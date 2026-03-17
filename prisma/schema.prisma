@@ -1,0 +1,186 @@
+// schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────
+// ENUM
+// ─────────────────────────────────────────
+
+enum Role {
+  CUSTOMER
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+  FAILED
+}
+
+enum ShippingType {
+  NATIONAL       // Melhor Envio (PAC, SEDEX, Jadlog, etc.)
+  LOCAL_DELIVERY // Entrega própria / mototaxi (Maciço de Baturité)
+  PICKUP         // Retirada na loja (Aracoiaba-CE)
+}
+
+enum ProductType {
+  SUPPLEMENT
+  FASHION
+  ACCESSORY
+}
+
+// ─────────────────────────────────────────
+// MODELS
+// ─────────────────────────────────────────
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(CUSTOMER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  orders    Order[]
+
+  @@map("users")
+}
+
+model Category {
+  id        String    @id @default(cuid())
+  name      String
+  slug      String    @unique
+  icon      String?
+  active    Boolean   @default(true)
+  createdAt DateTime  @default(now())
+
+  products  Product[]
+
+  @@map("categories")
+}
+
+model Product {
+  id          String      @id @default(cuid())
+  name        String
+  slug        String      @unique
+  description String
+  price       Decimal     @db.Decimal(10, 2)
+  stock       Int         @default(0)
+  images      String[]    // Array de paths ou URLs
+  featured    Boolean     @default(false)
+  active      Boolean     @default(true)
+  isNew       Boolean     @default(true)
+  productType ProductType @default(SUPPLEMENT)
+
+  // Campos para suplementos
+  weight      String?  // Ex: "900g", "1kg", "300g" (exibição)
+  weightKg    Float?   // Peso real em kg para cálculo de frete (ex: 0.9)
+  flavors     String[] // Ex: ["Chocolate", "Baunilha", "Morango"]
+
+  // Campos para moda fitness
+  sizes       String[] // Ex: ["P", "M", "G", "GG"]
+  gender      String?  // "masculino", "feminino", "unissex"
+  color       String?  // Cor principal do produto
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  categoryId  String
+  category    Category    @relation(fields: [categoryId], references: [id])
+
+  orderItems  OrderItem[]
+
+  @@map("products")
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  status          OrderStatus @default(PENDING)
+  total           Decimal     @db.Decimal(10, 2)
+  stripeSessionId String?     @unique
+  stripePaymentId String?
+
+  // Modalidade e custo de entrega
+  shippingType      ShippingType
+  shippingCost      Decimal     @db.Decimal(10, 2) @default(0)
+  shippingCarrier   String?     // "PAC", "SEDEX", "Jadlog", "Mototaxi", "Retirada"
+  shippingDeadline  String?     // "3-5 dias úteis", "Mesmo dia", etc.
+  trackingCode      String?     // Código de rastreio (preenchido pelo admin após envio)
+
+  // Endereço de entrega (desnormalizado para preservar histórico)
+  // Vazio se shippingType = PICKUP
+  addressStreet       String?
+  addressNumber       String?
+  addressComplement   String?
+  addressNeighborhood String?
+  addressCity         String?
+  addressState        String?
+  addressZip          String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId    String
+  user      User        @relation(fields: [userId], references: [id])
+
+  items     OrderItem[]
+
+  @@map("orders")
+}
+
+model OrderItem {
+  id           String  @id @default(cuid())
+  quantity     Int
+  price        Decimal @db.Decimal(10, 2) // Preço no momento da compra
+  selectedSize   String? // Tamanho selecionado (para moda fitness)
+  selectedFlavor String? // Sabor selecionado (para suplementos)
+
+  orderId   String
+  order     Order   @relation(fields: [orderId], references: [id])
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+
+  @@map("order_items")
+}
+
+// Zonas de entrega local — Maciço de Baturité
+model LocalDeliveryZone {
+  id          String  @id @default(cuid())
+  city        String  // "Aracoiaba", "Baturité", "Capistrano"...
+  state       String  @default("CE")
+  price       Decimal @db.Decimal(10, 2) // Taxa de entrega para esta cidade
+  deadlineText String @default("Mesmo dia ou próximo dia útil")
+  active      Boolean @default(true)
+
+  @@map("local_delivery_zones")
+}
+
+// Configurações gerais da loja (endereço, horários, contatos)
+model StoreSettings {
+  id                String  @id @default(cuid())
+  addressStreet     String  @default("Rua Antônio Lopes, 571")
+  addressComplement String  @default("Conjunto Cohab")
+  addressCity       String  @default("Aracoiaba")
+  addressState      String  @default("CE")
+  addressZip        String  @default("62765-000")
+  whatsapp          String  @default("5585997839040")
+  instagram         String  @default("@brabus.performancestore")
+  openingHours      String  @default("Seg–Sex: 8h–18h | Sáb: 8h–13h")
+  googleMapsUrl     String?
+  googleMapsEmbed   String?
+
+  @@map("store_settings")
+}

@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #C9A84C;
+  --color-primary-dark: #A68A3D;
+  --color-secondary: #CC2200;
+  --color-secondary-dark: #A31B00;
+  --color-background: #0A0A0A;
+  --color-surface: #171717;
+  --color-surface-hover: #262626;
+  
+  --font-heading: "Bebas Neue", sans-serif;
+  --font-body: "Inter", sans-serif;
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 4%;
+    --foreground: 0 0% 98%;
+    /* ... variáveis shadcn omitidas por brevidade, assumindo dark theme puro ... */
+  }
+
+  * {
+    border-color: #262626;
+  }
+  
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    @apply font-body text-gray-200 antialiased;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading tracking-wider;
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-surface/50 backdrop-blur-md border border-white/10;
+  }
+}
