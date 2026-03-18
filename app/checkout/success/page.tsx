@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { Suspense, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import { CheckCircle, LoaderCircle, MessageCircle, TimerReset } from "lucide-react"
@@ -47,7 +47,7 @@ function buildSuccessCopy(summary: CheckoutSessionSummary | null) {
 
 type CheckoutSessionSummaryResponse = CheckoutSessionSummary | { error?: string }
 
-export default function CheckoutSuccessPage() {
+function CheckoutSuccessContent() {
   const searchParams = useSearchParams()
   const sessionId = searchParams.get("session_id")
   const { clearCart } = useCartStore()
@@ -140,5 +140,21 @@ export default function CheckoutSuccessPage() {
         </Link>
       </div>
     </div>
+  )
+}
+
+export default function CheckoutSuccessPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="container mx-auto flex min-h-[70vh] items-center justify-center px-4 py-20">
+          <div className="rounded-sm border border-white/10 bg-black/40 px-8 py-6 text-center text-sm text-gray-400">
+            Carregando confirmação do pedido...
+          </div>
+        </div>
+      }
+    >
+      <CheckoutSuccessContent />
+    </Suspense>
   )
 }

@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server"
-import { ShippingType, Prisma } from "@prisma/client"
+import { PaymentStatus, ShippingType, Prisma } from "@prisma/client"
 import type Stripe from "stripe"
 import { auth } from "@/auth"
 import { fetchMelhorEnvioServices, findLocalDeliveryZone, normalizePostalCode } from "@/lib/shipping"
 import prisma from "@/lib/prisma"
 import {
+  inferOrderPaymentMethodFromCheckoutConfig,
   getStripeCheckoutPaymentMethodTypes,
   getStripeServerClient,
   isStripeTestEnvironmentConfigured,
@@ -132,6 +133,7 @@ export async function POST(req: Request) {
     }
 
     const stripe = getStripeServerClient()
+    const configuredPaymentMethods = getStripeCheckoutPaymentMethodTypes()
     const sessionAuth = await auth()
     const userId = sessionAuth?.user?.id
 
@@ -349,6 +351,8 @@ export async function POST(req: Request) {
     const order = await prisma.order.create({
       data: {
         userId,
+        paymentMethod: inferOrderPaymentMethodFromCheckoutConfig(configuredPaymentMethods),
+        paymentStatus: PaymentStatus.PENDING,
         total,
         shippingType,
         shippingCost: resolvedShippingCost,
@@ -363,7 +367,7 @@ export async function POST(req: Request) {
 
     const origin = req.headers.get("origin") || process.env.NEXTAUTH_URL
     const stripeSession = await stripe.checkout.sessions.create({
-      payment_method_types: getStripeCheckoutPaymentMethodTypes(),
+      payment_method_types: configuredPaymentMethods,
       line_items: lineItems,
       mode: "payment",
       success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/auth"
+import { cleanupOrphanedManagedProductImages } from "@/lib/admin-product-images"
 import {
   normalizeProductPayload,
   productWithRelationsInclude,
@@ -19,6 +20,17 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     const { id } = await params
     const body = await req.json()
     const { productData, variants } = normalizeProductPayload(body)
+    const existingProduct = await prisma.product.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        images: true,
+      },
+    })
+
+    if (!existingProduct) {
+      return NextResponse.json({ error: "Produto não encontrado." }, { status: 404 })
+    }
 
     if (!productData.name || !productData.slug || !productData.categoryId) {
       return NextResponse.json({ error: "Nome, slug e subcategoria são obrigatórios." }, { status: 400 })
@@ -107,6 +119,9 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       })
     })
 
+    const removedImages = existingProduct.images.filter((image) => !productData.images.includes(image))
+    await cleanupOrphanedManagedProductImages(prisma, removedImages)
+
     return NextResponse.json(serializeProduct(product))
   } catch (error) {
     console.error(error)
@@ -119,11 +134,24 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
 
   try {
     const { id } = await params
+    const existingProduct = await prisma.product.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        images: true,
+      },
+    })
+
+    if (!existingProduct) {
+      return NextResponse.json({ error: "Produto não encontrado." }, { status: 404 })
+    }
 
     await prisma.$transaction(async (tx) => {
       await tx.productVariant.deleteMany({ where: { productId: id } })
       await tx.product.delete({ where: { id } })
     })
+
+    await cleanupOrphanedManagedProductImages(prisma, existingProduct.images)
 
     return NextResponse.json({ success: true })
   } catch (error) {

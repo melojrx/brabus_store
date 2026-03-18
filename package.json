@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "integrations:check": "node --env-file=.env --import tsx scripts/check-integrations.ts",
     "stripe:listen": "bash scripts/stripe-listen.sh",
     "prisma:generate": "prisma generate",
     "postinstall": "prisma generate"

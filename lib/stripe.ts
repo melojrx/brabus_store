@@ -1,3 +1,4 @@
+import { PaymentMethod } from "@prisma/client"
 import Stripe from "stripe"
 
 const ALLOWED_CHECKOUT_PAYMENT_METHOD_TYPES = new Set<Stripe.Checkout.SessionCreateParams.PaymentMethodType>([
@@ -65,4 +66,14 @@ export function getStripeCheckoutPaymentMethodTypes() {
   }
 
   return methods
+}
+
+export function inferOrderPaymentMethodFromCheckoutConfig(
+  methods: readonly Stripe.Checkout.SessionCreateParams.PaymentMethodType[],
+) {
+  if (methods.length === 1 && methods[0] === "pix") {
+    return PaymentMethod.STRIPE_PIX
+  }
+
+  return PaymentMethod.STRIPE_CARD
 }

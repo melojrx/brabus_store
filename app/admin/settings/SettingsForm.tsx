@@ -7,6 +7,7 @@ type Settings = {
   id: string
   whatsapp: string
   instagram: string
+  pixKey: string | null
   openingHours: string
   addressStreet: string
   addressComplement: string
@@ -21,6 +22,7 @@ export default function SettingsForm({ settings }: { settings: Settings }) {
   const [form, setForm] = useState({
     whatsapp: settings.whatsapp,
     instagram: settings.instagram,
+    pixKey: settings.pixKey ?? "",
     openingHours: settings.openingHours,
     addressStreet: settings.addressStreet,
     addressComplement: settings.addressComplement,
@@ -67,7 +69,11 @@ export default function SettingsForm({ settings }: { settings: Settings }) {
         </div>
         <div>
           <label className="label-admin">Instagram</label>
-          <input className="input-admin" value={form.instagram} onChange={(e) => set("instagram", e.target.value)} placeholder="@perfil" />
+          <input className="input-admin" value={form.instagram} onChange={(e) => set("instagram", e.target.value)} placeholder="@brabus_pstore" />
+        </div>
+        <div>
+          <label className="label-admin">Chave Pix</label>
+          <input className="input-admin" value={form.pixKey} onChange={(e) => set("pixKey", e.target.value)} placeholder="email, telefone, CPF ou chave aleatória" />
         </div>
         <div>
           <label className="label-admin">Horário de Funcionamento</label>

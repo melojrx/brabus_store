@@ -3,6 +3,7 @@ import { ArrowRight, Instagram, MapPin, Zap } from "lucide-react"
 import AddToCartButton from "@/components/AddToCartButton"
 import { getBestSellingProductIds, productWithRelationsInclude, serializeProduct } from "@/lib/catalog-api"
 import prisma from "@/lib/prisma"
+import { getPublicStoreSettings } from "@/lib/store-settings"
 
 async function getBestSellingProducts() {
   try {
@@ -51,21 +52,9 @@ async function getBestSellingProducts() {
   }
 }
 
-async function getInstagramFeed() {
-  try {
-    const res = await fetch(`${process.env.NEXTAUTH_URL || "http://localhost:3000"}/api/instagram/feed`, {
-      next: { revalidate: 3600 },
-    })
-    if (!res.ok) return []
-    return res.json()
-  } catch {
-    return []
-  }
-}
-
 export default async function Home() {
   const bestSellingProducts = await getBestSellingProducts()
-  const instagramFeed = await getInstagramFeed()
+  const storeSettings = await getPublicStoreSettings()
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -136,7 +125,7 @@ export default async function Home() {
             <div className="flex items-center gap-4">
               <Instagram className="w-8 h-8 shrink-0" />
               <div>
-                <h3 className="font-bold uppercase tracking-widest text-sm">@brabus.performancestore</h3>
+                <h3 className="font-bold uppercase tracking-widest text-sm">{storeSettings.instagram}</h3>
                 <p className="text-black/70 text-xs">Siga no Instagram</p>
               </div>
             </div>
@@ -285,40 +274,18 @@ export default async function Home() {
       {/* ──── INSTAGRAM ──── */}
       <section className="py-20 bg-black border-t border-white/5">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
+          <div className="text-center max-w-2xl mx-auto">
             <Instagram className="w-10 h-10 mx-auto text-[var(--color-primary)] mb-4" />
             <h2 className="text-3xl md:text-4xl font-heading tracking-wider uppercase mb-2">
-              Siga a <span className="text-white">@brabus.performancestore</span>
+              Siga a <span className="text-white">{storeSettings.instagram}</span>
             </h2>
-            <p className="text-gray-400 mt-2">Marque a gente no seu treino 💀🔥</p>
-          </div>
+            <p className="text-gray-400 mt-2">
+              Acompanhe novidades da loja, lançamentos e bastidores no perfil oficial.
+            </p>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2">
-            {instagramFeed.slice(0, 6).map((post: { id: string; permalink: string; media_url: string }) => (
+            <div className="mt-8">
               <a
-                key={post.id}
-                href={post.permalink}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="relative aspect-square group overflow-hidden block rounded-sm"
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={post.media_url}
-                  alt="Instagram post"
-                  className="object-cover w-full h-full group-hover:scale-110 transition-transform duration-500 grayscale group-hover:grayscale-0"
-                />
-                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                  <Instagram className="text-white w-8 h-8" />
-                </div>
-              </a>
-            ))}
-          </div>
-
-          {instagramFeed.length === 0 && (
-            <div className="text-center py-8">
-              <a
-                href="https://instagram.com/brabus.performancestore"
+                href={storeSettings.instagramUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 text-[var(--color-primary)] hover:underline font-bold uppercase tracking-widest text-sm"
@@ -326,7 +293,7 @@ export default async function Home() {
                 <Instagram className="w-5 h-5" /> Ver perfil no Instagram
               </a>
             </div>
-          )}
+          </div>
         </div>
       </section>
     </div>

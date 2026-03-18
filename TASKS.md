@@ -129,13 +129,13 @@
 > Frente aberta a partir da revisão cruzada entre `PRD.md` e a implementação atual
 
 ### 9.1 Admin — Pedidos
-- [ ] Criar `app/admin/orders/page.tsx` com listagem administrativa dedicada
-- [ ] Adicionar filtro por status na listagem de pedidos do admin
-- [ ] Criar `GET /api/admin/orders`
-- [ ] Criar `PATCH /api/admin/orders/[id]/status`
-- [ ] Criar `PATCH /api/admin/orders/[id]/tracking`
-- [ ] Permitir edição manual de status no detalhe administrativo do pedido
-- [ ] Permitir cadastro/edição de código de rastreio no detalhe administrativo do pedido
+- [x] Criar `app/admin/orders/page.tsx` com listagem administrativa dedicada
+- [x] Adicionar filtro por status na listagem de pedidos do admin
+- [x] Criar `GET /api/admin/orders`
+- [x] Criar `PATCH /api/admin/orders/[id]/status`
+- [x] Criar `PATCH /api/admin/orders/[id]/tracking`
+- [x] Permitir edição manual de status no detalhe administrativo do pedido
+- [x] Permitir cadastro/edição de código de rastreio no detalhe administrativo do pedido
 
 ### 9.2 Área do Cliente
 - [x] Estruturar navegação real da conta do cliente além do histórico embutido
@@ -160,20 +160,20 @@
 - [x] Fazer a seção `Mais Vendidos` da home refletir venda real, não apenas `featured`
 
 ### 9.4 Admin — Upload e Toggle de Produtos
-- [ ] Criar `POST /api/admin/upload`
-- [ ] Permitir upload de múltiplas imagens por produto no admin
-- [ ] Permitir reordenação simples das imagens no cadastro do produto
-- [ ] Permitir remoção de imagens já vinculadas ao produto
-- [ ] Criar `PATCH /api/admin/products/[id]/toggle` ou formalizar ação equivalente dedicada
-- [ ] Substituir o campo manual de URLs por fluxo de upload real em `ProductsManager`
+- [x] Criar `POST /api/admin/upload`
+- [x] Permitir upload de múltiplas imagens por produto no admin
+- [x] Permitir reordenação simples das imagens no cadastro do produto
+- [x] Permitir remoção de imagens já vinculadas ao produto
+- [x] Criar `PATCH /api/admin/products/[id]/toggle` ou formalizar ação equivalente dedicada
+- [x] Substituir o campo manual de URLs por fluxo de upload real em `ProductsManager`
 
 ### 9.5 Integrações Externas
-- [ ] Integrar Instagram de forma real ou com fallback curado configurável, removendo o mock silencioso atual
+- [x] Integrar Instagram de forma real ou com fallback curado configurável, removendo o mock silencioso atual
 - [ ] Validar a integração do Melhor Envio com credenciais de teste/sandbox conforme o PRD
 - [ ] Confirmar cálculo de frete nacional com fluxo real do Melhor Envio em ambiente de desenvolvimento
-- [ ] Validar a integração Stripe com chaves de teste
-- [ ] Validar criação de checkout, retorno de sucesso/cancelamento e webhook Stripe com ambiente de teste
-- [ ] Documentar variáveis de ambiente obrigatórias para Instagram, Melhor Envio e Stripe
+- [x] Validar a integração Stripe com chaves de teste
+- [x] Validar criação de checkout, retorno de sucesso/cancelamento e webhook Stripe com ambiente de teste
+- [x] Documentar variáveis de ambiente obrigatórias para Instagram, Melhor Envio e Stripe
 
 ### 9.6 Home — Seção `Encontre seu Objetivo`
 - [ ] Tornar a seção dinâmica mantendo sempre 3 cards
@@ -182,14 +182,25 @@
 - [ ] Remover os cards hardcoded atuais da home
 
 ### 9.7 Operação de Loja Física e Pagamentos Manuais
-- [ ] Definir enums e campos de pedido para `paymentMethod` e `paymentStatus`
-- [ ] Adicionar suporte a `CASH` no modelo de pedidos
-- [ ] Adicionar suporte a `MANUAL_PIX` no modelo de pedidos
-- [ ] Adicionar campos opcionais de pagamento manual (`paidAt`, `manualPaymentReference`, `manualPaymentNotes`, `cashReceivedAmount`, `changeAmount`)
-- [ ] Garantir separação clara entre status de pagamento e status operacional/logístico do pedido
-- [ ] Adaptar criação de pedido para aceitar fluxos sem Stripe quando o pagamento for manual
-- [ ] Permitir confirmação manual de pagamento no admin
-- [ ] Permitir registro de valor recebido e troco para vendas em dinheiro
-- [ ] Permitir exibição/registro de chave Pix e referência para `MANUAL_PIX`
-- [ ] Garantir que `MANUAL_PIX` não marque pagamento como concluído automaticamente
-- [ ] Preparar a base para um fluxo simples de PDV/loja física em etapa posterior
+- [x] Definir enums e campos de pedido para `paymentMethod` e `paymentStatus`
+- [x] Adicionar suporte a `CASH` no modelo de pedidos
+- [x] Adicionar suporte a `MANUAL_PIX` no modelo de pedidos
+- [x] Adicionar campos opcionais de pagamento manual (`paidAt`, `manualPaymentReference`, `manualPaymentNotes`, `cashReceivedAmount`, `changeAmount`)
+- [x] Garantir separação clara entre status de pagamento e status operacional/logístico do pedido
+- [x] Adaptar criação de pedido Stripe para preencher `paymentMethod` e `paymentStatus` corretamente
+- [x] Permitir confirmação manual de pagamento no admin
+- [x] Permitir registro de valor recebido e troco para vendas em dinheiro
+- [x] Permitir exibição/registro de chave Pix e referência para `MANUAL_PIX`
+- [x] Garantir que `MANUAL_PIX` não marque pagamento como concluído automaticamente
+- [x] Preparar a base para um fluxo simples de PDV/loja física em etapa posterior
+- [ ] Expandir `paymentMethod` para suportar cartão presencial sem Stripe (`POS_DEBIT` e `POS_CREDIT`)
+- [ ] Criar tela administrativa dedicada de PDV/balcão para pedidos presenciais
+- [ ] Permitir busca e adição manual de produtos/variantes em um pedido interno
+- [ ] Permitir selecionar cliente existente ou registrar venda rápida sem cliente obrigatório
+- [ ] Permitir finalizar venda presencial com `PICKUP` como fluxo inicial padrão
+- [ ] Permitir escolher `CASH`, `MANUAL_PIX`, `POS_DEBIT` ou `POS_CREDIT` no fechamento do pedido manual
+- [ ] Permitir registrar valor recebido, troco, referência Pix e notas diretamente no fluxo de PDV
+- [ ] Permitir registrar observações e referência operacional para cartão presencial quando necessário
+- [ ] Criar persistência de pedido manual sem depender do checkout Stripe
+- [ ] Garantir baixa de estoque consistente no fechamento/confirmacão do pedido presencial
+- [ ] Garantir que pedidos criados no PDV apareçam corretamente no admin de pedidos

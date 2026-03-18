@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { Instagram, MapPin, Phone } from "lucide-react";
+import { getPublicStoreSettings } from "@/lib/store-settings";
 
-export default function Footer() {
+export default async function Footer() {
+  const settings = await getPublicStoreSettings()
+
   return (
     <footer className="bg-black border-t border-white/10 pt-16 pb-8 mt-20">
       <div className="container mx-auto px-4 grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
@@ -11,7 +14,7 @@ export default function Footer() {
             Para quem treina de verdade. Suplementação e moda fitness de alta performance com foco no Maciço de Baturité e todo o Ceará.
           </p>
           <div className="flex gap-4">
-            <a href="https://instagram.com/brabus.performancestore" target="_blank" className="text-gray-400 hover:text-white transition-colors">
+            <a href={settings.instagramUrl} target="_blank" className="text-gray-400 hover:text-white transition-colors">
               <Instagram className="w-6 h-6" />
             </a>
           </div>
@@ -22,7 +25,7 @@ export default function Footer() {
           <ul className="space-y-3 text-sm text-gray-400">
             <li className="flex items-start gap-2">
               <MapPin className="w-5 h-5 text-[var(--color-primary)] shrink-0" />
-              <span>Rua Antônio Lopes, 571<br/>Conjunto Cohab<br/>Aracoiaba - CE<br/>62765-000</span>
+              <span>{settings.addressStreet}<br/>{settings.addressComplement}<br/>{settings.addressCity} - {settings.addressState}<br/>{settings.addressZip}</span>
             </li>
             <li className="flex items-center gap-2 pt-2">
               <Phone className="w-5 h-5 text-[var(--color-primary)]" />

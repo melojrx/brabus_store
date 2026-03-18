@@ -1,0 +1,51 @@
+import { ZodError } from "zod"
+import { NextResponse } from "next/server"
+import { auth } from "@/auth"
+import { updateOrderTrackingSchema } from "@/lib/admin-orders"
+import prisma from "@/lib/prisma"
+
+async function checkAdmin() {
+  const session = await auth()
+  return session?.user?.role === "ADMIN"
+}
+
+export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+  if (!(await checkAdmin())) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  try {
+    const { id } = await params
+    const body = await req.json()
+    const { trackingCode } = updateOrderTrackingSchema.parse(body)
+
+    const order = await prisma.order.findUnique({
+      where: { id },
+      select: { id: true },
+    })
+
+    if (!order) {
+      return NextResponse.json({ error: "Pedido não encontrado." }, { status: 404 })
+    }
+
+    const updatedOrder = await prisma.order.update({
+      where: { id },
+      data: { trackingCode },
+      select: {
+        id: true,
+        status: true,
+        trackingCode: true,
+        updatedAt: true,
+      },
+    })
+
+    return NextResponse.json(updatedOrder)
+  } catch (error) {
+    if (error instanceof ZodError) {
+      return NextResponse.json({ error: error.issues[0]?.message ?? "Código de rastreio inválido." }, { status: 400 })
+    }
+
+    console.error("Erro ao atualizar rastreio do pedido:", error)
+    return NextResponse.json({ error: "Server Error" }, { status: 500 })
+  }
+}

@@ -1,7 +1,7 @@
 import { auth } from "@/auth"
 import { redirect } from "next/navigation"
 import Link from "next/link"
-import { LayoutDashboard, Package, Tags, Settings, LogOut, Users, Truck } from "lucide-react"
+import { LayoutDashboard, Package, Tags, Settings, LogOut, Users, Truck, Receipt } from "lucide-react"
 
 export default async function AdminLayout({
   children,
@@ -32,6 +32,9 @@ export default async function AdminLayout({
            </Link>
            <Link href="/admin/products" className="flex items-center gap-3 px-3 py-3 text-gray-300 hover:bg-white/5 hover:text-white rounded-sm transition-colors font-medium text-sm">
              <Package className="w-5 h-5 text-gray-400" /> Produtos
+           </Link>
+           <Link href="/admin/orders" className="flex items-center gap-3 px-3 py-3 text-gray-300 hover:bg-white/5 hover:text-white rounded-sm transition-colors font-medium text-sm">
+             <Receipt className="w-5 h-5 text-gray-400" /> Pedidos
            </Link>
            <Link href="/admin/categories" className="flex items-center gap-3 px-3 py-3 text-gray-300 hover:bg-white/5 hover:text-white rounded-sm transition-colors font-medium text-sm">
              <Tags className="w-5 h-5 text-gray-400" /> Categorias

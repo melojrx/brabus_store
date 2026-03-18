@@ -648,6 +648,7 @@ Escopo:
 - adicionar meios de pagamento manuais para operacao interna:
   - dinheiro
   - Pix manual por chave Pix da loja
+  - cartao presencial sem Stripe
 - garantir que pagamentos manuais nao sejam marcados como pagos automaticamente sem confirmacao operacional quando isso for necessario
 
 Diretriz de produto:
@@ -666,6 +667,8 @@ Estrutura funcional sugerida:
   - `STRIPE_PIX` quando a conta Stripe suportar Pix
   - `CASH`
   - `MANUAL_PIX`
+  - `POS_DEBIT`
+  - `POS_CREDIT`
 - `paymentStatus`
   - `PENDING`
   - `PAID`
@@ -687,6 +690,10 @@ Regras operacionais:
   - deve exibir a chave Pix da loja
   - nao deve marcar o pedido como pago automaticamente
   - exige confirmacao manual no admin ou no fluxo de PDV antes de liberar como `PAID`
+- `POS_DEBIT` e `POS_CREDIT`
+  - representam pagamento em maquineta/balcao, fora do Stripe
+  - podem ser confirmados manualmente no ato da venda
+  - podem registrar observacoes e referencia operacional quando necessario
 - `STRIPE_*`
   - continua seguindo confirmacao automatica por webhook
 
@@ -701,6 +708,42 @@ Entregas objetivas:
 - permitir confirmacao manual de pagamento no admin
 - permitir registrar observacoes e referencia de pagamento manual
 - preparar a base para um fluxo de PDV simples para loja fisica
+
+Status atual:
+- o modelo de pedidos ja suporta `paymentMethod`, `paymentStatus`, `paidAt`, referencia/notas manuais e valores de caixa/troco
+- o checkout online e o webhook Stripe ja preenchem os campos de pagamento de forma consistente
+- o admin de pedidos ja permite confirmar pagamento manual, registrar Pix manual, dinheiro, valor recebido, troco e observacoes
+- a chave Pix da loja ja pode ser cadastrada no admin e exibida no detalhe do pedido
+- a separacao entre status operacional e status de pagamento ja esta implementada
+- o modelo atual ainda precisa ser expandido para suportar pagamentos presenciais em cartao sem Stripe no PDV
+
+Proxima entrega explicita:
+- implementar uma tela dedicada de PDV/balcao para registrar vendas presenciais do zero, sem depender do checkout publico
+
+Escopo detalhado do PDV:
+- criar uma pagina administrativa dedicada para operacao de loja fisica
+- permitir montar um pedido manual adicionando produtos e variantes
+- permitir definir cliente existente ou venda rapida sem cadastro obrigatorio
+- permitir selecionar tipo de entrega compativel com venda presencial, com foco inicial em `PICKUP`
+- permitir escolher `CASH`, `MANUAL_PIX`, `POS_DEBIT` ou `POS_CREDIT` no ato da venda
+- permitir registrar valor recebido, troco, referencia Pix e observacoes operacionais na propria tela
+- permitir finalizar o pedido ja com `paymentStatus` coerente e baixa de estoque controlada
+
+Regras do PDV:
+- `CASH` pode ser concluido no ato da venda se o operador confirmar recebimento
+- `MANUAL_PIX` pode nascer como `PENDING` e ser confirmado depois, ou ser concluido na hora se o comprovante for validado no balcao
+- `POS_DEBIT` e `POS_CREDIT` devem existir como pagamentos manuais presenciais, sem qualquer dependencia do Stripe
+- a baixa de estoque deve acontecer uma unica vez, no momento correto de confirmacao/finalizacao
+- a tela de PDV nao substitui o checkout publico; ela atende apenas a operacao interna
+
+Entregas objetivas da proxima etapa:
+- criar rota/tela administrativa de PDV
+- criar fluxo de busca e adicao de produtos/variantes ao pedido manual
+- criar resumo de itens, subtotal, total e identificacao do cliente
+- expandir `paymentMethod` para suportar cartao presencial sem Stripe
+- criar finalizacao manual com `CASH`, `MANUAL_PIX`, `POS_DEBIT` e `POS_CREDIT`
+- registrar o pedido de forma consistente com os campos de pagamento ja existentes
+- garantir que a finalizacao manual atualize estoque e mantenha compatibilidade com o admin de pedidos
 ### 12.8 Ordem Recomendada De Execucao
 1. Admin Pedidos
 2. Conta do Cliente

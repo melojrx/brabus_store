@@ -34,6 +34,21 @@ enum ShippingType {
   PICKUP // Retirada na loja (Aracoiaba-CE)
 }
 
+enum PaymentMethod {
+  STRIPE_CARD
+  STRIPE_PIX
+  CASH
+  MANUAL_PIX
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  CANCELLED
+  REFUNDED
+}
+
 // ─────────────────────────────────────────
 // MODELS
 // ─────────────────────────────────────────
@@ -132,11 +147,18 @@ model Product {
 }
 
 model Order {
-  id              String      @id @default(cuid())
-  status          OrderStatus @default(PENDING)
-  total           Decimal     @db.Decimal(10, 2)
-  stripeSessionId String?     @unique
+  id              String        @id @default(cuid())
+  status          OrderStatus   @default(PENDING)
+  paymentMethod   PaymentMethod @default(STRIPE_CARD)
+  paymentStatus   PaymentStatus @default(PENDING)
+  total           Decimal       @db.Decimal(10, 2)
+  stripeSessionId String?       @unique
   stripePaymentId String?
+  paidAt          DateTime?
+  manualPaymentReference String?
+  manualPaymentNotes     String?
+  cashReceivedAmount     Decimal? @db.Decimal(10, 2)
+  changeAmount           Decimal? @db.Decimal(10, 2)
 
   // Modalidade e custo de entrega
   shippingType     ShippingType
@@ -238,7 +260,8 @@ model StoreSettings {
   addressState      String  @default("CE")
   addressZip        String  @default("62765-000")
   whatsapp          String  @default("5585997839040")
-  instagram         String  @default("@brabus.performancestore")
+  instagram         String  @default("@brabus_pstore")
+  pixKey            String?
   openingHours      String  @default("Seg–Sex: 8h–18h | Sáb: 8h–13h")
   googleMapsUrl     String?
   googleMapsEmbed   String?

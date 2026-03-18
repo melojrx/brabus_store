@@ -1,26 +1,67 @@
 import { NextResponse } from "next/server"
+import {
+  getCuratedInstagramFallbackPosts,
+  getInstagramIntegrationSummary,
+} from "@/lib/integration-status"
 
 // Cache: ISR ou fetch revalidation a cada 1 hora.
 export const revalidate = 3600
 
 export async function GET() {
   try {
-    // Para simplificar, como não há um token de IG real configurado, retornaremos um JSON mockado 
-    // ou uma implementação básica para Instagram Fetcher 
-    // Em produção, usa-se a Graph API do IG
-    
-    // Dados mockados conforme instrução de que feed pode bater em API inativa (fallback no PRD)
-    const mockFeed = [
-      { id: "1", media_url: "https://placehold.co/400x400/000/FFF?text=Treino+1", permalink: "https://instagram.com" },
-      { id: "2", media_url: "https://placehold.co/400x400/000/FFF?text=Suplementos", permalink: "https://instagram.com" },
-      { id: "3", media_url: "https://placehold.co/400x400/000/FFF?text=Dica", permalink: "https://instagram.com" },
-      { id: "4", media_url: "https://placehold.co/400x400/000/FFF?text=Moda", permalink: "https://instagram.com" },
-      { id: "5", media_url: "https://placehold.co/400x400/000/FFF?text=Dieta", permalink: "https://instagram.com" },
-      { id: "6", media_url: "https://placehold.co/400x400/000/FFF?text=Loja", permalink: "https://instagram.com" },
-    ]
+    const instagramSummary = getInstagramIntegrationSummary()
 
-    return NextResponse.json(mockFeed)
+    if (instagramSummary.mode === "graph-api") {
+      const response = await fetch(
+        `https://graph.instagram.com/me/media?fields=id,media_url,permalink,thumbnail_url,media_type&limit=6&access_token=${encodeURIComponent(process.env.INSTAGRAM_ACCESS_TOKEN ?? "")}`,
+        {
+          next: { revalidate },
+        },
+      )
+
+      if (response.ok) {
+        const payload = (await response.json()) as {
+          data?: Array<{
+            id?: string
+            media_type?: string
+            media_url?: string
+            thumbnail_url?: string
+            permalink?: string
+          }>
+        }
+
+        const items = Array.isArray(payload.data) ? payload.data : []
+        const normalizedFeed = items
+          .map((item, index) => {
+            const mediaUrl =
+              item.media_type === "VIDEO"
+                ? item.thumbnail_url?.trim() || item.media_url?.trim() || ""
+                : item.media_url?.trim() || ""
+            const permalink = item.permalink?.trim() || ""
+
+            if (!mediaUrl || !permalink) {
+              return null
+            }
+
+            return {
+              id: item.id?.trim() || `instagram-${index + 1}`,
+              media_url: mediaUrl,
+              permalink,
+            }
+          })
+          .filter((item): item is { id: string; media_url: string; permalink: string } => item !== null)
+
+        if (normalizedFeed.length > 0) {
+          return NextResponse.json(normalizedFeed)
+        }
+      } else {
+        console.error("Falha ao buscar feed real do Instagram:", await response.text())
+      }
+    }
+
+    return NextResponse.json(getCuratedInstagramFallbackPosts())
   } catch (error) {
+    console.error("Erro ao carregar feed do Instagram:", error)
     return NextResponse.json({ error: "Server Error" }, { status: 500 })
   }
 }

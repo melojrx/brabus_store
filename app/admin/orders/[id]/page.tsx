@@ -2,16 +2,29 @@ import { auth } from "@/auth"
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import { ArrowLeft, Mail, MapPin, Truck, User } from "lucide-react"
+import OrderAdminActions from "@/app/admin/orders/[id]/OrderAdminActions"
+import { getAdminOrderDetail } from "@/lib/admin-orders"
+import { getOrderStatusMeta } from "@/lib/order-status"
+import { getPaymentMethodLabel, getPaymentStatusMeta } from "@/lib/payment-status"
 import prisma from "@/lib/prisma"
+import { getPublicStoreSettings } from "@/lib/store-settings"
 
-const STATUS_LABELS: Record<string, { label: string; cls: string }> = {
-  PENDING: { label: "Aguardando Pagamento", cls: "bg-yellow-500/20 text-yellow-400" },
-  PAID: { label: "Pago", cls: "bg-green-500/20 text-green-400" },
-  SHIPPED: { label: "Enviado", cls: "bg-blue-500/20 text-blue-400" },
-  DELIVERED: { label: "Entregue", cls: "bg-emerald-500/20 text-emerald-400" },
-  CANCELLED: { label: "Cancelado", cls: "bg-red-500/20 text-red-400" },
-  REFUNDED: { label: "Reembolsado", cls: "bg-purple-500/20 text-purple-400" },
-  FAILED: { label: "Falhou", cls: "bg-red-500/20 text-red-400" },
+function formatCurrency(value: number) {
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  }).format(value)
+}
+
+function formatDateTime(value: Date | string | null) {
+  if (!value) {
+    return "Não confirmado"
+  }
+
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(typeof value === "string" ? new Date(value) : value)
 }
 
 export default async function AdminOrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -23,50 +36,33 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
 
   const { id } = await params
 
-  const order = await prisma.order.findUnique({
-    where: { id },
-    include: {
-      user: {
-        select: {
-          name: true,
-          email: true,
-        },
-      },
-      items: {
-        include: {
-          product: {
-            select: {
-              name: true,
-              images: true,
-              slug: true,
-            },
-          },
-        },
-      },
-    },
-  })
+  const [order, storeSettings] = await Promise.all([
+    getAdminOrderDetail(prisma, id),
+    getPublicStoreSettings(),
+  ])
 
   if (!order) {
     return (
       <div className="container mx-auto px-4 py-20 text-center">
         <h1 className="text-3xl font-heading mb-4">Pedido não encontrado</h1>
-        <Link href="/admin" className="text-[var(--color-primary)] hover:underline">
-          Voltar para o dashboard
+        <Link href="/admin/orders" className="text-[var(--color-primary)] hover:underline">
+          Voltar para pedidos
         </Link>
       </div>
     )
   }
 
-  const status = STATUS_LABELS[order.status] ?? { label: order.status, cls: "bg-gray-500/20 text-gray-400" }
+  const status = getOrderStatusMeta(order.status)
+  const paymentStatus = getPaymentStatusMeta(order.paymentStatus)
   const subtotal = order.items.reduce((acc, item) => acc + (item.unitPrice ?? item.price).toNumber() * item.quantity, 0)
 
   return (
     <div className="max-w-5xl space-y-8">
       <Link
-        href="/admin?tab=overview"
+        href="/admin/orders"
         className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors uppercase tracking-widest text-xs font-bold"
       >
-        <ArrowLeft className="w-4 h-4" /> Dashboard
+        <ArrowLeft className="w-4 h-4" /> Pedidos
       </Link>
 
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 pb-8 border-b border-white/10">
@@ -81,7 +77,7 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
             })}
           </p>
         </div>
-        <span className={`text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-sm self-start ${status.cls}`}>
+        <span className={`text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-sm self-start ${status.outlinedClassName}`}>
           {status.label}
         </span>
       </div>
@@ -96,6 +92,9 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
             <p className="flex items-center gap-2 text-gray-400">
               <Mail className="w-4 h-4 text-[var(--color-primary)]" /> {order.user.email}
             </p>
+            {order.user.phone && (
+              <p className="text-gray-400">Telefone: {order.user.phone}</p>
+            )}
           </div>
         </div>
 
@@ -104,20 +103,18 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
           <div className="space-y-2 text-sm">
             <div className="flex justify-between text-gray-400">
               <span>Subtotal</span>
-              <span>R$ {subtotal.toFixed(2).replace(".", ",")}</span>
+              <span>{formatCurrency(subtotal)}</span>
             </div>
             <div className="flex justify-between text-gray-400">
               <span className="flex items-center gap-1.5">
                 <Truck className="w-3.5 h-3.5" />
                 {order.shippingCarrier ?? "Frete"}
               </span>
-              <span>R$ {order.shippingCost.toNumber().toFixed(2).replace(".", ",")}</span>
+              <span>{formatCurrency(order.shippingCost.toNumber())}</span>
             </div>
             <div className="flex justify-between font-bold text-white pt-3 border-t border-white/10 text-base">
               <span>Total</span>
-              <span className="font-heading tracking-wider">
-                R$ {order.total.toNumber().toFixed(2).replace(".", ",")}
-              </span>
+              <span className="font-heading tracking-wider">{formatCurrency(order.total.toNumber())}</span>
             </div>
           </div>
         </div>
@@ -127,21 +124,113 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
           {order.shippingType === "PICKUP" ? (
             <p className="text-sm text-gray-400">Retirada em loja. Rua Antônio Lopes, 571 — Aracoiaba, CE.</p>
           ) : (
-            <address className="not-italic text-sm text-gray-400 space-y-1">
-              <p className="flex items-center gap-2 text-white">
-                <MapPin className="w-4 h-4 text-[var(--color-primary)]" /> {order.addressStreet}
-                {order.addressNumber ? `, ${order.addressNumber}` : ""}
-              </p>
-              {order.addressComplement && <p>{order.addressComplement}</p>}
-              {order.addressNeighborhood && <p>{order.addressNeighborhood}</p>}
-              <p>
-                {order.addressCity} - {order.addressState}
-              </p>
-              {order.addressZip && <p>CEP {order.addressZip}</p>}
-            </address>
+            <div className="space-y-4 text-sm text-gray-400">
+              <address className="not-italic space-y-1">
+                <p className="flex items-center gap-2 text-white">
+                  <MapPin className="w-4 h-4 text-[var(--color-primary)]" /> {order.addressStreet}
+                  {order.addressNumber ? `, ${order.addressNumber}` : ""}
+                </p>
+                {order.addressComplement && <p>{order.addressComplement}</p>}
+                {order.addressNeighborhood && <p>{order.addressNeighborhood}</p>}
+                <p>
+                  {order.addressCity} - {order.addressState}
+                </p>
+                {order.addressZip && <p>CEP {order.addressZip}</p>}
+              </address>
+
+              <div className="space-y-1 border-t border-white/10 pt-4">
+                <p>Transportadora: {order.shippingCarrier ?? "Não informada"}</p>
+                {order.shippingDeadline && <p>Prazo: {order.shippingDeadline}</p>}
+                <p>Rastreio: {order.trackingCode ?? "Não informado"}</p>
+              </div>
+            </div>
           )}
         </div>
       </div>
+
+      <div className="bg-zinc-900 border border-white/5 rounded-sm p-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <h2 className="font-heading tracking-wider uppercase text-sm text-white">Pagamento</h2>
+            <p className="mt-2 text-sm text-gray-500">
+              Visão consolidada para caixa, conferência e operação de pedidos pagos manualmente.
+            </p>
+          </div>
+          <span className={`text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-sm ${paymentStatus.outlinedClassName}`}>
+            {paymentStatus.label}
+          </span>
+        </div>
+
+        <div className="mt-6 grid gap-6 lg:grid-cols-2">
+          <div className="space-y-3 text-sm">
+            <div className="flex justify-between gap-4 border-b border-white/5 pb-3">
+              <span className="text-gray-500">Método</span>
+              <span className="text-right text-white">{getPaymentMethodLabel(order.paymentMethod)}</span>
+            </div>
+            <div className="flex justify-between gap-4 border-b border-white/5 pb-3">
+              <span className="text-gray-500">Situação</span>
+              <span className="text-right text-white">{paymentStatus.label}</span>
+            </div>
+            <div className="flex justify-between gap-4 border-b border-white/5 pb-3">
+              <span className="text-gray-500">Confirmado em</span>
+              <span className="text-right text-white">{formatDateTime(order.paidAt)}</span>
+            </div>
+            {order.stripePaymentId && (
+              <div className="flex justify-between gap-4 border-b border-white/5 pb-3">
+                <span className="text-gray-500">Pagamento Stripe</span>
+                <span className="break-all text-right text-white">{order.stripePaymentId}</span>
+              </div>
+            )}
+            {order.manualPaymentReference && (
+              <div className="flex justify-between gap-4 border-b border-white/5 pb-3">
+                <span className="text-gray-500">Referência</span>
+                <span className="text-right text-white">{order.manualPaymentReference}</span>
+              </div>
+            )}
+            {order.cashReceivedAmount != null && (
+              <div className="flex justify-between gap-4 border-b border-white/5 pb-3">
+                <span className="text-gray-500">Valor Recebido</span>
+                <span className="text-right text-white">{formatCurrency(order.cashReceivedAmount.toNumber())}</span>
+              </div>
+            )}
+            {order.changeAmount != null && (
+              <div className="flex justify-between gap-4 border-b border-white/5 pb-3">
+                <span className="text-gray-500">Troco</span>
+                <span className="text-right text-white">{formatCurrency(order.changeAmount.toNumber())}</span>
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-4">
+            {order.paymentMethod === "MANUAL_PIX" && (
+              <div className="rounded-sm border border-[var(--color-primary)]/20 bg-[var(--color-primary)]/5 px-4 py-4 text-sm text-gray-200">
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--color-primary)]">Chave Pix da Loja</p>
+                <p className="mt-2 break-all font-mono text-xs text-white">{storeSettings.pixKey ?? "Não cadastrada no admin."}</p>
+              </div>
+            )}
+
+            <div className="rounded-sm border border-white/5 bg-black/30 px-4 py-4">
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-gray-500">Notas Operacionais</p>
+              <p className="mt-2 whitespace-pre-wrap text-sm text-gray-300">
+                {order.manualPaymentNotes ?? "Nenhuma observação registrada para este pagamento."}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <OrderAdminActions
+        orderId={order.id}
+        currentStatus={order.status}
+        currentPaymentMethod={order.paymentMethod}
+        currentPaymentStatus={order.paymentStatus}
+        initialTrackingCode={order.trackingCode}
+        initialManualPaymentReference={order.manualPaymentReference}
+        initialManualPaymentNotes={order.manualPaymentNotes}
+        initialCashReceivedAmount={order.cashReceivedAmount?.toNumber() ?? null}
+        initialChangeAmount={order.changeAmount?.toNumber() ?? null}
+        pixKey={storeSettings.pixKey}
+      />
 
       <div className="bg-zinc-900 border border-white/5 rounded-sm overflow-hidden">
         <div className="px-6 py-4 border-b border-white/5">

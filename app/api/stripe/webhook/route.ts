@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { OrderStatus, Prisma } from "@prisma/client"
+import { OrderStatus, PaymentMethod, PaymentStatus, Prisma } from "@prisma/client"
 import Stripe from "stripe"
 import { headers } from "next/headers"
 import prisma from "@/lib/prisma"
@@ -21,7 +21,7 @@ async function markOrderPaid(
     throw new Error(`Order ${orderId} not found`)
   }
 
-  if (order.status === OrderStatus.PAID) {
+  if (order.paymentStatus === PaymentStatus.PAID) {
     return "already-paid"
   }
 
@@ -51,7 +51,13 @@ async function markOrderPaid(
   await tx.order.update({
     where: { id: order.id },
     data: {
-      status: OrderStatus.PAID,
+      status: order.status === OrderStatus.PENDING ? OrderStatus.PAID : order.status,
+      paymentStatus: PaymentStatus.PAID,
+      paymentMethod:
+        session.payment_method_types?.length === 1 && session.payment_method_types[0] === "pix"
+          ? PaymentMethod.STRIPE_PIX
+          : PaymentMethod.STRIPE_CARD,
+      paidAt: order.paidAt ?? new Date(),
       stripePaymentId:
         typeof session.payment_intent === "string"
           ? session.payment_intent
@@ -71,7 +77,15 @@ async function markOrderStatusBySession(session: Stripe.Checkout.Session, status
 
   await prisma.order.update({
     where: { id: orderId },
-    data: { status },
+    data: {
+      status,
+      paymentStatus:
+        status === OrderStatus.FAILED
+          ? PaymentStatus.FAILED
+          : status === OrderStatus.CANCELLED
+            ? PaymentStatus.CANCELLED
+            : undefined,
+    },
   })
 
   return orderId

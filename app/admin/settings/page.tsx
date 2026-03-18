@@ -1,6 +1,7 @@
 import { Settings } from "lucide-react"
 import SettingsForm from "./SettingsForm"
 import prisma from "@/lib/prisma"
+import { normalizeInstagramHandle } from "@/lib/store-settings"
 
 export default async function AdminSettings() {
   const s = await prisma.storeSettings.findFirst()
@@ -8,7 +9,8 @@ export default async function AdminSettings() {
   const settings = {
     id: s?.id ?? "",
     whatsapp: s?.whatsapp ?? "",
-    instagram: s?.instagram ?? "",
+    instagram: normalizeInstagramHandle(s?.instagram ?? ""),
+    pixKey: s?.pixKey ?? null,
     openingHours: s?.openingHours ?? "",
     addressStreet: s?.addressStreet ?? "",
     addressComplement: s?.addressComplement ?? "",
