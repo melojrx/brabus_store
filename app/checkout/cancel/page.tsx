@@ -8,10 +8,10 @@ export default function CheckoutCancelPage() {
          <XCircle className="w-12 h-12 text-red-500" />
       </div>
       
-      <h1 className="text-4xl md:text-5xl font-heading tracking-wider uppercase mb-6">Pagamento <span className="text-red-500">Recusado</span></h1>
+      <h1 className="text-4xl md:text-5xl font-heading tracking-wider uppercase mb-6">Checkout <span className="text-red-500">Cancelado</span></h1>
       
       <p className="text-gray-400 mb-8 max-w-lg mx-auto">
-        Não foi possível processar o seu pagamento no momento. Seus itens continuam seguros no carrinho. Tente novamente com outra forma de pagamento.
+        O pagamento não foi concluído. Seus itens continuam no carrinho para você tentar novamente com cartão, Pix ou boleto.
       </p>
 
       <Link href="/checkout" className="bg-[var(--color-primary)] hover:bg-[var(--color-primary-dark)] text-black font-bold uppercase tracking-widest py-4 px-8 rounded-sm transition-all flex items-center justify-center gap-2">

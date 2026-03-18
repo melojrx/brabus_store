@@ -4,11 +4,13 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { UserPlus, AlertCircle } from "lucide-react"
+import { formatPhone } from "@/lib/account"
 
 export default function RegisterPage() {
   const router = useRouter()
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
+  const [phone, setPhone] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
   const [loading, setLoading] = useState(false)
@@ -22,7 +24,7 @@ export default function RegisterPage() {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email, phone, password }),
       })
 
       const data = await res.json()
@@ -81,6 +83,18 @@ export default function RegisterPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 placeholder="seu@email.com"
+                className="w-full bg-black/50 border border-white/10 rounded-sm p-4 text-white placeholder-gray-600 focus:border-[var(--color-primary)] focus:outline-none transition-colors"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-bold uppercase tracking-widest text-gray-400">Telefone / WhatsApp</label>
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(formatPhone(e.target.value))}
+                required
+                placeholder="(85) 99999-9999"
                 className="w-full bg-black/50 border border-white/10 rounded-sm p-4 text-white placeholder-gray-600 focus:border-[var(--color-primary)] focus:outline-none transition-colors"
               />
             </div>

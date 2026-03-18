@@ -33,23 +33,23 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
     return (
       <div className="container mx-auto px-4 py-20 text-center">
         <h1 className="text-3xl font-heading mb-4">Pedido não encontrado</h1>
-        <Link href="/account" className="text-[var(--color-primary)] hover:underline">
-          Voltar para minha conta
+        <Link href="/account/orders" className="text-[var(--color-primary)] hover:underline">
+          Voltar para meus pedidos
         </Link>
       </div>
     )
   }
 
   const status = STATUS_LABELS[order.status] ?? { label: order.status, cls: "bg-gray-500/20 text-gray-400" }
-  const subtotal = order.items.reduce((acc, item) => acc + item.price.toNumber() * item.quantity, 0)
+  const subtotal = order.items.reduce((acc, item) => acc + (item.unitPrice ?? item.price).toNumber() * item.quantity, 0)
 
   return (
     <div className="container mx-auto px-4 py-12 lg:py-20 max-w-3xl">
       <Link
-        href="/account"
+        href="/account/orders"
         className="inline-flex items-center gap-2 text-gray-400 hover:text-white transition-colors uppercase tracking-widest text-xs font-bold mb-8"
       >
-        <ArrowLeft className="w-4 h-4" /> Minha Conta
+        <ArrowLeft className="w-4 h-4" /> Meus Pedidos
       </Link>
 
       {/* Header */}

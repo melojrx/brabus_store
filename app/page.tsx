@@ -1,19 +1,51 @@
 import Link from "next/link"
 import { ArrowRight, Instagram, MapPin, Zap } from "lucide-react"
 import AddToCartButton from "@/components/AddToCartButton"
-import { productWithRelationsInclude, serializeProduct } from "@/lib/catalog-api"
+import { getBestSellingProductIds, productWithRelationsInclude, serializeProduct } from "@/lib/catalog-api"
 import prisma from "@/lib/prisma"
 
-async function getFeaturedProducts() {
+async function getBestSellingProducts() {
   try {
-    const products = await prisma.product.findMany({
-      where: { featured: true, active: true },
-      include: productWithRelationsInclude,
-      take: 8,
-      orderBy: { createdAt: "desc" },
-    })
+    const activeWhere = { active: true }
+    const orderedIds = await getBestSellingProductIds(activeWhere)
+    const topIds = orderedIds.slice(0, 8)
 
-    return products.map(serializeProduct)
+    let products = topIds.length
+      ? await prisma.product.findMany({
+          where: {
+            id: {
+              in: topIds,
+            },
+          },
+          include: productWithRelationsInclude,
+        })
+      : []
+
+    if (products.length === 0) {
+      products = await prisma.product.findMany({
+        where: { active: true, featured: true },
+        include: productWithRelationsInclude,
+        take: 8,
+        orderBy: { createdAt: "desc" },
+      })
+    }
+
+    if (products.length === 0) {
+      products = await prisma.product.findMany({
+        where: { active: true },
+        include: productWithRelationsInclude,
+        take: 8,
+        orderBy: { createdAt: "desc" },
+      })
+    }
+
+    const productsById = new Map(products.map((product) => [product.id, product]))
+    const orderedProducts =
+      topIds.length > 0
+        ? topIds.map((id) => productsById.get(id)).filter((product) => product != null)
+        : products
+
+    return orderedProducts.map(serializeProduct)
   } catch {
     return []
   }
@@ -32,7 +64,7 @@ async function getInstagramFeed() {
 }
 
 export default async function Home() {
-  const featuredProducts = await getFeaturedProducts()
+  const bestSellingProducts = await getBestSellingProducts()
   const instagramFeed = await getInstagramFeed()
 
   return (
@@ -186,7 +218,7 @@ export default async function Home() {
           </div>
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-            {featuredProducts.map((product) => (
+            {bestSellingProducts.map((product) => (
               <div
                 key={product.id}
                 className="group relative aspect-[3/4] rounded-sm overflow-hidden border border-white/10 hover:border-[var(--color-primary)]/50 transition-all hover:-translate-y-1 bg-zinc-900"
@@ -232,9 +264,9 @@ export default async function Home() {
               </div>
             ))}
 
-            {featuredProducts.length === 0 && (
+            {bestSellingProducts.length === 0 && (
               <div className="col-span-full text-center py-12 text-gray-500 border border-white/10 border-dashed rounded-sm">
-                Nenhum produto em destaque no momento.
+                Nenhum produto disponível no momento.
               </div>
             )}
           </div>

@@ -1,10 +1,14 @@
 import { NextResponse } from "next/server"
 import { ShippingType, Prisma } from "@prisma/client"
-import Stripe from "stripe"
+import type Stripe from "stripe"
 import { auth } from "@/auth"
 import { fetchMelhorEnvioServices, findLocalDeliveryZone, normalizePostalCode } from "@/lib/shipping"
 import prisma from "@/lib/prisma"
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, { apiVersion: "2024-09-30.acacia" as any })
+import {
+  getStripeCheckoutPaymentMethodTypes,
+  getStripeServerClient,
+  isStripeTestEnvironmentConfigured,
+} from "@/lib/stripe"
 
 type CheckoutItemInput = {
   productId: string
@@ -120,6 +124,14 @@ function validateRequiredAddressFields(address: ReturnType<typeof normalizeAddre
 
 export async function POST(req: Request) {
   try {
+    if (!isStripeTestEnvironmentConfigured()) {
+      return NextResponse.json(
+        { error: "Stripe de teste ainda não configurado neste ambiente." },
+        { status: 503 },
+      )
+    }
+
+    const stripe = getStripeServerClient()
     const sessionAuth = await auth()
     const userId = sessionAuth?.user?.id
 
@@ -351,12 +363,23 @@ export async function POST(req: Request) {
 
     const origin = req.headers.get("origin") || process.env.NEXTAUTH_URL
     const stripeSession = await stripe.checkout.sessions.create({
-      payment_method_types: ["card", "pix", "boleto"],
+      payment_method_types: getStripeCheckoutPaymentMethodTypes(),
       line_items: lineItems,
       mode: "payment",
       success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/checkout/cancel`,
       client_reference_id: order.id,
+      customer_email: sessionAuth.user?.email ?? undefined,
+      locale: "pt-BR",
+      billing_address_collection: "auto",
+      phone_number_collection: {
+        enabled: true,
+      },
+      metadata: {
+        orderId: order.id,
+        userId,
+        shippingType,
+      },
     })
 
     await prisma.order.update({
@@ -367,6 +390,22 @@ export async function POST(req: Request) {
     return NextResponse.json({ sessionId: stripeSession.id, url: stripeSession.url })
   } catch (error) {
     console.error("Erro no checkout:", error)
+
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "param" in error &&
+      error.param === "payment_method_types"
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Os metodos de pagamento configurados na Stripe nao estao habilitados nesta conta de teste. Verifique STRIPE_CHECKOUT_PAYMENT_METHOD_TYPES e as configuracoes da conta Stripe.",
+        },
+        { status: 400 },
+      )
+    }
+
     return NextResponse.json({ error: "Erro ao processar checkout" }, { status: 500 })
   }
 }

@@ -10,6 +10,8 @@ export default function LoginPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get("callbackUrl") || "/"
+  const registered = searchParams.get("registered") === "1"
+  const passwordReset = searchParams.get("reset") === "1"
 
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -61,6 +63,18 @@ export default function LoginPage() {
             </div>
           )}
 
+          {registered && !error ? (
+            <div className="mb-6 rounded-sm border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-300">
+              Conta criada com sucesso. Faça login para continuar.
+            </div>
+          ) : null}
+
+          {passwordReset && !error ? (
+            <div className="mb-6 rounded-sm border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-300">
+              Senha redefinida com sucesso. Entre com a nova senha.
+            </div>
+          ) : null}
+
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
               <label className="text-xs font-bold uppercase tracking-widest text-gray-400">E-mail</label>
@@ -106,6 +120,12 @@ export default function LoginPage() {
           </form>
 
           <div className="mt-6 text-center space-y-3">
+            <p className="text-gray-400 text-sm">
+              Esqueceu a senha?{" "}
+              <Link href="/auth/forgot-password" className="text-[var(--color-primary)] hover:underline font-bold">
+                Redefinir acesso
+              </Link>
+            </p>
             <p className="text-gray-400 text-sm">
               Não tem conta?{" "}
               <Link href="/auth/register" className="text-[var(--color-primary)] hover:underline font-bold">

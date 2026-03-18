@@ -440,7 +440,8 @@ Estado atual do projeto apos as fases executadas nesta sessao:
 - a refatoracao principal e a estabilizacao pos-migracao foram concluidas
 - a politica para legado financeiro ficou definida como `costPrice = null` ate preenchimento administrativo
 - a revisao final de validacoes foi concluida com `npx prisma validate`, `npx tsc --noEmit --pretty false` e `npx eslint app lib components store prisma`
-- a validacao final do projeto deve continuar acontecendo de forma recorrente no ciclo normal de desenvolvimento, mas nao ha pendencias abertas deste plano
+- a validacao final do projeto deve continuar acontecendo de forma recorrente no ciclo normal de desenvolvimento
+- o plano de refatoracao de catalogo segue encerrado, mas a revisao cruzada com o `PRD.md` abriu uma nova frente de execucao para cobrir lacunas funcionais ainda nao entregues
 
 ### Correcoes Pos-Migracao Prioritarias
 Achados da revisao final dos fluxos criticos, com ordem recomendada de execucao:
@@ -496,3 +497,217 @@ A implementacao da fase `8.6 Dashboard e KPI` deve seguir este recorte:
 - `Visao Geral` com cards operacionais no topo e tabela paginada de ultimos pedidos
 - `Acompanhamento Financeiro` com cards financeiros, um grafico de linha, um grafico de barras e ranking de produtos
 - experiencia leve, sem excesso de filtros, sem relatorios complexos e sem dependencias desnecessarias
+
+## 12. Lacunas Remanescentes Do PRD
+Revisao feita apos o encerramento da refatoracao principal. Esta secao abre uma nova trilha de execucao orientada pelo `PRD.md`, sem reabrir a modelagem ja concluida.
+
+### 12.1 Admin Pedidos
+Objetivo:
+- concluir o modulo administrativo de pedidos alem do detalhe isolado ja existente
+
+Escopo:
+- criar listagem administrativa dedicada de pedidos
+- permitir filtro por status
+- permitir abertura rapida do detalhe do pedido
+- permitir alteracao manual de status
+- permitir registro e edicao de `trackingCode`
+- expor APIs administrativas correspondentes
+
+Entregas objetivas:
+- pagina `app/admin/orders/page.tsx`
+- rota `GET /api/admin/orders`
+- rota `PATCH /api/admin/orders/[id]/status`
+- rota `PATCH /api/admin/orders/[id]/tracking`
+- regra de autorizacao admin e validacoes minimas de payload
+
+### 12.2 Conta Do Cliente
+Objetivo:
+- transformar `/account` em uma area logada completa, nao apenas um historico simples de pedidos
+
+Escopo:
+- cadastro e edicao dos dados do cliente
+- captura e manutencao de `nome`, `fone/whatsapp`, `email`
+- suporte a endereco principal do cliente
+- historico de pedidos e detalhe de pedido em rotas consistentes
+- fluxo de alteracao de senha
+- servico de `esqueci a senha` com token seguro de redefinicao
+
+Decisao de simplificacao:
+- manter 1 endereco principal por cliente nesta fase, evitando um modulo complexo de multiplos enderecos
+
+Entregas objetivas:
+- tela de dados do cliente
+- tela ou secao de alteracao de senha
+- pagina dedicada `/account/orders`
+- ajuste da navegacao de `/account`
+- persistencia de `phone/whatsapp` no modelo do usuario ou perfil associado
+- pagina `/auth/forgot-password`
+- pagina `/auth/reset-password`
+- rotas de solicitacao e confirmacao de reset de senha
+
+Status atual:
+- concluido nesta etapa
+- o cadastro do cliente agora suporta `nome`, `email`, `fone/whatsapp` e `endereco principal`
+- `/account` passou a operar como pagina real de perfil
+- `/account/orders` passou a existir como historico dedicado
+- a conta agora permite troca de senha autenticada e recuperacao por token seguro
+- sem provedor transacional configurado, o `esqueci a senha` expõe o link apenas em desenvolvimento e registra a URL no servidor; a entrega por e-mail real pode ser ligada depois sem refatorar o fluxo
+
+### 12.3 Catalogo Publico
+Objetivo:
+- alinhar a listagem de produtos com o PRD, mantendo a simplicidade do modelo atual por categoria/subcategoria e variantes
+
+Escopo:
+- paginacao publica
+- busca por nome
+- ordenacao por `mais recentes`, `menor preco`, `maior preco` e `mais vendidos`
+- filtro por categoria e subcategoria
+- filtro por tamanho quando aplicavel
+- filtro por sabor quando aplicavel
+
+Decisoes:
+- o filtro legado por `tipo` nao volta; o equivalente passa a ser categoria pai
+- `mais vendidos` deve ser derivado de itens vendidos, nao de `featured`
+
+Entregas objetivas:
+- evoluir `GET /api/products` com `page`, `search`, `sort`, `category`, `subcategory`, `size`, `flavor`
+- atualizar `app/products/page.tsx` para refletir esses filtros
+- manter compatibilidade visual com o catalogo baseado em variantes
+- alinhar a home para usar venda real na secao `Mais Vendidos`, com fallback operacional para `featured` e `createdAt`
+
+Status atual:
+- concluido nesta etapa
+- `GET /api/products` agora entrega `items`, `pagination` e `filters`
+- a listagem publica passou a suportar paginacao, busca, ordenacao e filtros por categoria pai, subcategoria, tamanho e sabor
+- `/products` passou a consumir a resposta paginada da API e renderizar a navegacao publica com esses filtros
+- a home deixou de tratar `featured` como fonte primaria de `Mais Vendidos`; o bloco agora prioriza itens com venda real e usa fallback por `featured` e `createdAt` quando ainda nao houver historico suficiente
+
+### 12.4 Upload E Toggle De Produtos
+Objetivo:
+- substituir o campo manual de URLs por upload real e concluir o controle operacional de ativo/inativo
+
+Escopo:
+- upload administrativo de 1 ou mais imagens por produto
+- armazenamento simples em `/public/uploads/products/` nesta fase
+- reordenacao e remocao basica de imagens no cadastro
+- acao dedicada para ativar/desativar produto
+
+Entregas objetivas:
+- rota `POST /api/admin/upload`
+- suporte a upload multiplo de imagens no admin de produtos
+- rota `PATCH /api/admin/products/[id]/toggle` ou acao equivalente formalizada
+- manter o cadastro aceitando mais de uma imagem por produto
+
+### 12.5 Integracoes Externas Prioritarias
+Objetivo:
+- sair do modo parcial/mock e fechar as integracoes obrigatorias do PRD em ambiente de desenvolvimento e homologacao
+
+Escopo:
+- Instagram: sair do feed mockado e conectar widget/feed real ou fallback curado configuravel
+- Melhor Envio: validar fluxo com credenciais reais de sandbox/teste, cotacao, fallback e cache
+- Stripe: validar chaves de teste, checkout, retorno e webhook em ambiente de desenvolvimento
+
+Entregas objetivas:
+- documentar variaveis de ambiente obrigatorias
+- validar o fluxo completo com credenciais de teste
+- registrar claramente quando a integracao usa fallback
+- remover dependencia de mock silencioso onde o PRD exige comportamento real
+
+Status atual:
+- Stripe Checkout foi endurecido para ambiente de teste, com `card`, `pix` e `boleto`
+- o webhook agora trata corretamente pagamentos sincronos e assincronos (`checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, `checkout.session.expired`)
+- a tela de sucesso deixou de assumir `pagamento aprovado` para Pix e boleto antes da confirmacao do webhook
+- o Stripe CLI ja esta instalado localmente
+- a validacao ponta a ponta com Stripe real segue pendente porque o `.env` ainda usa chaves placeholder (`pk_test_...`, `sk_test_...`, `whsec_...`)
+
+### 12.6 Home — Secao `Encontre Seu Objetivo`
+Objetivo:
+- tornar a secao dinamica, mantendo o limite visual de 3 cards e ligando cada card a categorias reais do catalogo
+
+Escopo:
+- cards alimentados por categorias/subcategorias reais
+- clique levando para `/products` ja filtrado pela categoria correspondente
+- manter a experiencia leve, sem CMS ou configurador complexo nesta fase
+
+Decisao de simplificacao:
+- sempre exibir 3 cards
+- priorizar categorias pai ativas com melhor ordem configurada
+- se necessario, usar fallback para as 3 principais categorias do seed ate o admin ganhar ordenacao editorial dedicada
+
+Entregas objetivas:
+- fonte de dados dinamica para os 3 cards
+- links consistentes com a pagina filtrada de produtos
+- remocao dos cards hardcoded atuais
+
+### 12.7 Operacao De Loja Fisica E Pagamentos Manuais
+Objetivo:
+- permitir que a plataforma opere tambem como apoio a vendas presenciais, sem depender exclusivamente do Stripe para concluir um pedido
+
+Escopo:
+- manter Stripe como meio de pagamento online automatizado
+- adicionar meios de pagamento manuais para operacao interna:
+  - dinheiro
+  - Pix manual por chave Pix da loja
+- garantir que pagamentos manuais nao sejam marcados como pagos automaticamente sem confirmacao operacional quando isso for necessario
+
+Diretriz de produto:
+- pagamento online e pagamento presencial/manual devem coexistir, mas com fluxos claramente separados
+- o checkout publico continua priorizando pagamentos online
+- a operacao de loja fisica usa pedido manual, status controlado e confirmacao operacional
+
+Modelo recomendado:
+- introduzir um conceito explicito de metodo de pagamento no pedido
+- introduzir um status de pagamento separado do status logistico/comercial do pedido
+- permitir registrar informacoes adicionais para pagamento manual, sem acoplar isso ao Stripe
+
+Estrutura funcional sugerida:
+- `paymentMethod`
+  - `STRIPE_CARD`
+  - `STRIPE_PIX` quando a conta Stripe suportar Pix
+  - `CASH`
+  - `MANUAL_PIX`
+- `paymentStatus`
+  - `PENDING`
+  - `PAID`
+  - `FAILED`
+  - `CANCELLED`
+  - `REFUNDED`
+- campos complementares opcionais no pedido
+  - `paidAt`
+  - `manualPaymentReference`
+  - `manualPaymentNotes`
+  - `cashReceivedAmount`
+  - `changeAmount`
+
+Regras operacionais:
+- `CASH`
+  - pode ser marcado como pago no ato da venda presencial
+  - pode registrar valor recebido e troco
+- `MANUAL_PIX`
+  - deve exibir a chave Pix da loja
+  - nao deve marcar o pedido como pago automaticamente
+  - exige confirmacao manual no admin ou no fluxo de PDV antes de liberar como `PAID`
+- `STRIPE_*`
+  - continua seguindo confirmacao automatica por webhook
+
+Decisao de escopo:
+- nesta frente, o objetivo principal e habilitar a operacao interna e omnichannel
+- a exposicao de `dinheiro` ou `Pix manual` no checkout publico deve ser tratada com cautela e pode ficar para uma segunda etapa
+- a primeira entrega recomendada e o suporte a pagamentos manuais no admin/PDV e no modelo de pedidos
+
+Entregas objetivas:
+- evoluir schema de pedidos para comportar metodo e status de pagamento
+- adaptar criacao e detalhe de pedido para pagamentos manuais
+- permitir confirmacao manual de pagamento no admin
+- permitir registrar observacoes e referencia de pagamento manual
+- preparar a base para um fluxo de PDV simples para loja fisica
+### 12.8 Ordem Recomendada De Execucao
+1. Admin Pedidos
+2. Conta do Cliente
+3. Catalogo publico com paginacao, busca e filtros
+4. Upload multiplo e toggle de produtos
+5. Integracao Stripe com chaves de teste
+6. Integracao Melhor Envio com credenciais de teste/sandbox
+7. Integracao Instagram
+8. Home dinamica na secao `Encontre Seu Objetivo`
+9. Operacao de loja fisica com `CASH` e `MANUAL_PIX`
