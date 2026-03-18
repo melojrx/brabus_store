@@ -1,58 +1,40 @@
 import { NextResponse } from "next/server"
-import axios from "axios"
+import { calculateOrderWeight, fetchMelhorEnvioServices, normalizePostalCode, type ShippingCartItemInput } from "@/lib/shipping"
+import prisma from "@/lib/prisma"
 
 export async function POST(req: Request) {
   try {
     const body = await req.json()
-    const { toPostalCode, weightKg, height = 10, width = 20, length = 20 } = body
+    const toPostalCode = normalizePostalCode(String(body.toPostalCode ?? ""))
+    const rawItems = Array.isArray(body.items) ? (body.items as ShippingCartItemInput[]) : []
+    const directWeight = Number(body.weightKg)
 
-    if (!toPostalCode || !weightKg) {
-      return NextResponse.json({ error: "CEP destino e peso são obrigatórios" }, { status: 400 })
+    if (!toPostalCode || toPostalCode.length !== 8) {
+      return NextResponse.json({ error: "CEP destino inválido." }, { status: 400 })
     }
 
-    const payload = {
-      from: { postal_code: "62765000" }, // Origem: Aracoiaba-CE
-      to: { postal_code: toPostalCode.replace(/\D/g, "") },
-      products: [
-        {
-          id: "x",
-          quantity: 1,
-          weight: weightKg,
-          height: height,
-          width: width,
-          length: length,
-          insurance_value: 0
-        }
-      ]
+    const weightKg =
+      rawItems.length > 0
+        ? await calculateOrderWeight(prisma, rawItems)
+        : Number.isFinite(directWeight) && directWeight > 0
+          ? directWeight
+          : 0
+
+    if (weightKg <= 0) {
+      return NextResponse.json({ error: "Peso total do pedido inválido." }, { status: 400 })
     }
 
-    const ME_TOKEN = process.env.MELHOR_ENVIO_TOKEN
-    if (!ME_TOKEN) {
-      console.warn("Melhor Envio token não configurado")
-      return NextResponse.json({ services: [] }) // Fallback caso token não exista
-    }
-
-    // Usando sandbox para testes (melhorenvio.com.br/api/v2 para prod)
-    const apiUrl = "https://sandbox.melhorenvio.com.br/api/v2/me/shipment/calculate"
-
-    const response = await axios.post(apiUrl, payload, {
-      headers: {
-        Accept: "application/json",
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${ME_TOKEN}`,
-        "User-Agent": "BrabusStore (jrmelo@example.com)"
-      }
+    const services = await fetchMelhorEnvioServices({
+      toPostalCode,
+      weightKg,
+      height: Number(body.height) || 10,
+      width: Number(body.width) || 20,
+      length: Number(body.length) || 20,
     })
 
-    const activeServices = response.data.filter((s: any) => !s.error)
-
-    return NextResponse.json({ services: activeServices })
-  } catch (error: any) {
-    if (axios.isAxiosError(error)) {
-      console.error("Erro da API Melhor Envio:", error.response?.data)
-    } else {
-      console.error(error)
-    }
+    return NextResponse.json({ services, weightKg })
+  } catch (error) {
+    console.error("Erro ao calcular frete:", error)
     return NextResponse.json({ error: "Erro ao calcular frete" }, { status: 500 })
   }
 }

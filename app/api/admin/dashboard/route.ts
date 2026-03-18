@@ -1,47 +1,24 @@
 import { NextResponse } from "next/server"
-import { PrismaClient, OrderStatus } from "@prisma/client"
 import { auth } from "@/auth"
+import { DASHBOARD_ORDERS_PAGE_SIZE, getAdminDashboardData } from "@/lib/admin-dashboard"
+import prisma from "@/lib/prisma"
 
-const prisma = new PrismaClient()
-
-export async function GET() {
+export async function GET(req: Request) {
   const session = await auth()
   if (!session || session.user?.role !== "ADMIN") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
   try {
-    const totalOrders = await prisma.order.count()
-    
-    // Calcula receita APENAS de pedidos com status PAID, SHIPPED, DELIVERED
-    const paidStatuses = [OrderStatus.PAID, OrderStatus.SHIPPED, OrderStatus.DELIVERED]
-    const revenueAgg = await prisma.order.aggregate({
-      _sum: { total: true },
-      where: { status: { in: paidStatuses } }
-    })
-    const revenue = revenueAgg._sum.total || 0
+    const { searchParams } = new URL(req.url)
+    const requestedPage = Number.parseInt(searchParams.get("page") || "1", 10)
+    const page = Number.isFinite(requestedPage) && requestedPage > 0 ? requestedPage : 1
 
-    const pendingOrders = await prisma.order.count({ where: { status: OrderStatus.PENDING } })
-    const totalCustomers = await prisma.user.count({ where: { role: 'CUSTOMER' } })
-    const lowStockProducts = await prisma.product.count({ where: { stock: { lt: 10 } } })
-    
-    const latestOrders = await prisma.order.findMany({
-      take: 5,
-      orderBy: { createdAt: 'desc' },
-      include: { user: { select: { name: true, email: true } } }
-    })
+    const dashboard = await getAdminDashboardData(prisma, page, DASHBOARD_ORDERS_PAGE_SIZE)
 
-    return NextResponse.json({
-      metrics: {
-        revenue,
-        totalOrders,
-        pendingOrders,
-        totalCustomers,
-        lowStockProducts
-      },
-      latestOrders
-    })
+    return NextResponse.json(dashboard)
   } catch (error) {
+    console.error("Erro ao carregar dashboard admin:", error)
     return NextResponse.json({ error: "Server Error" }, { status: 500 })
   }
 }

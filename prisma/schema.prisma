@@ -29,15 +29,9 @@ enum OrderStatus {
 }
 
 enum ShippingType {
-  NATIONAL       // Melhor Envio (PAC, SEDEX, Jadlog, etc.)
+  NATIONAL // Melhor Envio (PAC, SEDEX, Jadlog, etc.)
   LOCAL_DELIVERY // Entrega própria / mototaxi (Maciço de Baturité)
-  PICKUP         // Retirada na loja (Aracoiaba-CE)
-}
-
-enum ProductType {
-  SUPPLEMENT
-  FASHION
-  ACCESSORY
+  PICKUP // Retirada na loja (Aracoiaba-CE)
 }
 
 // ─────────────────────────────────────────
@@ -53,55 +47,63 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  orders    Order[]
+  orders Order[]
 
   @@map("users")
 }
 
 model Category {
-  id        String    @id @default(cuid())
-  name      String
-  slug      String    @unique
-  icon      String?
-  active    Boolean   @default(true)
-  createdAt DateTime  @default(now())
+  id                  String   @id @default(cuid())
+  name                String
+  slug                String   @unique
+  icon                String?
+  active              Boolean  @default(true)
+  sortOrder           Int      @default(0)
+  supportsSize        Boolean  @default(false)
+  supportsColor       Boolean  @default(false)
+  supportsFlavor      Boolean  @default(false)
+  supportsWeight      Boolean  @default(false)
+  trackStockByVariant Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @default(now()) @updatedAt
 
-  products  Product[]
+  parentId String?
+  parent   Category?  @relation("CategoryTree", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryTree")
 
+  products Product[]
+
+  @@index([parentId])
   @@map("categories")
 }
 
 model Product {
-  id          String      @id @default(cuid())
+  id          String   @id @default(cuid())
   name        String
-  slug        String      @unique
+  slug        String   @unique
   description String
-  price       Decimal     @db.Decimal(10, 2)
-  stock       Int         @default(0)
-  images      String[]    // Array de paths ou URLs
-  featured    Boolean     @default(false)
-  active      Boolean     @default(true)
-  isNew       Boolean     @default(true)
-  productType ProductType @default(SUPPLEMENT)
+  price       Decimal  @db.Decimal(10, 2)
+  costPrice   Decimal? @db.Decimal(10, 2)
+  images      String[] // Array de paths ou URLs
+  featured    Boolean  @default(false)
+  active      Boolean  @default(true)
+  isNew       Boolean  @default(true)
 
-  // Campos para suplementos
-  weight      String?  // Ex: "900g", "1kg", "300g" (exibição)
-  weightKg    Float?   // Peso real em kg para cálculo de frete (ex: 0.9)
-  flavors     String[] // Ex: ["Chocolate", "Baunilha", "Morango"]
+  weight      String? // Ex: "900g", "1kg", "300g" (exibição)
+  weightLabel String?
+  weightKg    Float? // Peso real em kg para cálculo de frete (ex: 0.9)
+  gender      String? // "masculino", "feminino", "unissex"
 
-  // Campos para moda fitness
-  sizes       String[] // Ex: ["P", "M", "G", "GG"]
-  gender      String?  // "masculino", "feminino", "unissex"
-  color       String?  // Cor principal do produto
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id])
 
-  categoryId  String
-  category    Category    @relation(fields: [categoryId], references: [id])
+  variants   ProductVariant[]
+  orderItems OrderItem[]
 
-  orderItems  OrderItem[]
-
+  @@index([categoryId])
   @@map("products")
 }
 
@@ -113,11 +115,11 @@ model Order {
   stripePaymentId String?
 
   // Modalidade e custo de entrega
-  shippingType      ShippingType
-  shippingCost      Decimal     @db.Decimal(10, 2) @default(0)
-  shippingCarrier   String?     // "PAC", "SEDEX", "Jadlog", "Mototaxi", "Retirada"
-  shippingDeadline  String?     // "3-5 dias úteis", "Mesmo dia", etc.
-  trackingCode      String?     // Código de rastreio (preenchido pelo admin após envio)
+  shippingType     ShippingType
+  shippingCost     Decimal      @default(0) @db.Decimal(10, 2)
+  shippingCarrier  String? // "PAC", "SEDEX", "Jadlog", "Mototaxi", "Retirada"
+  shippingDeadline String? // "3-5 dias úteis", "Mesmo dia", etc.
+  trackingCode     String? // Código de rastreio (preenchido pelo admin após envio)
 
   // Endereço de entrega (desnormalizado para preservar histórico)
   // Vazio se shippingType = PICKUP
@@ -132,38 +134,73 @@ model Order {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  userId    String
-  user      User        @relation(fields: [userId], references: [id])
+  userId String
+  user   User   @relation(fields: [userId], references: [id])
 
-  items     OrderItem[]
+  items OrderItem[]
 
   @@map("orders")
 }
 
 model OrderItem {
-  id           String  @id @default(cuid())
-  quantity     Int
-  price        Decimal @db.Decimal(10, 2) // Preço no momento da compra
-  selectedSize   String? // Tamanho selecionado (para moda fitness)
-  selectedFlavor String? // Sabor selecionado (para suplementos)
+  id                      String   @id @default(cuid())
+  quantity                Int
+  price                   Decimal  @db.Decimal(10, 2) // Preço no momento da compra
+  unitPrice               Decimal? @db.Decimal(10, 2)
+  unitCost                Decimal? @db.Decimal(10, 2)
+  selectedSize            String? // Tamanho selecionado (para moda fitness)
+  selectedColor           String?
+  selectedFlavor          String? // Sabor selecionado (para suplementos)
+  productNameSnapshot     String?
+  productSlugSnapshot     String?
+  categoryNameSnapshot    String?
+  subcategoryNameSnapshot String?
+  variantNameSnapshot     String?
 
-  orderId   String
-  order     Order   @relation(fields: [orderId], references: [id])
+  orderId String
+  order   Order  @relation(fields: [orderId], references: [id])
 
   productId String
   product   Product @relation(fields: [productId], references: [id])
 
+  productVariantId String?
+  productVariant   ProductVariant? @relation(fields: [productVariantId], references: [id])
+
+  @@index([orderId])
+  @@index([productId])
+  @@index([productVariantId])
   @@map("order_items")
+}
+
+model ProductVariant {
+  id        String   @id @default(cuid())
+  sku       String?  @unique
+  name      String?
+  size      String?
+  color     String?
+  flavor    String?
+  stock     Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+
+  orderItems OrderItem[]
+
+  @@index([productId])
+  @@map("product_variants")
 }
 
 // Zonas de entrega local — Maciço de Baturité
 model LocalDeliveryZone {
-  id          String  @id @default(cuid())
-  city        String  // "Aracoiaba", "Baturité", "Capistrano"...
-  state       String  @default("CE")
-  price       Decimal @db.Decimal(10, 2) // Taxa de entrega para esta cidade
-  deadlineText String @default("Mesmo dia ou próximo dia útil")
-  active      Boolean @default(true)
+  id           String  @id @default(cuid())
+  city         String // "Aracoiaba", "Baturité", "Capistrano"...
+  state        String  @default("CE")
+  price        Decimal @db.Decimal(10, 2) // Taxa de entrega para esta cidade
+  deadlineText String  @default("Mesmo dia ou próximo dia útil")
+  active       Boolean @default(true)
 
   @@map("local_delivery_zones")
 }

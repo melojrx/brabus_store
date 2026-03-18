@@ -35,8 +35,8 @@ export default function Footer() {
            <h4 className="font-heading tracking-wider text-xl mb-4">Links Úteis</h4>
            <ul className="space-y-2 text-sm text-gray-400">
              <li><Link href="/products" className="hover:text-white transition-colors">Todos os Produtos</Link></li>
-             <li><Link href="/products?type=SUPPLEMENT" className="hover:text-white transition-colors">Suplementos</Link></li>
-             <li><Link href="/products?type=FASHION" className="hover:text-white transition-colors">Moda Fitness</Link></li>
+             <li><Link href="/products?category=suplementos" className="hover:text-white transition-colors">Suplementos</Link></li>
+             <li><Link href="/products?category=roupas-fitness" className="hover:text-white transition-colors">Moda Fitness</Link></li>
              <li><Link href="/loja" className="hover:text-white transition-colors">Como Chegar</Link></li>
              <li><Link href="/contato" className="hover:text-white transition-colors">Fale Conosco</Link></li>
            </ul>

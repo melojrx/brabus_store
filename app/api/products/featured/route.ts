@@ -1,18 +1,17 @@
 import { NextResponse } from "next/server"
-import { PrismaClient } from "@prisma/client"
-
-const prisma = new PrismaClient()
+import { productWithRelationsInclude, serializeProduct } from "@/lib/catalog-api"
+import prisma from "@/lib/prisma"
 
 export async function GET() {
   try {
     const products = await prisma.product.findMany({
       where: { active: true, featured: true },
-      include: { category: true },
+      include: productWithRelationsInclude,
       take: 8,
-      orderBy: { createdAt: 'desc' }
+      orderBy: { createdAt: "desc" },
     })
-    
-    return NextResponse.json(products)
+
+    return NextResponse.json(products.map(serializeProduct))
   } catch (error) {
     return NextResponse.json({ error: "Erro interno no servidor" }, { status: 500 })
   }

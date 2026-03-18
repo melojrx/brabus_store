@@ -1,9 +1,7 @@
 import { NextResponse } from "next/server"
-import { PrismaClient } from "@prisma/client"
 import bcrypt from "bcryptjs"
 import { z } from "zod"
-
-const prisma = new PrismaClient()
+import prisma from "@/lib/prisma"
 
 const registerSchema = z.object({
   name: z.string().min(2, "O nome deve ter pelo menos 2 caracteres"),
@@ -34,7 +32,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ id: user.id, email: user.email, name: user.name }, { status: 201 })
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json({ error: error.errors }, { status: 400 })
+      return NextResponse.json({ error: (error as any).errors }, { status: 400 })
     }
     return NextResponse.json({ error: "Erro interno no servidor" }, { status: 500 })
   }

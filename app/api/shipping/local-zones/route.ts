@@ -1,7 +1,5 @@
 import { NextResponse } from "next/server"
-import { PrismaClient } from "@prisma/client"
-
-const prisma = new PrismaClient()
+import prisma from "@/lib/prisma"
 
 export async function GET() {
   try {
@@ -9,7 +7,12 @@ export async function GET() {
       where: { active: true },
       orderBy: { city: 'asc' }
     })
-    return NextResponse.json(zones)
+    return NextResponse.json(
+      zones.map((zone) => ({
+        ...zone,
+        price: zone.price.toNumber(),
+      })),
+    )
   } catch (error) {
     return NextResponse.json({ error: "Server Error" }, { status: 500 })
   }
