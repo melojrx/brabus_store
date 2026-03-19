@@ -204,3 +204,25 @@
 - [x] Criar persistência de pedido manual sem depender do checkout Stripe
 - [x] Garantir baixa de estoque consistente no fechamento/confirmacão do pedido presencial
 - [x] Garantir que pedidos criados no PDV apareçam corretamente no admin de pedidos
+
+### 9.8 Checkout Público Local com Dinheiro e Pix Manual
+- [ ] Expor seleção de forma de pagamento no checkout público
+- [ ] Manter `NATIONAL` restrito ao fluxo Stripe
+- [ ] Permitir `STRIPE_CARD`, `MANUAL_PIX` e `CASH` para `PICKUP`
+- [ ] Permitir `STRIPE_CARD`, `MANUAL_PIX` e `CASH` para `LOCAL_DELIVERY`
+- [ ] Exibir a chave Pix da loja no checkout quando `MANUAL_PIX` for selecionado
+- [ ] Permitir informar `valor em mãos` para `CASH` e calcular troco no checkout público
+- [ ] Evoluir `POST /api/checkout` para aceitar `paymentMethod`
+- [ ] Bifurcar `POST /api/checkout` entre criação de sessão Stripe e criação de pedido manual público
+- [ ] Extrair a criação de pedido manual para serviço compartilhado entre checkout público e PDV
+- [ ] Criar pedidos públicos manuais com `paymentStatus = PENDING`
+- [ ] Garantir que pedidos públicos `MANUAL_PIX` e `CASH` não baixem estoque automaticamente na criação
+- [ ] Garantir que a confirmação manual no admin continue sendo o ponto de baixa de estoque para pedidos públicos manuais pendentes
+- [ ] Ajustar `/checkout/success` para exibir instruções específicas de `MANUAL_PIX`
+- [ ] Ajustar `/checkout/success` para exibir instruções específicas de `CASH`
+- [ ] Adicionar CTA de WhatsApp na confirmação de pedidos manuais públicos
+- [ ] Validar ponta a ponta `PICKUP` com `MANUAL_PIX`
+- [ ] Validar ponta a ponta `PICKUP` com `CASH`
+- [ ] Validar ponta a ponta `LOCAL_DELIVERY` com `MANUAL_PIX`
+- [ ] Validar ponta a ponta `LOCAL_DELIVERY` com `CASH`
+- [ ] Validar que o fluxo Stripe permanece intacto após a introdução dos pagamentos manuais públicos

@@ -139,7 +139,7 @@ O catálogo é dividido em três grandes linhas:
 - Vender suplementação e moda fitness para clientes de toda a região com entrega rápida
 - Fortalecer o atendimento via WhatsApp Business para vendas conversacionais
 - Exibir conteúdo do Instagram para engajamento e prova social
-- Oferecer checkout seguro com Stripe e opção de retirada na loja física em Aracoiaba-CE
+- Oferecer checkout seguro com Stripe e, para retirada na loja e entrega local, também permitir pagamentos em dinheiro e Pix manual
 - Garantir experiência mobile-first, já que a maioria dos clientes acessa via smartphone
 
 ### 1.8 Escopo da v1.0 (MVP)
@@ -148,6 +148,7 @@ O catálogo é dividido em três grandes linhas:
 |---|---|
 | Catálogo completo (suplementos + moda fitness) | Sistema de avaliações/reviews |
 | Carrinho e checkout com Stripe | Programa de fidelidade / pontos |
+| Checkout local com Dinheiro e Pix manual | Cupons de desconto |
 | Autenticação de clientes | Cupons de desconto |
 | Painel Admin completo | Instagram Shopping (tags de produto) |
 | Gestão de pedidos | App mobile nativo |
@@ -251,8 +252,8 @@ O catálogo é dividido em três grandes linhas:
 | `/products` | **Listagem de Produtos** | Grid de produtos com filtros por categoria, busca e ordenação |
 | `/products/[slug]` | **Detalhe do Produto** | Imagens, descrição, tabela nutricional, botão de compra |
 | `/cart` | **Carrinho** | Resumo dos itens, quantidades, subtotal, botão para checkout |
-| `/checkout` | **Checkout** | Dados do cliente, endereço de entrega, pagamento via Stripe |
-| `/checkout/success` | **Confirmação de Pedido** | Mensagem de sucesso, número do pedido, resumo da compra |
+| `/checkout` | **Checkout** | Dados do cliente, endereço de entrega e pagamento via Stripe ou manual local |
+| `/checkout/success` | **Confirmação de Pedido** | Mensagem de sucesso, número do pedido, resumo da compra e instruções de pagamento quando aplicável |
 | `/checkout/cancel` | **Pagamento Cancelado** | Mensagem de cancelamento com link para voltar ao carrinho |
 | `/account` | **Minha Conta** | Dados pessoais, histórico de pedidos |
 | `/account/orders` | **Meus Pedidos** | Lista de pedidos com status e detalhes |
@@ -295,10 +296,15 @@ O catálogo é dividido em três grandes linhas:
                                             └── Não logado? → [LOGIN] / [CADASTRO]
                                                   └── Logado? → [CHECKOUT]
                                                         └── Preenche dados + endereço
-                                                              └── Clica "Pagar com Stripe"
-                                                                    └── Redireciona Stripe
-                                                                          ├── Sucesso → [/checkout/success]
-                                                                          └── Cancelado → [/checkout/cancel]
+                                                              └── Escolhe forma de pagamento
+                                                                    ├── Stripe
+                                                                    │     └── Redireciona Stripe
+                                                                    │           ├── Sucesso → [/checkout/success]
+                                                                    │           └── Cancelado → [/checkout/cancel]
+                                                                    ├── Pix manual
+                                                                    │     └── Cria pedido `PENDING` + exibe instruções Pix em [/checkout/success]
+                                                                    └── Dinheiro
+                                                                          └── Cria pedido `PENDING` + exibe instruções de retirada/entrega em [/checkout/success]
 ```
 
 ### 4.2 Fluxo de Cadastro / Login
@@ -371,7 +377,7 @@ O catálogo é dividido em três grandes linhas:
 #### Etapas do Checkout (3 steps)
 - **Step 1 — Dados pessoais:** nome, e-mail, telefone (pré-preenchidos se logado)
 - **Step 2 — Entrega:** seleção do tipo de entrega + endereço (se aplicável)
-- **Step 3 — Pagamento:** resumo do pedido + Stripe Elements
+- **Step 3 — Pagamento:** resumo do pedido + Stripe ou pagamento manual local, conforme modalidade escolhida
 
 #### 🚚 Modalidades de Entrega (Seleção obrigatória no Step 2)
 
@@ -404,6 +410,28 @@ O catálogo é dividido em três grandes linhas:
 - Campo de observação para agendar horário de retirada
 - Após confirmação do pedido: mensagem automática via link WhatsApp com endereço e horário
 
+#### 💳 Modalidades de Pagamento no Checkout
+
+**Opção 1 — Stripe**
+- Mantida como fluxo padrão de pagamento online
+- Obrigatória para `NATIONAL`
+- Continua disponível para `PICKUP` e `LOCAL_DELIVERY`
+- Confirmação automática via webhook Stripe
+
+**Opção 2 — Pix Manual**
+- Disponível apenas para `PICKUP` e `LOCAL_DELIVERY`
+- Exibe a chave Pix cadastrada nas configurações da loja
+- Cria pedido com `paymentMethod = MANUAL_PIX` e `paymentStatus = PENDING`
+- Não marca o pagamento como concluído automaticamente
+- Permite ao cliente seguir para uma tela de confirmação com instruções e CTA para WhatsApp
+
+**Opção 3 — Dinheiro**
+- Disponível apenas para `PICKUP` e `LOCAL_DELIVERY`
+- Cria pedido com `paymentMethod = CASH`
+- Pode coletar valor em mãos para cálculo de troco
+- Nasce como `paymentStatus = PENDING` até confirmação operacional
+- Permite ao cliente seguir para uma tela de confirmação com instruções de retirada ou entrega
+
 ---
 
 #### Fluxo Técnico do Checkout
@@ -411,7 +439,12 @@ O catálogo é dividido em três grandes linhas:
 - Auto-preenchimento de endereço via **ViaCEP** ao digitar o CEP
 - Detecção automática de cidade local ao preencher CEP (comparar com lista de cidades do Maciço)
 - Cálculo de frete chamado automaticamente após CEP preenchido (debounce 800ms)
-- Ao confirmar, cria o registro `Order` no banco com status `PENDING` e `shippingType` definido
+- Ao confirmar, cria o registro `Order` no banco com `shippingType` definido
+- Se a forma de pagamento for Stripe, cria sessão de checkout e aguarda confirmação por webhook
+- Se a forma de pagamento for `MANUAL_PIX` ou `CASH`, cria pedido público manual sem abrir Stripe
+- Pedidos públicos manuais nascem com `paymentStatus = PENDING`
+- A confirmação de pagamento manual acontece no admin
+- A baixa de estoque para pagamentos manuais pendentes não deve acontecer automaticamente na criação do pedido
 - Após pagamento confirmado pelo webhook Stripe, atualiza para `PAID`
 - Se `shippingType = PICKUP` ou `LOCAL_DELIVERY`: dispara link WhatsApp automático para o cliente
 
@@ -514,7 +547,8 @@ Conteúdo obrigatório da página:
 
 - Listagem com: número do pedido, cliente, data, valor total, status
 - Filtro por status: PENDING, PAID, SHIPPED, DELIVERED, CANCELLED, REFUNDED
-- Detalhe do pedido: itens, cliente, endereço de entrega, forma de pagamento
+- Detalhe do pedido: itens, cliente, endereço de entrega, forma e status de pagamento
+- Confirmar manualmente pagamentos em `MANUAL_PIX` e `CASH`
 - Alterar status do pedido manualmente
 
 ### 5.9 Módulo: Admin — Categorias
@@ -837,11 +871,11 @@ horário: Seg–Sex: 8h–18h | Sáb: 8h–13h
 | `GET` | `/api/admin/orders/[id]` | Detalhe de qualquer pedido | ADMIN |
 | `PATCH` | `/api/admin/orders/[id]/status` | Atualizar status do pedido | ADMIN |
 
-### 7.5 Checkout / Stripe
+### 7.5 Checkout / Pagamentos
 
 | Método | Rota | Descrição | Auth |
 |---|---|---|---|
-| `POST` | `/api/checkout` | Criar Stripe Checkout Session | CUSTOMER |
+| `POST` | `/api/checkout` | Criar Stripe Checkout Session ou pedido manual público | CUSTOMER |
 | `POST` | `/api/stripe/webhook` | Receber eventos do Stripe | Stripe secret |
 
 ### 7.6 Upload

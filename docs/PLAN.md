@@ -699,8 +699,9 @@ Regras operacionais:
 
 Decisao de escopo:
 - nesta frente, o objetivo principal e habilitar a operacao interna e omnichannel
-- a exposicao de `dinheiro` ou `Pix manual` no checkout publico deve ser tratada com cautela e pode ficar para uma segunda etapa
-- a primeira entrega recomendada e o suporte a pagamentos manuais no admin/PDV e no modelo de pedidos
+- a primeira entrega foi concluida no admin/PDV e no modelo de pedidos
+- a segunda etapa imediata passa a ser a exposicao controlada de `dinheiro` e `Pix manual` no checkout publico apenas para `PICKUP` e `LOCAL_DELIVERY`
+- o checkout publico nacional continua dependente de Stripe
 
 Entregas objetivas:
 - evoluir schema de pedidos para comportar metodo e status de pagamento
@@ -715,35 +716,68 @@ Status atual:
 - o admin de pedidos ja permite confirmar pagamento manual, registrar Pix manual, dinheiro, valor recebido, troco e observacoes
 - a chave Pix da loja ja pode ser cadastrada no admin e exibida no detalhe do pedido
 - a separacao entre status operacional e status de pagamento ja esta implementada
-- o modelo atual ainda precisa ser expandido para suportar pagamentos presenciais em cartao sem Stripe no PDV
+- o PDV ja suporta `CASH`, `MANUAL_PIX`, `POS_DEBIT` e `POS_CREDIT` com persistencia consistente e baixa de estoque controlada
 
 Proxima entrega explicita:
-- implementar uma tela dedicada de PDV/balcao para registrar vendas presenciais do zero, sem depender do checkout publico
+- expor `CASH` e `MANUAL_PIX` no checkout publico de forma controlada para `PICKUP` e `LOCAL_DELIVERY`, sem quebrar o fluxo atual do Stripe
 
-Escopo detalhado do PDV:
-- criar uma pagina administrativa dedicada para operacao de loja fisica
-- permitir montar um pedido manual adicionando produtos e variantes
-- permitir definir cliente existente ou venda rapida sem cadastro obrigatorio
-- permitir selecionar tipo de entrega compativel com venda presencial, com foco inicial em `PICKUP`
-- permitir escolher `CASH`, `MANUAL_PIX`, `POS_DEBIT` ou `POS_CREDIT` no ato da venda
-- permitir registrar valor recebido, troco, referencia Pix e observacoes operacionais na propria tela
-- permitir finalizar o pedido ja com `paymentStatus` coerente e baixa de estoque controlada
+Escopo detalhado do checkout publico local:
+- adicionar selecao de forma de pagamento no checkout publico
+- manter `STRIPE_CARD` como opcao principal online
+- permitir `MANUAL_PIX` e `CASH` apenas quando `shippingType` for `PICKUP` ou `LOCAL_DELIVERY`
+- bloquear `MANUAL_PIX` e `CASH` para `NATIONAL`
+- exibir chave Pix da loja no fluxo publico quando `MANUAL_PIX` for escolhido
+- permitir informar valor em maos para `CASH` quando isso fizer sentido operacionalmente
+- criar pedido manual publico sem abrir sessao Stripe
+- reaproveitar a base de validacao e persistencia ja usada pelo PDV, evitando duplicacao de regra de negocio
+- exibir tela de confirmacao com instrucoes especificas por metodo de pagamento e CTA para WhatsApp
 
-Regras do PDV:
-- `CASH` pode ser concluido no ato da venda se o operador confirmar recebimento
-- `MANUAL_PIX` pode nascer como `PENDING` e ser confirmado depois, ou ser concluido na hora se o comprovante for validado no balcao
-- `POS_DEBIT` e `POS_CREDIT` devem existir como pagamentos manuais presenciais, sem qualquer dependencia do Stripe
-- a baixa de estoque deve acontecer uma unica vez, no momento correto de confirmacao/finalizacao
-- a tela de PDV nao substitui o checkout publico; ela atende apenas a operacao interna
+Regras do checkout publico local:
+- `STRIPE_CARD`
+  - continua funcionando como hoje
+  - segue criando sessao Stripe e depende de webhook para confirmacao
+- `MANUAL_PIX`
+  - cria pedido com `paymentMethod = MANUAL_PIX`
+  - nasce com `paymentStatus = PENDING`
+  - nao deve marcar pagamento como concluido automaticamente
+  - deve exibir instrucoes, chave Pix e CTA para WhatsApp na confirmacao
+- `CASH`
+  - cria pedido com `paymentMethod = CASH`
+  - nasce com `paymentStatus = PENDING`
+  - pode registrar `cashReceivedAmount` e `changeAmount` quando o cliente informar valor em maos
+  - deve exibir instrucoes de retirada/entrega e CTA para WhatsApp na confirmacao
+- `NATIONAL`
+  - continua restrito aos meios suportados pelo Stripe
+
+Regra recomendada de estoque para a fase:
+- manter o comportamento atual do Stripe: baixa de estoque apenas quando houver confirmacao real
+- pedidos publicos `MANUAL_PIX` e `CASH` criados como `PENDING` nao devem baixar estoque automaticamente na criacao
+- a baixa para esses pedidos deve acontecer no momento da confirmacao manual de pagamento no admin
+- risco aceito desta fase: possibilidade de overselling em pedidos manuais pendentes, sem mecanismo de reserva temporaria
+
+Decisoes tecnicas recomendadas:
+- evitar mudanca de schema nesta etapa; o modelo atual ja suporta o fluxo
+- evoluir `POST /api/checkout` para aceitar `paymentMethod`
+- bifurcar o fluxo de checkout:
+  - Stripe -> cria sessao como hoje
+  - manual -> cria pedido e retorna payload de confirmacao
+- extrair a criacao de pedido manual para um servico compartilhado em `lib/`, reutilizavel entre checkout publico e PDV
+- reutilizar `StoreSettings.pixKey` como fonte unica da chave Pix da loja
+
+Fora de escopo desta etapa:
+- QR Code Pix dinamico
+- conciliacao automatica de comprovante
+- reserva temporaria de estoque com expiracao
+- meios manuais para `NATIONAL`
 
 Entregas objetivas da proxima etapa:
-- criar rota/tela administrativa de PDV
-- criar fluxo de busca e adicao de produtos/variantes ao pedido manual
-- criar resumo de itens, subtotal, total e identificacao do cliente
-- expandir `paymentMethod` para suportar cartao presencial sem Stripe
-- criar finalizacao manual com `CASH`, `MANUAL_PIX`, `POS_DEBIT` e `POS_CREDIT`
-- registrar o pedido de forma consistente com os campos de pagamento ja existentes
-- garantir que a finalizacao manual atualize estoque e mantenha compatibilidade com o admin de pedidos
+- adicionar UI de forma de pagamento ao checkout publico
+- adaptar validacao do frontend para combinar entrega e metodo de pagamento
+- adaptar `POST /api/checkout` para criar pedidos manuais publicos
+- criar servico compartilhado para persistencia de pedido manual
+- ajustar `/checkout/success` para instrucoes especificas de `MANUAL_PIX` e `CASH`
+- manter compatibilidade integral com o fluxo Stripe ja existente
+- validar ponta a ponta `PICKUP` e `LOCAL_DELIVERY` com `MANUAL_PIX` e `CASH`
 ### 12.8 Ordem Recomendada De Execucao
 1. Admin Pedidos
 2. Conta do Cliente
