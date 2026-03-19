@@ -4,6 +4,7 @@ import Link from "next/link"
 import { ArrowLeft, Mail, MapPin, Truck, User } from "lucide-react"
 import OrderAdminActions from "@/app/admin/orders/[id]/OrderAdminActions"
 import { getAdminOrderDetail } from "@/lib/admin-orders"
+import { PDV_WALK_IN_CUSTOMER_EMAIL } from "@/lib/pdv"
 import { getOrderStatusMeta } from "@/lib/order-status"
 import { getPaymentMethodLabel, getPaymentStatusMeta } from "@/lib/payment-status"
 import prisma from "@/lib/prisma"
@@ -55,6 +56,11 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
   const status = getOrderStatusMeta(order.status)
   const paymentStatus = getPaymentStatusMeta(order.paymentStatus)
   const subtotal = order.items.reduce((acc, item) => acc + (item.unitPrice ?? item.price).toNumber() * item.quantity, 0)
+  const customerName = order.customerNameSnapshot ?? order.user.name
+  const customerEmail =
+    order.customerEmailSnapshot ??
+    (order.user.email === PDV_WALK_IN_CUSTOMER_EMAIL ? "Não informado" : order.user.email)
+  const customerPhone = order.customerPhoneSnapshot ?? order.user.phone
 
   return (
     <div className="max-w-5xl space-y-8">
@@ -87,13 +93,13 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
           <h2 className="font-heading tracking-wider uppercase text-sm mb-4">Cliente</h2>
           <div className="space-y-3 text-sm">
             <p className="flex items-center gap-2 text-white">
-              <User className="w-4 h-4 text-[var(--color-primary)]" /> {order.user.name}
+              <User className="w-4 h-4 text-[var(--color-primary)]" /> {customerName}
             </p>
             <p className="flex items-center gap-2 text-gray-400">
-              <Mail className="w-4 h-4 text-[var(--color-primary)]" /> {order.user.email}
+              <Mail className="w-4 h-4 text-[var(--color-primary)]" /> {customerEmail}
             </p>
-            {order.user.phone && (
-              <p className="text-gray-400">Telefone: {order.user.phone}</p>
+            {customerPhone && (
+              <p className="text-gray-400">Telefone: {customerPhone}</p>
             )}
           </div>
         </div>
@@ -175,6 +181,12 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
               <span className="text-gray-500">Confirmado em</span>
               <span className="text-right text-white">{formatDateTime(order.paidAt)}</span>
             </div>
+            {order.paymentInstallments != null && (
+              <div className="flex justify-between gap-4 border-b border-white/5 pb-3">
+                <span className="text-gray-500">Parcelamento</span>
+                <span className="text-right text-white">{order.paymentInstallments}x</span>
+              </div>
+            )}
             {order.stripePaymentId && (
               <div className="flex justify-between gap-4 border-b border-white/5 pb-3">
                 <span className="text-gray-500">Pagamento Stripe</span>
@@ -202,10 +214,18 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
           </div>
 
           <div className="space-y-4">
-            {order.paymentMethod === "MANUAL_PIX" && (
+            {(order.paymentMethod === "MANUAL_PIX" ||
+              order.paymentMethod === "POS_DEBIT" ||
+              order.paymentMethod === "POS_CREDIT") && (
               <div className="rounded-sm border border-[var(--color-primary)]/20 bg-[var(--color-primary)]/5 px-4 py-4 text-sm text-gray-200">
-                <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--color-primary)]">Chave Pix da Loja</p>
-                <p className="mt-2 break-all font-mono text-xs text-white">{storeSettings.pixKey ?? "Não cadastrada no admin."}</p>
+                <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--color-primary)]">
+                  {order.paymentMethod === "MANUAL_PIX" ? "Chave Pix da Loja" : "Referência Operacional"}
+                </p>
+                <p className="mt-2 break-all font-mono text-xs text-white">
+                  {order.paymentMethod === "MANUAL_PIX"
+                    ? storeSettings.pixKey ?? "Não cadastrada no admin."
+                    : order.manualPaymentReference ?? "Nenhuma referência registrada."}
+                </p>
               </div>
             )}
 
@@ -229,6 +249,8 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
         initialManualPaymentNotes={order.manualPaymentNotes}
         initialCashReceivedAmount={order.cashReceivedAmount?.toNumber() ?? null}
         initialChangeAmount={order.changeAmount?.toNumber() ?? null}
+        initialPaymentInstallments={order.paymentInstallments}
+        orderTotal={order.total.toNumber()}
         pixKey={storeSettings.pixKey}
       />
 

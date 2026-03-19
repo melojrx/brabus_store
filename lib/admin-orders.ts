@@ -12,6 +12,7 @@ import {
   type PaymentMethodValue,
   type PaymentStatusValue,
 } from "@/lib/payment-status"
+import { PDV_WALK_IN_CUSTOMER_EMAIL } from "@/lib/pdv"
 
 export const ADMIN_ORDERS_PAGE_SIZE = 12
 
@@ -83,6 +84,7 @@ function optionalTrimmedString(max: number, message: string) {
     .trim()
     .max(max, message)
     .optional()
+    .nullable()
     .or(z.literal(""))
     .transform((value) => {
       if (!value) {
@@ -117,6 +119,25 @@ export const updateOrderPaymentSchema = z
   .object({
     paymentMethod: z.enum(PAYMENT_METHOD_VALUES),
     paymentStatus: z.enum(PAYMENT_STATUS_VALUES),
+    paymentInstallments: z
+      .union([z.number().int(), z.string(), z.null(), z.undefined()])
+      .transform((value, ctx) => {
+        if (value == null || value === "") {
+          return null
+        }
+
+        const parsed = typeof value === "number" ? value : Number.parseInt(value, 10)
+
+        if (!Number.isInteger(parsed) || parsed <= 0 || parsed > 12) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Informe um parcelamento válido entre 1 e 12x.",
+          })
+          return z.NEVER
+        }
+
+        return parsed
+      }),
     manualPaymentReference: optionalTrimmedString(120, "A referência deve ter no máximo 120 caracteres."),
     manualPaymentNotes: optionalTrimmedString(1000, "As observações devem ter no máximo 1000 caracteres."),
     cashReceivedAmount: optionalMoneyField,
@@ -128,6 +149,14 @@ export const updateOrderPaymentSchema = z
         code: z.ZodIssueCode.custom,
         message: "Informe a referência do Pix manual antes de marcar como pago.",
         path: ["manualPaymentReference"],
+      })
+    }
+
+    if (data.paymentMethod === "POS_CREDIT" && !data.paymentInstallments) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Informe o número de parcelas para cartão de crédito.",
+        path: ["paymentInstallments"],
       })
     }
   })
@@ -165,11 +194,15 @@ export function normalizeOrdersPageSize(value: number | null | undefined) {
 }
 
 export function serializeAdminOrderListItem(order: AdminOrderListRecord) {
+  const customerEmail =
+    order.customerEmailSnapshot ??
+    (order.user.email === PDV_WALK_IN_CUSTOMER_EMAIL ? "Não informado" : order.user.email)
+
   return {
     id: order.id,
-    customerName: order.user.name,
-    customerEmail: order.user.email,
-    customerPhone: order.user.phone,
+    customerName: order.customerNameSnapshot ?? order.user.name,
+    customerEmail,
+    customerPhone: order.customerPhoneSnapshot ?? order.user.phone,
     createdAt: order.createdAt.toISOString(),
     total: decimalToNumber(order.total),
     status: order.status as OrderStatusValue,

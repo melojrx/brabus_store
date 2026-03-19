@@ -39,6 +39,8 @@ enum PaymentMethod {
   STRIPE_PIX
   CASH
   MANUAL_PIX
+  POS_DEBIT
+  POS_CREDIT
 }
 
 enum PaymentStatus {
@@ -151,6 +153,7 @@ model Order {
   status          OrderStatus   @default(PENDING)
   paymentMethod   PaymentMethod @default(STRIPE_CARD)
   paymentStatus   PaymentStatus @default(PENDING)
+  paymentInstallments Int?
   total           Decimal       @db.Decimal(10, 2)
   stripeSessionId String?       @unique
   stripePaymentId String?
@@ -159,6 +162,9 @@ model Order {
   manualPaymentNotes     String?
   cashReceivedAmount     Decimal? @db.Decimal(10, 2)
   changeAmount           Decimal? @db.Decimal(10, 2)
+  customerNameSnapshot   String?
+  customerEmailSnapshot  String?
+  customerPhoneSnapshot  String?
 
   // Modalidade e custo de entrega
   shippingType     ShippingType

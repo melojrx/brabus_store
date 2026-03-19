@@ -6,6 +6,7 @@ import {
   getNextOperationalStatusForPayment,
   updateOrderPaymentSchema,
 } from "@/lib/admin-orders"
+import { decrementOrderItemStock } from "@/lib/order-stock"
 import prisma from "@/lib/prisma"
 
 async function checkAdmin() {
@@ -30,7 +31,16 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         total: true,
         status: true,
         paymentStatus: true,
+        paymentInstallments: true,
         paidAt: true,
+        items: {
+          select: {
+            id: true,
+            productId: true,
+            productVariantId: true,
+            quantity: true,
+          },
+        },
       },
     })
 
@@ -47,7 +57,9 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         : null
     const changeAmount =
       payload.paymentMethod === PaymentMethod.CASH
-        ? payload.changeAmount ?? (computedChangeAmount != null && computedChangeAmount > 0 ? computedChangeAmount : 0)
+        ? computedChangeAmount != null && computedChangeAmount > 0
+          ? computedChangeAmount
+          : 0
         : null
 
     if (
@@ -63,6 +75,8 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     }
 
     const nextOperationalStatus = getNextOperationalStatusForPayment(order.status, payload.paymentStatus)
+    const shouldDecrementStock =
+      order.paymentStatus !== PaymentStatus.PAID && payload.paymentStatus === PaymentStatus.PAID
     const paidAt =
       payload.paymentStatus === PaymentStatus.PAID
         ? order.paidAt ?? new Date()
@@ -70,34 +84,52 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
           ? null
           : order.paidAt
 
-    const updatedOrder = await prisma.order.update({
-      where: { id },
-      data: {
-        status: nextOperationalStatus,
-        paymentMethod: payload.paymentMethod,
-        paymentStatus: payload.paymentStatus,
-        paidAt,
-        manualPaymentReference:
-          payload.paymentMethod === PaymentMethod.MANUAL_PIX ? payload.manualPaymentReference : null,
-        manualPaymentNotes:
-          payload.paymentMethod === PaymentMethod.CASH || payload.paymentMethod === PaymentMethod.MANUAL_PIX
-            ? payload.manualPaymentNotes
-            : null,
-        cashReceivedAmount,
-        changeAmount,
-      },
-      select: {
-        id: true,
-        status: true,
-        paymentMethod: true,
-        paymentStatus: true,
-        paidAt: true,
-        manualPaymentReference: true,
-        manualPaymentNotes: true,
-        cashReceivedAmount: true,
-        changeAmount: true,
-        updatedAt: true,
-      },
+    const updatedOrder = await prisma.$transaction(async (tx) => {
+      if (shouldDecrementStock) {
+        await decrementOrderItemStock(tx, order.items)
+      }
+
+      return tx.order.update({
+        where: { id },
+        data: {
+          status: nextOperationalStatus,
+          paymentMethod: payload.paymentMethod,
+          paymentStatus: payload.paymentStatus,
+          paymentInstallments:
+            payload.paymentMethod === PaymentMethod.POS_CREDIT
+              ? payload.paymentInstallments ?? order.paymentInstallments ?? 1
+              : null,
+          paidAt,
+          manualPaymentReference:
+            payload.paymentMethod === PaymentMethod.MANUAL_PIX ||
+            payload.paymentMethod === PaymentMethod.POS_DEBIT ||
+            payload.paymentMethod === PaymentMethod.POS_CREDIT
+              ? payload.manualPaymentReference
+              : null,
+          manualPaymentNotes:
+            payload.paymentMethod === PaymentMethod.CASH ||
+            payload.paymentMethod === PaymentMethod.MANUAL_PIX ||
+            payload.paymentMethod === PaymentMethod.POS_DEBIT ||
+            payload.paymentMethod === PaymentMethod.POS_CREDIT
+              ? payload.manualPaymentNotes
+              : null,
+          cashReceivedAmount,
+          changeAmount,
+        },
+        select: {
+          id: true,
+          status: true,
+          paymentMethod: true,
+          paymentStatus: true,
+          paymentInstallments: true,
+          paidAt: true,
+          manualPaymentReference: true,
+          manualPaymentNotes: true,
+          cashReceivedAmount: true,
+          changeAmount: true,
+          updatedAt: true,
+        },
+      })
     })
 
     return NextResponse.json({

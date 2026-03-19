@@ -5,6 +5,37 @@ import { getBestSellingProductIds, productWithRelationsInclude, serializeProduct
 import prisma from "@/lib/prisma"
 import { getPublicStoreSettings } from "@/lib/store-settings"
 
+const OBJECTIVE_CARD_CONTENT: Record<
+  string,
+  {
+    image: string
+    description: string
+  }
+> = {
+  suplementos: {
+    image: "https://images.unsplash.com/photo-1593095948071-474c5cc2989d?q=80&w=800&auto=format&fit=crop",
+    description: "Suplementos para força, recuperação e evolução consistente.",
+  },
+  "roupas-fitness": {
+    image: "https://images.unsplash.com/photo-1571731956672-f2b94d7dd0cb?q=80&w=800&auto=format&fit=crop",
+    description: "Peças para treino com caimento, mobilidade e presença visual.",
+  },
+  acessorios: {
+    image: "https://images.unsplash.com/photo-1518611012118-696072aa579a?q=80&w=800&auto=format&fit=crop",
+    description: "Acessórios para complementar a rotina de treino e performance.",
+  },
+  "alimentacao-fitness": {
+    image: "https://images.unsplash.com/photo-1490645935967-10de6ba17061?q=80&w=800&auto=format&fit=crop",
+    description: "Opções práticas para rotina saudável, energia e conveniência.",
+  },
+}
+
+const OBJECTIVE_CARD_FALLBACK_IMAGES = [
+  "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=800&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1549060279-7e168fcee0c2?q=80&w=800&auto=format&fit=crop",
+  "https://images.unsplash.com/photo-1518310383802-640c2de311b2?q=80&w=800&auto=format&fit=crop",
+]
+
 async function getBestSellingProducts() {
   try {
     const activeWhere = { active: true }
@@ -52,9 +83,134 @@ async function getBestSellingProducts() {
   }
 }
 
+async function getObjectiveCategories() {
+  const parentCategories = await prisma.category.findMany({
+    where: {
+      active: true,
+      parentId: null,
+      OR: [
+        {
+          products: {
+            some: {
+              active: true,
+            },
+          },
+        },
+        {
+          children: {
+            some: {
+              active: true,
+              products: {
+                some: {
+                  active: true,
+                },
+              },
+            },
+          },
+        },
+      ],
+    },
+    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+    take: 3,
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      children: {
+        where: {
+          active: true,
+          products: {
+            some: {
+              active: true,
+            },
+          },
+        },
+        orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+        take: 3,
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+        },
+      },
+    },
+  })
+
+  const cards = parentCategories.map((category, index) => {
+    const curatedContent = OBJECTIVE_CARD_CONTENT[category.slug]
+    const childNames = category.children.map((child) => child.name).filter(Boolean)
+
+    return {
+      id: category.id,
+      title: category.name,
+      href: `/products?category=${category.slug}`,
+      image:
+        curatedContent?.image ??
+        OBJECTIVE_CARD_FALLBACK_IMAGES[index % OBJECTIVE_CARD_FALLBACK_IMAGES.length],
+      description:
+        curatedContent?.description ??
+        (childNames.length > 0
+          ? `Explore ${childNames.join(", ").toLowerCase()} e outras opções da categoria.`
+          : "Veja os produtos disponíveis desta categoria no catálogo."),
+    }
+  })
+
+  if (cards.length >= 3) {
+    return cards
+  }
+
+  const fallbackSubcategories = await prisma.category.findMany({
+    where: {
+      active: true,
+      parentId: {
+        not: null,
+      },
+      products: {
+        some: {
+          active: true,
+        },
+      },
+      slug: {
+        notIn: cards.map((card) => card.href.split("=").at(-1) ?? ""),
+      },
+    },
+    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+    take: 3 - cards.length,
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      parent: {
+        select: {
+          name: true,
+          slug: true,
+        },
+      },
+    },
+  })
+
+  return [
+    ...cards,
+    ...fallbackSubcategories.map((category, index) => ({
+      id: category.id,
+      title: category.name,
+      href: `/products?subcategory=${category.slug}`,
+      image:
+        OBJECTIVE_CARD_CONTENT[category.parent?.slug ?? ""]?.image ??
+        OBJECTIVE_CARD_FALLBACK_IMAGES[(cards.length + index) % OBJECTIVE_CARD_FALLBACK_IMAGES.length],
+      description: category.parent
+        ? `Veja os produtos de ${category.name.toLowerCase()} dentro de ${category.parent.name.toLowerCase()}.`
+        : "Veja os produtos disponíveis desta categoria no catálogo.",
+    })),
+  ]
+}
+
 export default async function Home() {
-  const bestSellingProducts = await getBestSellingProducts()
-  const storeSettings = await getPublicStoreSettings()
+  const [bestSellingProducts, objectiveCategories, storeSettings] = await Promise.all([
+    getBestSellingProducts(),
+    getObjectiveCategories(),
+    getPublicStoreSettings(),
+  ])
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -144,47 +300,34 @@ export default async function Home() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {[
-              {
-                href: "/products?category=whey-protein",
-                title: "Whey Protein",
-                img: "https://images.unsplash.com/photo-1593095948071-474c5cc2989d?q=80&w=800",
-                desc: "Ganho de massa e recuperação",
-              },
-              {
-                href: "/products?category=creatina",
-                title: "Creatina",
-                img: "https://images.unsplash.com/photo-1607619056574-7b8d3ee536b2?q=80&w=800",
-                desc: "Força e performance máxima",
-              },
-              {
-                href: "/products?category=roupas-fitness",
-                title: "Moda Fitness",
-                img: "https://images.unsplash.com/photo-1571731956672-f2b94d7dd0cb?q=80&w=800",
-                desc: "Treine com estilo",
-              },
-            ].map((cat) => (
+            {objectiveCategories.map((category) => (
               <Link
-                key={cat.href}
-                href={cat.href}
+                key={category.id}
+                href={category.href}
                 className="group relative h-80 overflow-hidden rounded-sm bg-zinc-900 border border-white/10 hover:border-[var(--color-primary)]/50 transition-all"
               >
                 <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-10" />
                 <div
                   className="absolute inset-0 bg-cover bg-center opacity-50 group-hover:scale-105 group-hover:opacity-70 transition-all duration-700"
-                  style={{ backgroundImage: `url("${cat.img}")` }}
+                  style={{ backgroundImage: `url("${category.image}")` }}
                 />
                 <div className="absolute bottom-0 left-0 right-0 z-20 p-6">
                   <h3 className="text-3xl font-heading tracking-wider uppercase text-white group-hover:text-[var(--color-primary)] transition-colors">
-                    {cat.title}
+                    {category.title}
                   </h3>
                   <p className="text-gray-400 text-sm mt-1 translate-y-2 opacity-0 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
-                    {cat.desc}
+                    {category.description}
                   </p>
                 </div>
               </Link>
             ))}
           </div>
+
+          {objectiveCategories.length === 0 && (
+            <div className="rounded-sm border border-dashed border-white/10 px-6 py-16 text-center text-sm text-gray-500">
+              Nenhuma categoria disponível no momento.
+            </div>
+          )}
         </div>
       </section>
 

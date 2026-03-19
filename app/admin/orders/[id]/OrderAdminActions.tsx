@@ -4,6 +4,12 @@ import { useEffect, useMemo, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { Loader2, Save } from "lucide-react"
 import {
+  formatChangeAmount,
+  formatCurrencyInputValue,
+  maskCurrencyInput,
+  parseCurrencyInputValue,
+} from "@/lib/currency-input"
+import {
   ADMIN_ORDER_STATUS_OPTIONS,
   type OrderStatusValue,
   getOrderStatusMeta,
@@ -37,33 +43,8 @@ async function parseErrorMessage(response: Response) {
 
   return null
 }
-
-function formatMoneyInput(value: number | null) {
-  if (value == null) {
-    return ""
-  }
-
-  return value.toFixed(2).replace(".", ",")
-}
-
 function normalizeOptionalText(value: string) {
   return value.trim()
-}
-
-function normalizeMoneyInput(value: string) {
-  const normalizedValue = value.trim()
-
-  if (!normalizedValue) {
-    return ""
-  }
-
-  const parsed = Number(normalizedValue.replace(",", "."))
-
-  if (!Number.isFinite(parsed) || parsed < 0) {
-    return normalizedValue
-  }
-
-  return parsed.toFixed(2)
 }
 
 export default function OrderAdminActions({
@@ -76,6 +57,8 @@ export default function OrderAdminActions({
   initialManualPaymentNotes,
   initialCashReceivedAmount,
   initialChangeAmount,
+  initialPaymentInstallments,
+  orderTotal,
   pixKey,
 }: {
   orderId: string
@@ -87,6 +70,8 @@ export default function OrderAdminActions({
   initialManualPaymentNotes: string | null
   initialCashReceivedAmount: number | null
   initialChangeAmount: number | null
+  initialPaymentInstallments: number | null
+  orderTotal: number
   pixKey: string | null
 }) {
   const router = useRouter()
@@ -96,8 +81,10 @@ export default function OrderAdminActions({
   const [trackingCode, setTrackingCode] = useState(initialTrackingCode ?? "")
   const [manualPaymentReference, setManualPaymentReference] = useState(initialManualPaymentReference ?? "")
   const [manualPaymentNotes, setManualPaymentNotes] = useState(initialManualPaymentNotes ?? "")
-  const [cashReceivedAmount, setCashReceivedAmount] = useState(formatMoneyInput(initialCashReceivedAmount))
-  const [changeAmount, setChangeAmount] = useState(formatMoneyInput(initialChangeAmount))
+  const [cashReceivedAmount, setCashReceivedAmount] = useState(formatCurrencyInputValue(initialCashReceivedAmount))
+  const [paymentInstallments, setPaymentInstallments] = useState(
+    initialPaymentInstallments != null ? String(initialPaymentInstallments) : "1",
+  )
   const [statusFeedback, setStatusFeedback] = useState<Feedback>(null)
   const [paymentFeedback, setPaymentFeedback] = useState<Feedback>(null)
   const [trackingFeedback, setTrackingFeedback] = useState<Feedback>(null)
@@ -118,8 +105,8 @@ export default function OrderAdminActions({
     setPaymentStatus(currentPaymentStatus)
     setManualPaymentReference(initialManualPaymentReference ?? "")
     setManualPaymentNotes(initialManualPaymentNotes ?? "")
-    setCashReceivedAmount(formatMoneyInput(initialCashReceivedAmount))
-    setChangeAmount(formatMoneyInput(initialChangeAmount))
+    setCashReceivedAmount(formatCurrencyInputValue(initialCashReceivedAmount))
+    setPaymentInstallments(initialPaymentInstallments != null ? String(initialPaymentInstallments) : "1")
   }, [
     currentPaymentMethod,
     currentPaymentStatus,
@@ -127,6 +114,7 @@ export default function OrderAdminActions({
     initialManualPaymentNotes,
     initialCashReceivedAmount,
     initialChangeAmount,
+    initialPaymentInstallments,
   ])
 
   const normalizedInitialTrackingCode = useMemo(
@@ -144,28 +132,35 @@ export default function OrderAdminActions({
   )
   const normalizedManualPaymentReference = normalizeOptionalText(manualPaymentReference)
   const normalizedManualPaymentNotes = normalizeOptionalText(manualPaymentNotes)
-  const normalizedInitialCashReceivedAmount = useMemo(
-    () => normalizeMoneyInput(formatMoneyInput(initialCashReceivedAmount)),
+  const initialParsedCashReceivedAmount = useMemo(
+    () => parseCurrencyInputValue(formatCurrencyInputValue(initialCashReceivedAmount)),
     [initialCashReceivedAmount],
   )
-  const normalizedInitialChangeAmount = useMemo(
-    () => normalizeMoneyInput(formatMoneyInput(initialChangeAmount)),
-    [initialChangeAmount],
+  const initialComputedChangeAmount = useMemo(
+    () => formatChangeAmount(orderTotal, initialParsedCashReceivedAmount) ?? initialChangeAmount ?? 0,
+    [initialChangeAmount, initialParsedCashReceivedAmount, orderTotal],
   )
-  const normalizedCashReceivedAmount = normalizeMoneyInput(cashReceivedAmount)
-  const normalizedChangeAmount = normalizeMoneyInput(changeAmount)
+  const normalizedInitialInstallments = useMemo(
+    () => (initialPaymentInstallments != null ? String(initialPaymentInstallments) : "1"),
+    [initialPaymentInstallments],
+  )
+  const parsedCashReceivedAmount = parseCurrencyInputValue(cashReceivedAmount)
+  const computedChangeAmount = formatChangeAmount(orderTotal, parsedCashReceivedAmount)
   const currentStatusMeta = getOrderStatusMeta(status)
   const currentPaymentStatusMeta = getPaymentStatusMeta(paymentStatus)
   const isCashPayment = paymentMethod === "CASH"
   const isManualPixPayment = paymentMethod === "MANUAL_PIX"
-  const shouldShowPaymentNotes = isCashPayment || isManualPixPayment
+  const isCardTerminalPayment = paymentMethod === "POS_DEBIT" || paymentMethod === "POS_CREDIT"
+  const shouldShowPaymentReference = isManualPixPayment || isCardTerminalPayment
+  const shouldShowPaymentNotes = isCashPayment || isManualPixPayment || isCardTerminalPayment
   const hasPaymentChanges =
     paymentMethod !== currentPaymentMethod ||
     paymentStatus !== currentPaymentStatus ||
     normalizedManualPaymentReference !== normalizedInitialManualPaymentReference ||
     normalizedManualPaymentNotes !== normalizedInitialManualPaymentNotes ||
-    (isCashPayment ? normalizedCashReceivedAmount : "") !== normalizedInitialCashReceivedAmount ||
-    (isCashPayment ? normalizedChangeAmount : "") !== normalizedInitialChangeAmount
+    (isCashPayment ? parsedCashReceivedAmount ?? null : null) !== initialParsedCashReceivedAmount ||
+    (isCashPayment ? computedChangeAmount ?? 0 : 0) !== initialComputedChangeAmount ||
+    (isCardTerminalPayment && paymentMethod === "POS_CREDIT" ? paymentInstallments : "1") !== normalizedInitialInstallments
 
   function handleStatusSave() {
     startStatusTransition(async () => {
@@ -216,10 +211,11 @@ export default function OrderAdminActions({
           body: JSON.stringify({
             paymentMethod,
             paymentStatus,
-            manualPaymentReference: isManualPixPayment ? normalizedManualPaymentReference : null,
+            paymentInstallments: paymentMethod === "POS_CREDIT" ? paymentInstallments : null,
+            manualPaymentReference: shouldShowPaymentReference ? normalizedManualPaymentReference : null,
             manualPaymentNotes: shouldShowPaymentNotes ? normalizedManualPaymentNotes : null,
-            cashReceivedAmount: isCashPayment ? normalizedCashReceivedAmount || null : null,
-            changeAmount: isCashPayment ? normalizedChangeAmount || null : null,
+            cashReceivedAmount: isCashPayment && parsedCashReceivedAmount != null ? parsedCashReceivedAmount.toFixed(2) : null,
+            changeAmount: null,
           }),
         })
 
@@ -343,14 +339,16 @@ export default function OrderAdminActions({
             </div>
           )}
 
-          {isManualPixPayment && (
+          {shouldShowPaymentReference && (
             <div>
-              <label className="label-admin">Referência do Pix</label>
+              <label className="label-admin">
+                {isManualPixPayment ? "Referência do Pix" : "Referência da Operação"}
+              </label>
               <input
                 value={manualPaymentReference}
                 onChange={(event) => setManualPaymentReference(event.target.value)}
                 className="input-admin"
-                placeholder="Ex.: comprovante 9832 ou NSU"
+                placeholder={isManualPixPayment ? "Ex.: comprovante 9832 ou NSU" : "Ex.: NSU, autorização ou observação da maquineta"}
                 disabled={isPaymentPending}
               />
             </div>
@@ -362,25 +360,42 @@ export default function OrderAdminActions({
                 <label className="label-admin">Valor Recebido</label>
                 <input
                   value={cashReceivedAmount}
-                  onChange={(event) => setCashReceivedAmount(event.target.value)}
+                  onChange={(event) => setCashReceivedAmount(maskCurrencyInput(event.target.value))}
                   className="input-admin"
-                  placeholder="Ex.: 200,00"
+                  placeholder="R$ 0,00"
                   disabled={isPaymentPending}
-                  inputMode="decimal"
+                  inputMode="numeric"
                 />
               </div>
 
               <div>
-                <label className="label-admin">Troco</label>
+                <label className="label-admin">Troco Calculado</label>
                 <input
-                  value={changeAmount}
-                  onChange={(event) => setChangeAmount(event.target.value)}
+                  value={formatCurrencyInputValue(computedChangeAmount)}
                   className="input-admin"
-                  placeholder="Ex.: 15,50"
-                  disabled={isPaymentPending}
-                  inputMode="decimal"
+                  placeholder="R$ 0,00"
+                  disabled
+                  inputMode="numeric"
                 />
               </div>
+            </div>
+          )}
+
+          {paymentMethod === "POS_CREDIT" && (
+            <div>
+              <label className="label-admin">Parcelamento</label>
+              <select
+                value={paymentInstallments}
+                onChange={(event) => setPaymentInstallments(event.target.value)}
+                className="input-admin"
+                disabled={isPaymentPending}
+              >
+                {Array.from({ length: 12 }, (_, index) => index + 1).map((installment) => (
+                  <option key={installment} value={String(installment)}>
+                    {installment}x
+                  </option>
+                ))}
+              </select>
             </div>
           )}
 
@@ -391,7 +406,11 @@ export default function OrderAdminActions({
                 value={manualPaymentNotes}
                 onChange={(event) => setManualPaymentNotes(event.target.value)}
                 className="input-admin min-h-[120px] resize-y"
-                placeholder="Informações úteis para caixa, conferência ou atendimento."
+                placeholder={
+                  isCardTerminalPayment
+                    ? "Informações úteis da venda em maquineta, operadora ou conferência."
+                    : "Informações úteis para caixa, conferência ou atendimento."
+                }
                 disabled={isPaymentPending}
               />
             </div>

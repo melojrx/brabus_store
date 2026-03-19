@@ -176,10 +176,10 @@
 - [x] Documentar variáveis de ambiente obrigatórias para Instagram, Melhor Envio e Stripe
 
 ### 9.6 Home — Seção `Encontre seu Objetivo`
-- [ ] Tornar a seção dinâmica mantendo sempre 3 cards
-- [ ] Fazer os cards apontarem para categorias reais do catálogo
-- [ ] Garantir que o clique leve para `/products` já filtrado pela categoria correspondente
-- [ ] Remover os cards hardcoded atuais da home
+- [x] Tornar a seção dinâmica mantendo sempre 3 cards
+- [x] Fazer os cards apontarem para categorias reais do catálogo
+- [x] Garantir que o clique leve para `/products` já filtrado pela categoria correspondente
+- [x] Remover os cards hardcoded atuais da home
 
 ### 9.7 Operação de Loja Física e Pagamentos Manuais
 - [x] Definir enums e campos de pedido para `paymentMethod` e `paymentStatus`
@@ -193,14 +193,14 @@
 - [x] Permitir exibição/registro de chave Pix e referência para `MANUAL_PIX`
 - [x] Garantir que `MANUAL_PIX` não marque pagamento como concluído automaticamente
 - [x] Preparar a base para um fluxo simples de PDV/loja física em etapa posterior
-- [ ] Expandir `paymentMethod` para suportar cartão presencial sem Stripe (`POS_DEBIT` e `POS_CREDIT`)
-- [ ] Criar tela administrativa dedicada de PDV/balcão para pedidos presenciais
-- [ ] Permitir busca e adição manual de produtos/variantes em um pedido interno
-- [ ] Permitir selecionar cliente existente ou registrar venda rápida sem cliente obrigatório
-- [ ] Permitir finalizar venda presencial com `PICKUP` como fluxo inicial padrão
-- [ ] Permitir escolher `CASH`, `MANUAL_PIX`, `POS_DEBIT` ou `POS_CREDIT` no fechamento do pedido manual
-- [ ] Permitir registrar valor recebido, troco, referência Pix e notas diretamente no fluxo de PDV
-- [ ] Permitir registrar observações e referência operacional para cartão presencial quando necessário
-- [ ] Criar persistência de pedido manual sem depender do checkout Stripe
-- [ ] Garantir baixa de estoque consistente no fechamento/confirmacão do pedido presencial
-- [ ] Garantir que pedidos criados no PDV apareçam corretamente no admin de pedidos
+- [x] Expandir `paymentMethod` para suportar cartão presencial sem Stripe (`POS_DEBIT` e `POS_CREDIT`)
+- [x] Criar tela administrativa dedicada de PDV/balcão para pedidos presenciais
+- [x] Permitir busca e adição manual de produtos/variantes em um pedido interno
+- [x] Permitir selecionar cliente existente ou registrar venda rápida sem cliente obrigatório
+- [x] Permitir finalizar venda presencial com `PICKUP` como fluxo inicial padrão
+- [x] Permitir escolher `CASH`, `MANUAL_PIX`, `POS_DEBIT` ou `POS_CREDIT` no fechamento do pedido manual
+- [x] Permitir registrar valor recebido, troco, referência Pix e notas diretamente no fluxo de PDV
+- [x] Permitir registrar observações e referência operacional para cartão presencial quando necessário
+- [x] Criar persistência de pedido manual sem depender do checkout Stripe
+- [x] Garantir baixa de estoque consistente no fechamento/confirmacão do pedido presencial
+- [x] Garantir que pedidos criados no PDV apareçam corretamente no admin de pedidos
