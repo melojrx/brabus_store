@@ -1,0 +1,15 @@
+.git
+.github
+.next
+.DS_Store
+.env
+.env.*
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+coverage
+.turbo
+.codex
+public/uploads

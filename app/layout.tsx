@@ -6,10 +6,13 @@ import Footer from "@/components/Footer"
 import WhatsAppButton from "@/components/WhatsAppButton"
 import Providers from "@/components/Providers"
 
+export const dynamic = "force-dynamic"
+
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
 const bebasNeue = Bebas_Neue({ weight: "400", subsets: ["latin"], variable: "--font-bebas-neue" })
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://brabustore.com.br"),
   title: {
     default: "Brabu's Performance Store",
     template: "%s | Brabu's Performance Store",
@@ -19,7 +22,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "pt_BR",
-    url: "https://brabus.store",
+    url: "https://brabustore.com.br",
     siteName: "Brabu's Performance Store",
   },
 }

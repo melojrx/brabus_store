@@ -182,6 +182,7 @@ DATABASE_URL="postgresql://brabus_admin:brabus_password@localhost:5432/brabus_st
 
 NEXTAUTH_URL="http://localhost:3000"
 NEXTAUTH_SECRET="change-me"
+AUTH_TRUST_HOST="true"
 
 NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="pk_test_xxxxx"
 STRIPE_SECRET_KEY="sk_test_xxxxx"
@@ -203,6 +204,7 @@ PORT="3000"
 - `DATABASE_URL`
 - `NEXTAUTH_URL`
 - `NEXTAUTH_SECRET`
+- `AUTH_TRUST_HOST`
 
 ### Obrigatorias para checkout Stripe
 
@@ -250,6 +252,28 @@ npm run stripe:listen
 - `npm run prisma:generate`: regenera o Prisma Client
 - `npm run integrations:check`: testa o estado configurado de Stripe, Melhor Envio e Instagram
 - `npm run stripe:listen`: encaminha eventos locais do Stripe CLI para o webhook da aplicacao
+
+## Deploy
+
+O repositorio esta preparado para deploy em Easypanel com Docker.
+
+Arquivos versionados para isso:
+
+- `Dockerfile`
+- `.dockerignore`
+- `.env.example`
+- `docs/EASYPANEL_DEPLOY.md`
+
+Pontos operacionais importantes:
+
+- a aplicacao sobe na porta `3000`
+- o container executa `npx prisma migrate deploy` no startup
+- uploads administrativos exigem volume persistente em `/app/public/uploads`
+- em producao, defina `AUTH_TRUST_HOST=true`
+
+Guia completo:
+
+- [docs/EASYPANEL_DEPLOY.md](./docs/EASYPANEL_DEPLOY.md)
 
 ## Integracoes
 
