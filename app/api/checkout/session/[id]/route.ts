@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server"
 import prisma from "@/lib/prisma"
 import { getStripeServerClient } from "@/lib/stripe"
+import {
+  checkoutOrderSummarySelect,
+  serializeCheckoutOrderSummary,
+} from "@/lib/manual-orders"
 import { getPublicStoreSettings } from "@/lib/store-settings"
 
 export async function GET(
@@ -14,14 +18,7 @@ export async function GET(
       stripe.checkout.sessions.retrieve(id),
       prisma.order.findFirst({
         where: { stripeSessionId: id },
-        select: {
-          id: true,
-          status: true,
-          paymentMethod: true,
-          paymentStatus: true,
-          total: true,
-          shippingType: true,
-        },
+        select: checkoutOrderSummarySelect,
       }),
       getPublicStoreSettings(),
     ])
@@ -32,16 +29,7 @@ export async function GET(
       status: session.status,
       paymentStatus: session.payment_status,
       whatsapp: storeSettings.whatsapp,
-      order: order
-        ? {
-            id: order.id,
-            status: order.status,
-            paymentMethod: order.paymentMethod,
-            paymentStatus: order.paymentStatus,
-            total: order.total.toNumber(),
-            shippingType: order.shippingType,
-          }
-        : null,
+      order: order ? serializeCheckoutOrderSummary(order) : null,
     })
   } catch (error) {
     return NextResponse.json({ error: "Não foi possível consultar a sessão do checkout." }, { status: 400 })

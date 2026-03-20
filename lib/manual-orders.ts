@@ -48,18 +48,29 @@ export type ManualOrderCreateInput = {
   cashReceivedAmount?: number | null
 }
 
-const checkoutOrderSummarySelect = Prisma.validator<Prisma.OrderSelect>()({
+export const checkoutOrderSummarySelect = Prisma.validator<Prisma.OrderSelect>()({
   id: true,
   status: true,
   paymentMethod: true,
   paymentStatus: true,
   total: true,
+  customerNameSnapshot: true,
   shippingType: true,
   shippingCarrier: true,
   shippingDeadline: true,
   cashReceivedAmount: true,
   changeAmount: true,
   createdAt: true,
+  items: {
+    select: {
+      quantity: true,
+      productNameSnapshot: true,
+      variantNameSnapshot: true,
+      selectedSize: true,
+      selectedColor: true,
+      selectedFlavor: true,
+    },
+  },
 })
 
 export type CheckoutOrderSummaryRecord = Prisma.OrderGetPayload<{
@@ -113,18 +124,38 @@ function validateAddressForShipping(
 }
 
 export function serializeCheckoutOrderSummary(order: CheckoutOrderSummaryRecord) {
+  const items = order.items.map((item) => {
+    const productName = normalizeText(item.productNameSnapshot) ?? "Produto"
+    const fallbackVariantLabel =
+      [item.selectedSize, item.selectedColor, item.selectedFlavor]
+        .map((value) => normalizeText(value))
+        .filter((value): value is string => Boolean(value))
+        .join(" / ") || null
+    const variantLabel =
+      normalizeText(item.variantNameSnapshot) ?? fallbackVariantLabel
+
+    return {
+      quantity: item.quantity,
+      productName,
+      variantLabel,
+      displayLabel: variantLabel ? `${productName} (${variantLabel})` : productName,
+    }
+  })
+
   return {
     id: order.id,
     status: order.status,
     paymentMethod: order.paymentMethod,
     paymentStatus: order.paymentStatus,
     total: order.total.toNumber(),
+    customerName: normalizeText(order.customerNameSnapshot),
     shippingType: order.shippingType,
     shippingCarrier: order.shippingCarrier,
     shippingDeadline: order.shippingDeadline,
     cashReceivedAmount: decimalToNumber(order.cashReceivedAmount),
     changeAmount: decimalToNumber(order.changeAmount),
     createdAt: order.createdAt.toISOString(),
+    items,
   }
 }
 

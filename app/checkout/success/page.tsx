@@ -21,12 +21,19 @@ type CheckoutOrderSummary = {
   paymentMethod: string
   paymentStatus: string
   total: number
+  customerName: string | null
   shippingType: string
   shippingCarrier: string | null
   shippingDeadline: string | null
   cashReceivedAmount: number | null
   changeAmount: number | null
   createdAt: string
+  items: Array<{
+    quantity: number
+    productName: string
+    variantLabel: string | null
+    displayLabel: string
+  }>
 }
 
 type StripeCheckoutSummary = {
@@ -102,6 +109,71 @@ function buildSuccessCopy(summary: CheckoutSummary | null) {
   }
 }
 
+function getShippingLabel(order: CheckoutOrderSummary) {
+  if (order.shippingType === "PICKUP") {
+    return "Retirada na Loja"
+  }
+
+  if (order.shippingType === "LOCAL_DELIVERY") {
+    return order.shippingCarrier?.trim() || "Entrega Local"
+  }
+
+  if (order.shippingType === "NATIONAL") {
+    return order.shippingCarrier?.trim()
+      ? `Entrega Nacional (${order.shippingCarrier.trim()})`
+      : "Entrega Nacional"
+  }
+
+  return order.shippingCarrier?.trim() || "Entrega"
+}
+
+function buildWhatsappOrderMessage(summary: CheckoutSummary | null) {
+  const order = summary?.order
+
+  if (!order) {
+    return "Olá! Acabei de finalizar um pedido no site e gostaria de acompanhamento."
+  }
+
+  const customerName = order.customerName?.trim() || "cliente"
+  const shortOrderId = `#${order.id.split("-")[0].toUpperCase()}`
+  const productLines = order.items.length > 0
+    ? order.items
+        .map((item) => `- ${item.quantity}x ${item.displayLabel}`)
+    : ["- itens do pedido"]
+  const paymentMethodLabel = getPaymentMethodLabel(order.paymentMethod as PaymentMethodValue)
+  const shippingLabel = getShippingLabel(order)
+  const paymentApproved =
+    order.status === "PAID" ||
+    order.paymentStatus === "PAID" ||
+    (summary?.source === "stripe" && summary.paymentStatus === "paid")
+  const baseLines = [
+    `Olá, ${customerName}!`,
+    paymentApproved
+      ? `Seu pagamento do pedido ${shortOrderId} foi aprovado.`
+      : `Seu pedido ${shortOrderId} foi recebido.`,
+    "",
+    "Produtos:",
+    ...productLines,
+    `Valor total: ${formatCurrency(order.total)}`,
+    `Forma de pagamento: ${paymentMethodLabel}`,
+    `Entrega: ${shippingLabel}`,
+  ]
+
+  if (paymentApproved) {
+    return baseLines.join("\n")
+  }
+
+  if (order.paymentMethod === "MANUAL_PIX") {
+    return [...baseLines, "", "Estou enviando o comprovante para confirmação."].join("\n")
+  }
+
+  if (order.paymentMethod === "CASH") {
+    return [...baseLines, "", "Quero alinhar o pagamento em dinheiro."].join("\n")
+  }
+
+  return baseLines.join("\n")
+}
+
 function CheckoutSuccessContent() {
   const searchParams = useSearchParams()
   const sessionId = searchParams.get("session_id")
@@ -166,13 +238,7 @@ function CheckoutSuccessContent() {
       ? getPaymentStatusMeta(order.paymentStatus as PaymentStatusValue)
       : null
   const whatsappNumber = summary?.whatsapp ?? "5585997839040"
-  const whatsappMessage = order
-    ? order.paymentMethod === "MANUAL_PIX"
-      ? `Olá! Acabei de gerar o pedido ${order.id} no site e quero enviar/confirmar o Pix manual.`
-      : order.paymentMethod === "CASH"
-        ? `Olá! Acabei de gerar o pedido ${order.id} no site e quero alinhar o pagamento em dinheiro.`
-        : `Olá! Acabei de finalizar o pedido ${order.id} no site e gostaria de acompanhar.`
-    : "Olá! Acabei de finalizar um pedido no site e gostaria de acompanhar."
+  const whatsappMessage = buildWhatsappOrderMessage(summary)
 
   return (
     <div className="container mx-auto px-4 py-20 min-h-[70vh] flex flex-col items-center justify-center text-center">
