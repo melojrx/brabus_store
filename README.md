@@ -253,6 +253,13 @@ npm run stripe:listen
 - `npm run integrations:check`: testa o estado configurado de Stripe, Melhor Envio e Instagram
 - `npm run stripe:listen`: encaminha eventos locais do Stripe CLI para o webhook da aplicacao
 
+### Stripe e Estoque
+
+- o estoque so baixa quando o pedido fica com `paymentStatus=PAID`
+- se o pagamento mudar de `PAID` para `CANCELLED` ou `REFUNDED`, o sistema repoe o estoque automaticamente
+- refunds completos recebidos da Stripe via webhook (`charge.refunded`) tambem marcam o pedido como `REFUNDED` e repoe o estoque
+- mudar apenas o `status` operacional do pedido no admin nao repoe estoque; a regra de estoque fica no fluxo financeiro
+
 ## Deploy
 
 O repositorio esta preparado para deploy em Easypanel com Docker.

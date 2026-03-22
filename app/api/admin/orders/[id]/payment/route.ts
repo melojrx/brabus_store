@@ -6,7 +6,7 @@ import {
   getNextOperationalStatusForPayment,
   updateOrderPaymentSchema,
 } from "@/lib/admin-orders"
-import { decrementOrderItemStock } from "@/lib/order-stock"
+import { decrementOrderItemStock, incrementOrderItemStock } from "@/lib/order-stock"
 import prisma from "@/lib/prisma"
 
 async function checkAdmin() {
@@ -77,6 +77,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     const nextOperationalStatus = getNextOperationalStatusForPayment(order.status, payload.paymentStatus)
     const shouldDecrementStock =
       order.paymentStatus !== PaymentStatus.PAID && payload.paymentStatus === PaymentStatus.PAID
+    const shouldIncrementStock =
+      order.paymentStatus === PaymentStatus.PAID &&
+      (payload.paymentStatus === PaymentStatus.CANCELLED ||
+        payload.paymentStatus === PaymentStatus.REFUNDED)
     const paidAt =
       payload.paymentStatus === PaymentStatus.PAID
         ? order.paidAt ?? new Date()
@@ -87,6 +91,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     const updatedOrder = await prisma.$transaction(async (tx) => {
       if (shouldDecrementStock) {
         await decrementOrderItemStock(tx, order.items)
+      }
+
+      if (shouldIncrementStock) {
+        await incrementOrderItemStock(tx, order.items)
       }
 
       return tx.order.update({

@@ -3,7 +3,7 @@ import { OrderStatus, PaymentMethod, PaymentStatus, Prisma } from "@prisma/clien
 import Stripe from "stripe"
 import { headers } from "next/headers"
 import prisma from "@/lib/prisma"
-import { decrementOrderItemStock } from "@/lib/order-stock"
+import { decrementOrderItemStock, incrementOrderItemStock } from "@/lib/order-stock"
 import { getStripeServerClient } from "@/lib/stripe"
 
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET
@@ -69,6 +69,47 @@ async function markOrderStatusBySession(session: Stripe.Checkout.Session, status
   })
 
   return orderId
+}
+
+async function markOrderRefundedByPaymentIntent(paymentIntentId: string) {
+  const order = await prisma.order.findFirst({
+    where: { stripePaymentId: paymentIntentId },
+    select: {
+      id: true,
+      status: true,
+      paymentStatus: true,
+      items: {
+        select: {
+          id: true,
+          productId: true,
+          productVariantId: true,
+          quantity: true,
+        },
+      },
+    },
+  })
+
+  if (!order) {
+    return "not-found"
+  }
+
+  if (order.paymentStatus !== PaymentStatus.PAID) {
+    return "already-processed"
+  }
+
+  await prisma.$transaction(async (tx) => {
+    await incrementOrderItemStock(tx, order.items)
+
+    await tx.order.update({
+      where: { id: order.id },
+      data: {
+        status: OrderStatus.REFUNDED,
+        paymentStatus: PaymentStatus.REFUNDED,
+      },
+    })
+  })
+
+  return order.id
 }
 
 export async function POST(req: Request) {
@@ -159,6 +200,37 @@ export async function POST(req: Request) {
           const orderId = await markOrderStatusBySession(session, OrderStatus.FAILED)
           console.log(`Order ${orderId} FAILED after payment_intent failure.`)
         }
+        break
+      }
+
+      case "charge.refunded": {
+        const charge = event.data.object as Stripe.Charge
+        const paymentIntentId =
+          typeof charge.payment_intent === "string" ? charge.payment_intent : charge.payment_intent?.id
+
+        if (!paymentIntentId) {
+          console.warn(`Refund event ${event.id} has no payment_intent. Skipping order sync.`)
+          break
+        }
+
+        if (!charge.refunded || charge.amount_refunded < charge.amount) {
+          console.log(`Payment intent ${paymentIntentId} received partial refund. No stock update performed.`)
+          break
+        }
+
+        const result = await markOrderRefundedByPaymentIntent(paymentIntentId)
+
+        if (result === "not-found") {
+          console.warn(`No order found for refunded payment intent ${paymentIntentId}.`)
+          break
+        }
+
+        if (result === "already-processed") {
+          console.warn(`Order for payment intent ${paymentIntentId} was already refunded/cancelled.`)
+          break
+        }
+
+        console.log(`Order ${result} REFUNDED and stock restored from Stripe refund.`)
         break
       }
 

@@ -34,3 +34,26 @@ export async function decrementOrderItemStock(
     }
   }
 }
+
+export async function incrementOrderItemStock(
+  tx: Prisma.TransactionClient,
+  items: OrderStockItem[],
+) {
+  for (const item of items) {
+    if (!item.productVariantId) {
+      throw new Error(`Order item ${item.id ?? item.productId} is missing productVariantId`)
+    }
+
+    await tx.productVariant.updateMany({
+      where: {
+        id: item.productVariantId,
+        productId: item.productId,
+      },
+      data: {
+        stock: {
+          increment: item.quantity,
+        },
+      },
+    })
+  }
+}

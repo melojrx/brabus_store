@@ -7,12 +7,27 @@ Obrigatórias:
 - `STRIPE_WEBHOOK_SECRET`
 - `STRIPE_CHECKOUT_PAYMENT_METHOD_TYPES` (ex.: `card` ou `card,pix`)
 
+Eventos recomendados no webhook:
+- `checkout.session.completed`
+- `checkout.session.async_payment_succeeded`
+- `checkout.session.async_payment_failed`
+- `checkout.session.expired`
+- `payment_intent.payment_failed`
+- `charge.refunded`
+
 Fluxo local:
 1. Rode `npm run dev`.
 2. Em outro terminal, rode `npm run stripe:listen`.
 3. Copie o `whsec_...` exibido pela Stripe CLI para `STRIPE_WEBHOOK_SECRET`.
 4. Reinicie o app após trocar a variável.
 5. Valide um pedido real de teste e confirme transição `PENDING -> PAID`.
+
+Estoque e estados financeiros:
+- O estoque baixa apenas quando o pedido entra em `PAID`.
+- No admin, se o pagamento mudar de `PAID -> CANCELLED` ou `PAID -> REFUNDED`, o estoque da variacao volta automaticamente.
+- Essa reposicao e idempotente: ela so acontece quando o estado anterior era `PAID`.
+- Refunds completos recebidos da Stripe via `charge.refunded` tambem marcam o pedido como `REFUNDED` e devolvem o estoque automaticamente.
+- Alterar apenas o `status` operacional do pedido no admin nao movimenta estoque; a devolucao depende da transicao de `paymentStatus` ou do webhook da Stripe.
 
 ## Melhor Envio
 Variáveis:

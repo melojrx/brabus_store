@@ -282,7 +282,18 @@ export function getNextOperationalStatusForPayment(
     return OrderStatus.CANCELLED
   }
 
+  if (nextPaymentStatus === PaymentStatus.CANCELLED && currentStatus === OrderStatus.PAID) {
+    return OrderStatus.CANCELLED
+  }
+
   if (nextPaymentStatus === PaymentStatus.REFUNDED && currentStatus === OrderStatus.PAID) {
+    return OrderStatus.REFUNDED
+  }
+
+  if (
+    nextPaymentStatus === PaymentStatus.REFUNDED &&
+    (currentStatus === OrderStatus.SHIPPED || currentStatus === OrderStatus.DELIVERED)
+  ) {
     return OrderStatus.REFUNDED
   }
 
