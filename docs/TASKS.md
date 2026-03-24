@@ -244,10 +244,10 @@ Este documento e a fonte da verdade operacional do projeto. Aqui ficam:
 
 #### TASK-S1-ADMIN-01 — Sidebar recolhivel no admin
 
-- [ ] Definir estado de recolhimento
-- [ ] Implementar trigger de recolher/expandir
-- [ ] Preservar navegacao acessivel
-- [ ] Revisar comportamento em telas menores
+- [x] Definir estado de recolhimento
+- [x] Implementar trigger de recolher/expandir
+- [x] Preservar navegacao acessivel
+- [x] Revisar comportamento em telas menores
 
 #### TASK-S1-ADMIN-02 — Feedbacks positivos de CRUD
 
@@ -572,4 +572,3 @@ Este documento e a fonte da verdade operacional do projeto. Aqui ficam:
 - [x] Consolidar `EVOLUTION_SPRINTS.md` e documentos `SPRINT_X_TASKS.md` em `docs/TASKS.md`
 - [x] Redefinir `docs/PLAN.md` como documento estrategico e de ordem de implementacao
 - [x] Preservar entregas historicas concluidas em secao propria
-

@@ -1,9 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useId, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
+  ChevronLeft,
+  House,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -49,9 +51,11 @@ function AdminNavLink({
   icon: Icon,
   pathname,
   onClick,
+  collapsed = false,
 }: AdminNavItem & {
   pathname: string
   onClick?: () => void
+  collapsed?: boolean
 }) {
   const isActive = isItemActive(pathname, href)
 
@@ -59,14 +63,15 @@ function AdminNavLink({
     <Link
       href={href}
       onClick={onClick}
-      className={`flex items-center gap-3 rounded-sm px-3 py-3 text-sm font-medium transition-colors ${
-        isActive
-          ? "bg-[var(--color-primary)]/15 text-white"
-          : "text-gray-300 hover:bg-white/5 hover:text-white"
-      }`}
+      aria-current={isActive ? "page" : undefined}
+      aria-label={collapsed ? label : undefined}
+      title={collapsed ? label : undefined}
+      className={`flex items-center rounded-sm px-3 py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 ${
+        collapsed ? "justify-center" : ""
+      } ${isActive ? "bg-[var(--color-primary)]/15 text-white" : "text-gray-300 hover:bg-white/5 hover:text-white"}`}
     >
       <Icon className={`h-5 w-5 ${isActive ? "text-[var(--color-primary)]" : "text-gray-400"}`} />
-      <span>{label}</span>
+      <span className={collapsed ? "sr-only" : "ml-3"}>{label}</span>
     </Link>
   )
 }
@@ -74,6 +79,10 @@ function AdminNavLink({
 export default function AdminNavigation() {
   const pathname = usePathname()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [desktopCollapsed, setDesktopCollapsed] = useState(false)
+  const mobileNavId = useId()
+  const currentItem = ADMIN_NAV_ITEMS.find((item) => isItemActive(pathname, item.href)) ?? ADMIN_NAV_ITEMS[0]
+  const CurrentItemIcon = currentItem.icon
 
   return (
     <>
@@ -87,41 +96,38 @@ export default function AdminNavigation() {
 
           <button
             type="button"
+            aria-controls={mobileNavId}
+            aria-expanded={menuOpen}
             aria-label={menuOpen ? "Fechar menu admin" : "Abrir menu admin"}
             onClick={() => setMenuOpen((current) => !current)}
-            className="rounded-sm border border-white/10 p-2 text-gray-300 transition-colors hover:border-white/30 hover:text-white"
+            className="rounded-sm border border-white/10 p-2 text-gray-300 transition-colors hover:border-white/30 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
           >
             {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </div>
 
-        <div className="scrollbar-none overflow-x-auto border-t border-white/5 px-4 py-3">
-          <div className="flex min-w-max gap-2">
-            {ADMIN_NAV_ITEMS.map(({ href, label, icon }) => {
-              const isActive = isItemActive(pathname, href)
-              const Icon = icon
+        <div className="border-t border-white/5 px-4 py-3">
+          <div className="flex items-center justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-gray-500">Seção atual</p>
+              <div className="mt-2 inline-flex max-w-full items-center gap-2 rounded-full border border-[var(--color-primary)]/30 bg-[var(--color-primary)]/10 px-3 py-2 text-sm font-medium text-white">
+                <CurrentItemIcon className="h-4 w-4 shrink-0 text-[var(--color-primary)]" />
+                <span className="truncate">{currentItem.label}</span>
+              </div>
+            </div>
 
-              return (
-                <Link
-                  key={href}
-                  href={href}
-                  className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-xs font-bold uppercase tracking-[0.18em] transition-colors ${
-                    isActive
-                      ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-black"
-                      : "border-white/10 text-gray-300 hover:border-white/30 hover:text-white"
-                  }`}
-                >
-                  <Icon className="h-3.5 w-3.5" />
-                  <span>{label}</span>
-                </Link>
-              )
-            })}
+            <Link
+              href="/"
+              className="shrink-0 rounded-sm border border-white/10 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.18em] text-gray-300 transition-colors hover:border-white/30 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
+            >
+              Loja
+            </Link>
           </div>
         </div>
 
         {menuOpen ? (
-          <div className="border-t border-white/5 px-4 py-4">
-            <nav className="space-y-1">
+          <div id={mobileNavId} className="border-t border-white/5 px-4 py-4">
+            <nav aria-label="Admin mobile" className="space-y-2">
               {ADMIN_NAV_ITEMS.map((item) => (
                 <AdminNavLink
                   key={item.href}
@@ -134,9 +140,17 @@ export default function AdminNavigation() {
 
             <div className="mt-4 border-t border-white/5 pt-4">
               <Link
+                href="/"
+                onClick={() => setMenuOpen(false)}
+                className="flex items-center justify-center rounded-sm border border-white/10 px-3 py-3 text-sm font-medium text-gray-300 transition-colors hover:border-white/30 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
+              >
+                Voltar para a loja
+              </Link>
+
+              <Link
                 href="/api/auth/signout"
                 onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-3 rounded-sm px-3 py-3 text-sm font-medium text-red-400 transition-colors hover:bg-red-400/10"
+                className="mt-2 flex items-center gap-3 rounded-sm px-3 py-3 text-sm font-medium text-red-400 transition-colors hover:bg-red-400/10"
               >
                 <LogOut className="h-5 w-5" />
                 <span>Sair</span>
@@ -146,28 +160,60 @@ export default function AdminNavigation() {
         ) : null}
       </div>
 
-      <aside className="hidden w-64 flex-col border-r border-white/5 bg-zinc-950 md:flex">
-        <div className="border-b border-white/5 p-6">
-          <Link href="/" className="block">
-            <span className="text-xl font-heading tracking-wider uppercase text-white transition-colors hover:text-[var(--color-primary)]">
-              Brabu&apos;s <span className="text-[var(--color-primary)]">Admin</span>
-            </span>
-          </Link>
+      <aside
+        className={`hidden shrink-0 flex-col border-r border-white/5 bg-zinc-950 transition-[width] duration-200 md:flex ${
+          desktopCollapsed ? "w-20" : "w-64"
+        }`}
+      >
+        <div className={`border-b border-white/5 ${desktopCollapsed ? "p-4" : "p-6"}`}>
+          <div className={`flex items-center gap-3 ${desktopCollapsed ? "justify-center" : "justify-between"}`}>
+            <Link href="/" className={`block min-w-0 ${desktopCollapsed ? "hidden" : ""}`}>
+              <span className="text-xl font-heading tracking-wider uppercase text-white transition-colors hover:text-[var(--color-primary)]">
+                Brabu&apos;s <span className="text-[var(--color-primary)]">Admin</span>
+              </span>
+            </Link>
+
+            <button
+              type="button"
+              aria-expanded={!desktopCollapsed}
+              aria-label={desktopCollapsed ? "Expandir sidebar do admin" : "Recolher sidebar do admin"}
+              title={desktopCollapsed ? "Expandir sidebar" : "Recolher sidebar"}
+              onClick={() => setDesktopCollapsed((current) => !current)}
+              className="rounded-sm border border-white/10 p-2 text-gray-300 transition-colors hover:border-white/30 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
+            >
+              <ChevronLeft className={`h-4 w-4 transition-transform ${desktopCollapsed ? "rotate-180" : ""}`} />
+            </button>
+          </div>
+
+          {desktopCollapsed ? (
+            <Link
+              href="/"
+              aria-label="Voltar para a loja"
+              title="Voltar para a loja"
+              className="mt-4 flex justify-center rounded-sm border border-white/10 px-3 py-2 text-xs font-bold uppercase tracking-[0.18em] text-white transition-colors hover:border-white/30 hover:text-[var(--color-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
+            >
+              <House className="h-4 w-4" />
+            </Link>
+          ) : null}
         </div>
 
-        <nav className="flex-1 space-y-1 px-3 py-6">
+        <nav aria-label="Admin desktop" className={`flex-1 space-y-1 ${desktopCollapsed ? "px-2 py-4" : "px-3 py-6"}`}>
           {ADMIN_NAV_ITEMS.map((item) => (
-            <AdminNavLink key={item.href} {...item} pathname={pathname} />
+            <AdminNavLink key={item.href} {...item} pathname={pathname} collapsed={desktopCollapsed} />
           ))}
         </nav>
 
-        <div className="border-t border-white/5 p-4">
+        <div className={`border-t border-white/5 ${desktopCollapsed ? "p-2" : "p-4"}`}>
           <Link
             href="/api/auth/signout"
-            className="flex items-center gap-3 rounded-sm px-3 py-3 text-sm font-medium text-red-400 transition-colors hover:bg-red-400/10"
+            aria-label={desktopCollapsed ? "Sair" : undefined}
+            title={desktopCollapsed ? "Sair" : undefined}
+            className={`flex items-center rounded-sm px-3 py-3 text-sm font-medium text-red-400 transition-colors hover:bg-red-400/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 ${
+              desktopCollapsed ? "justify-center" : ""
+            }`}
           >
             <LogOut className="h-5 w-5" />
-            <span>Sair</span>
+            <span className={desktopCollapsed ? "sr-only" : "ml-3"}>Sair</span>
           </Link>
         </div>
       </aside>
