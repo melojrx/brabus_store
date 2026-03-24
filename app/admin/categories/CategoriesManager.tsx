@@ -1,8 +1,9 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useEffect, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { ChevronRight, FolderTree, Loader2, Pencil, Plus, Tags, Trash2, X } from "lucide-react"
+import AdminInlineFeedback, { type AdminInlineFeedbackState } from "@/components/admin/AdminInlineFeedback"
 
 type ChildCategoryNode = Readonly<{
   id: string
@@ -112,16 +113,26 @@ export default function CategoriesManager({ initialCategories }: CategoriesManag
   const [form, setForm] = useState<CategoryForm>(createEmptyForm())
   const [saving, setSaving] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
-  const [error, setError] = useState("")
+  const [formFeedback, setFormFeedback] = useState<AdminInlineFeedbackState>(null)
+  const [pageFeedback, setPageFeedback] = useState<AdminInlineFeedbackState>(null)
 
   const parentCategories = initialCategories
   const totalCategories = parentCategories.reduce((sum, parent) => sum + 1 + parent.children.length, 0)
   const isSubcategory = form.parentId !== ""
 
+  useEffect(() => {
+    if (pageFeedback?.type !== "success") {
+      return
+    }
+
+    const timeoutId = window.setTimeout(() => setPageFeedback(null), 4000)
+    return () => window.clearTimeout(timeoutId)
+  }, [pageFeedback])
+
   function openCreate(parentId = "") {
     setEditing(null)
     setForm(createEmptyForm(parentId))
-    setError("")
+    setFormFeedback(null)
     setDrawerOpen(true)
   }
 
@@ -139,14 +150,14 @@ export default function CategoriesManager({ initialCategories }: CategoriesManag
       supportsWeight: category.supportsWeight,
       trackStockByVariant: category.trackStockByVariant,
     })
-    setError("")
+    setFormFeedback(null)
     setDrawerOpen(true)
   }
 
   function closeDrawer() {
     setDrawerOpen(false)
     setEditing(null)
-    setError("")
+    setFormFeedback(null)
   }
 
   function setField<Key extends keyof CategoryForm>(key: Key, value: CategoryForm[Key]) {
@@ -170,15 +181,21 @@ export default function CategoriesManager({ initialCategories }: CategoriesManag
   }
 
   async function handleSave() {
-    setError("")
+    setFormFeedback(null)
 
     if (!form.name || !form.slug) {
-      setError("Nome e slug são obrigatórios.")
+      setFormFeedback({
+        type: "error",
+        message: "Nome e slug são obrigatórios.",
+      })
       return
     }
 
     if (isSubcategory && !form.parentId) {
-      setError("Selecione uma categoria pai para a subcategoria.")
+      setFormFeedback({
+        type: "error",
+        message: "Selecione uma categoria pai para a subcategoria.",
+      })
       return
     }
 
@@ -205,14 +222,25 @@ export default function CategoriesManager({ initialCategories }: CategoriesManag
       })
 
       if (!res.ok) {
-        setError((await res.json()).error ?? "Erro ao salvar categoria.")
+        const payload = await res.json().catch(() => null)
+        setFormFeedback({
+          type: "error",
+          message: payload?.error ?? "Erro ao salvar categoria.",
+        })
         return
       }
 
       closeDrawer()
+      setPageFeedback({
+        type: "success",
+        message: editing ? "Categoria atualizada com sucesso." : "Categoria criada com sucesso.",
+      })
       startTransition(() => router.refresh())
     } catch {
-      setError("Erro de conexão.")
+      setFormFeedback({
+        type: "error",
+        message: "Erro de conexão.",
+      })
     } finally {
       setSaving(false)
     }
@@ -223,15 +251,29 @@ export default function CategoriesManager({ initialCategories }: CategoriesManag
       return
     }
 
+    setPageFeedback(null)
     setDeletingId(category.id)
     try {
       const res = await fetch(`/api/admin/categories/${category.id}`, { method: "DELETE" })
       if (!res.ok) {
-        setError((await res.json()).error ?? "Erro ao excluir categoria.")
+        const payload = await res.json().catch(() => null)
+        setPageFeedback({
+          type: "error",
+          message: payload?.error ?? "Erro ao excluir categoria.",
+        })
         return
       }
 
+      setPageFeedback({
+        type: "success",
+        message: "Categoria excluída com sucesso.",
+      })
       startTransition(() => router.refresh())
+    } catch {
+      setPageFeedback({
+        type: "error",
+        message: "Erro de conexão ao excluir categoria.",
+      })
     } finally {
       setDeletingId(null)
     }
@@ -258,6 +300,10 @@ export default function CategoriesManager({ initialCategories }: CategoriesManag
         >
           <Plus className="h-4 w-4" /> Nova Categoria
         </button>
+      </div>
+
+      <div className="mb-6">
+        <AdminInlineFeedback feedback={pageFeedback} />
       </div>
 
       <div className="space-y-6">
@@ -395,11 +441,7 @@ export default function CategoriesManager({ initialCategories }: CategoriesManag
             </div>
 
             <div className="flex-1 space-y-5 overflow-y-auto px-6 py-6">
-              {error ? (
-                <div className="rounded border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-500">
-                  {error}
-                </div>
-              ) : null}
+              <AdminInlineFeedback feedback={formFeedback} />
 
               <Field label="Tipo de Cadastro" htmlFor="category-level">
                 <select

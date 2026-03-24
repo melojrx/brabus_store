@@ -1,8 +1,9 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useEffect, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { Plus, X, Trash2, Pencil, Loader2 } from "lucide-react"
+import AdminInlineFeedback, { type AdminInlineFeedbackState } from "@/components/admin/AdminInlineFeedback"
 
 type Zone = {
   id: string
@@ -23,20 +24,30 @@ export default function ShippingZonesManager({ initialZones }: { initialZones: Z
   const [form, setForm] = useState(EMPTY)
   const [saving, setSaving] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
-  const [error, setError] = useState("")
+  const [formFeedback, setFormFeedback] = useState<AdminInlineFeedbackState>(null)
+  const [pageFeedback, setPageFeedback] = useState<AdminInlineFeedbackState>(null)
 
-  function openCreate() { setEditing(null); setForm(EMPTY); setError(""); setDrawerOpen(true) }
+  useEffect(() => {
+    if (pageFeedback?.type !== "success") return
+    const timeoutId = window.setTimeout(() => setPageFeedback(null), 4000)
+    return () => window.clearTimeout(timeoutId)
+  }, [pageFeedback])
+
+  function openCreate() { setEditing(null); setForm(EMPTY); setFormFeedback(null); setDrawerOpen(true) }
   function openEdit(z: Zone) {
     setEditing(z)
     setForm({ city: z.city, state: z.state, price: String(z.price), deadlineText: z.deadlineText, active: z.active })
-    setError(""); setDrawerOpen(true)
+    setFormFeedback(null); setDrawerOpen(true)
   }
-  function close() { setDrawerOpen(false); setEditing(null); setError("") }
+  function close() { setDrawerOpen(false); setEditing(null); setFormFeedback(null) }
   function setField(key: keyof typeof EMPTY, value: string | boolean) { setForm((p) => ({ ...p, [key]: value })) }
 
   async function handleSave() {
-    setError("")
-    if (!form.city || !form.price) { setError("Cidade e frete são obrigatórios."); return }
+    setFormFeedback(null)
+    if (!form.city || !form.price) {
+      setFormFeedback({ type: "error", message: "Cidade e frete são obrigatórios." })
+      return
+    }
     setSaving(true)
     try {
       const url = editing ? `/api/admin/shipping/zones/${editing.id}` : "/api/admin/shipping/zones"
@@ -45,18 +56,38 @@ export default function ShippingZonesManager({ initialZones }: { initialZones: Z
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       })
-      if (!res.ok) { setError((await res.json()).error ?? "Erro."); return }
-      close(); startTransition(() => router.refresh())
-    } catch { setError("Erro de conexão.") }
+      if (!res.ok) {
+        const payload = await res.json().catch(() => null)
+        setFormFeedback({ type: "error", message: payload?.error ?? "Erro ao salvar zona de entrega." })
+        return
+      }
+      close()
+      setPageFeedback({
+        type: "success",
+        message: editing ? "Zona de entrega atualizada com sucesso." : "Zona de entrega criada com sucesso.",
+      })
+      startTransition(() => router.refresh())
+    } catch {
+      setFormFeedback({ type: "error", message: "Erro de conexão." })
+    }
     finally { setSaving(false) }
   }
 
   async function handleDelete(id: string) {
     if (!confirm("Excluir esta zona?")) return
+    setPageFeedback(null)
     setDeletingId(id)
     try {
-      await fetch(`/api/admin/shipping/zones/${id}`, { method: "DELETE" })
+      const response = await fetch(`/api/admin/shipping/zones/${id}`, { method: "DELETE" })
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null)
+        setPageFeedback({ type: "error", message: payload?.error ?? "Erro ao excluir zona de entrega." })
+        return
+      }
+      setPageFeedback({ type: "success", message: "Zona de entrega excluída com sucesso." })
       startTransition(() => router.refresh())
+    } catch {
+      setPageFeedback({ type: "error", message: "Erro de conexão ao excluir zona de entrega." })
     } finally { setDeletingId(null) }
   }
 
@@ -67,6 +98,10 @@ export default function ShippingZonesManager({ initialZones }: { initialZones: Z
         <button onClick={openCreate} className="bg-[var(--color-primary)] text-black font-bold uppercase tracking-widest text-xs px-6 py-3 rounded-sm flex items-center gap-2 hover:bg-[var(--color-primary-dark)] transition-colors">
           <Plus className="w-4 h-4" /> Nova Zona
         </button>
+      </div>
+
+      <div className="mb-6">
+        <AdminInlineFeedback feedback={pageFeedback} />
       </div>
 
       <div className="bg-zinc-900 border border-white/5 rounded-sm overflow-hidden">
@@ -121,7 +156,7 @@ export default function ShippingZonesManager({ initialZones }: { initialZones: Z
               <button onClick={close} className="text-gray-400 hover:text-white"><X className="w-5 h-5" /></button>
             </div>
             <div className="flex-1 overflow-y-auto px-6 py-6 space-y-5">
-              {error && <p className="text-red-400 text-sm bg-red-500/10 border border-red-500/20 rounded-sm px-4 py-3">{error}</p>}
+              <AdminInlineFeedback feedback={formFeedback} />
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-2">
                   <label className="label-admin">Cidade *</label>

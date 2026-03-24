@@ -251,11 +251,11 @@ Este documento e a fonte da verdade operacional do projeto. Aqui ficam:
 
 #### TASK-S1-ADMIN-02 — Feedbacks positivos de CRUD
 
-- [ ] Definir padrao visual unico para feedbacks de sucesso
-- [ ] Aplicar em produtos
-- [ ] Aplicar em categorias
-- [ ] Aplicar em zonas de entrega
-- [ ] Aplicar em configuracoes
+- [x] Definir padrao visual unico para feedbacks de sucesso
+- [x] Aplicar em produtos
+- [x] Aplicar em categorias
+- [x] Aplicar em zonas de entrega
+- [x] Aplicar em configuracoes
 
 #### TASK-S1-ADMIN-03 — Tabela de produtos com scroll horizontal correto
 

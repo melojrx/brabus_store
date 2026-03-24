@@ -19,6 +19,7 @@ import {
   Trash2,
   X,
 } from "lucide-react"
+import AdminInlineFeedback, { type AdminInlineFeedbackState } from "@/components/admin/AdminInlineFeedback"
 
 type ParentCategory = Readonly<{
   id: string
@@ -409,10 +410,11 @@ export default function ProductsManager({ initialProducts, categories, filters, 
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [togglingId, setTogglingId] = useState<string | null>(null)
   const [formError, setFormError] = useState("")
-  const [listError, setListError] = useState("")
+  const [formFeedback, setFormFeedback] = useState<AdminInlineFeedbackState>(null)
+  const [listFeedback, setListFeedback] = useState<AdminInlineFeedbackState>(null)
   const [sessionUploadedImages, setSessionUploadedImages] = useState<string[]>([])
   const [listingFilters, setListingFilters] = useState(filters)
-  const filtersPanelRef = useRef<HTMLDivElement | null>(null)
+  const filtersPanelRef = useRef<HTMLFormElement | null>(null)
 
   const groupedSubcategories = categories.reduce<Record<string, Subcategory[]>>((groups, category) => {
     const key = category.parent?.name ?? "Sem Categoria Pai"
@@ -478,6 +480,15 @@ export default function ProductsManager({ initialProducts, categories, filters, 
     }
   }, [filtersPanelOpen])
 
+  useEffect(() => {
+    if (listFeedback?.type !== "success") {
+      return
+    }
+
+    const timeoutId = window.setTimeout(() => setListFeedback(null), 4000)
+    return () => window.clearTimeout(timeoutId)
+  }, [listFeedback])
+
   async function cleanupUploadedImages(urls: readonly string[]) {
     if (urls.length === 0) {
       return
@@ -499,7 +510,8 @@ export default function ProductsManager({ initialProducts, categories, filters, 
     setForm(createEmptyForm())
     setSessionUploadedImages([])
     setFormError("")
-    setListError("")
+    setFormFeedback(null)
+    setListFeedback(null)
     setDrawerOpen(true)
   }
 
@@ -535,7 +547,8 @@ export default function ProductsManager({ initialProducts, categories, filters, 
     })
     setSessionUploadedImages([])
     setFormError("")
-    setListError("")
+    setFormFeedback(null)
+    setListFeedback(null)
     setDrawerOpen(true)
   }
 
@@ -552,6 +565,7 @@ export default function ProductsManager({ initialProducts, categories, filters, 
     setEditingProduct(null)
     setSessionUploadedImages([])
     setFormError("")
+    setFormFeedback(null)
   }
 
   function setField<Key extends keyof ProductForm>(key: Key, value: ProductForm[Key]) {
@@ -719,6 +733,7 @@ export default function ProductsManager({ initialProducts, categories, filters, 
     }
 
     setFormError("")
+    setFormFeedback(null)
     setUploadingImages(true)
 
     try {
@@ -788,6 +803,7 @@ export default function ProductsManager({ initialProducts, categories, filters, 
 
   async function handleSave() {
     setFormError("")
+    setFormFeedback(null)
 
     if (!form.name || !form.price || !form.costPrice || !form.categoryId) {
       setFormError("Preencha nome, preço de venda, preço de custo e subcategoria.")
@@ -847,6 +863,11 @@ export default function ProductsManager({ initialProducts, categories, filters, 
       setDrawerOpen(false)
       setEditingProduct(null)
       setForm(createEmptyForm())
+      setFormFeedback(null)
+      setListFeedback({
+        type: "success",
+        message: editingProduct ? "Produto atualizado com sucesso." : "Produto criado com sucesso.",
+      })
       startTransition(() => router.refresh())
     } catch {
       setFormError("Erro de conexão.")
@@ -860,27 +881,37 @@ export default function ProductsManager({ initialProducts, categories, filters, 
       return
     }
 
-    setListError("")
+    setListFeedback(null)
     setDeletingId(id)
 
     try {
       const response = await fetch(`/api/admin/products/${id}`, { method: "DELETE" })
 
       if (!response.ok) {
-        setListError(await extractErrorMessage(response, "Não foi possível excluir o produto."))
+        setListFeedback({
+          type: "error",
+          message: await extractErrorMessage(response, "Não foi possível excluir o produto."),
+        })
         return
       }
 
+      setListFeedback({
+        type: "success",
+        message: "Produto excluído com sucesso.",
+      })
       startTransition(() => router.refresh())
     } catch {
-      setListError("Erro de conexão ao excluir o produto.")
+      setListFeedback({
+        type: "error",
+        message: "Erro de conexão ao excluir o produto.",
+      })
     } finally {
       setDeletingId(null)
     }
   }
 
   async function handleToggle(product: Product) {
-    setListError("")
+    setListFeedback(null)
     setTogglingId(product.id)
 
     try {
@@ -891,13 +922,23 @@ export default function ProductsManager({ initialProducts, categories, filters, 
       })
 
       if (!response.ok) {
-        setListError(await extractErrorMessage(response, "Não foi possível atualizar o status do produto."))
+        setListFeedback({
+          type: "error",
+          message: await extractErrorMessage(response, "Não foi possível atualizar o status do produto."),
+        })
         return
       }
 
+      setListFeedback({
+        type: "success",
+        message: product.active ? "Produto desativado com sucesso." : "Produto ativado com sucesso.",
+      })
       startTransition(() => router.refresh())
     } catch {
-      setListError("Erro de conexão ao atualizar o status do produto.")
+      setListFeedback({
+        type: "error",
+        message: "Erro de conexão ao atualizar o status do produto.",
+      })
     } finally {
       setTogglingId(null)
     }
@@ -915,11 +956,9 @@ export default function ProductsManager({ initialProducts, categories, filters, 
         </div>
       </div>
 
-      {listError ? (
-        <div className="mb-6 rounded border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-400">
-          {listError}
-        </div>
-      ) : null}
+      <div className="mb-6">
+        <AdminInlineFeedback feedback={listFeedback} />
+      </div>
 
       <div className="mb-6 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
         <form onSubmit={handleListingSubmit} className="relative" ref={filtersPanelRef}>
@@ -1260,11 +1299,16 @@ export default function ProductsManager({ initialProducts, categories, filters, 
             </div>
 
             <div className="flex-1 space-y-6 overflow-y-auto px-6 py-6">
-              {formError ? (
-                <div className="rounded border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-400">
-                  {formError}
-                </div>
-              ) : null}
+              <AdminInlineFeedback
+                feedback={
+                  formError
+                    ? {
+                        type: "error",
+                        message: formError,
+                      }
+                    : formFeedback
+                }
+              />
 
               <div className="grid grid-cols-2 gap-4">
                 <Field label="Nome" htmlFor="product-name">

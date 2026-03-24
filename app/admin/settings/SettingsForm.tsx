@@ -1,7 +1,8 @@
 "use client"
 
-import { useState } from "react"
-import { Save, Loader2, Check } from "lucide-react"
+import { useEffect, useState } from "react"
+import { Save, Loader2 } from "lucide-react"
+import AdminInlineFeedback, { type AdminInlineFeedbackState } from "@/components/admin/AdminInlineFeedback"
 
 type Settings = {
   id: string
@@ -33,34 +34,47 @@ export default function SettingsForm({ settings }: { settings: Settings }) {
     googleMapsEmbed: settings.googleMapsEmbed ?? "",
   })
   const [saving, setSaving] = useState(false)
-  const [saved, setSaved] = useState(false)
-  const [error, setError] = useState("")
+  const [feedback, setFeedback] = useState<AdminInlineFeedbackState>(null)
+
+  useEffect(() => {
+    if (feedback?.type !== "success") {
+      return
+    }
+
+    const timeoutId = window.setTimeout(() => setFeedback(null), 4000)
+    return () => window.clearTimeout(timeoutId)
+  }, [feedback])
 
   function set(key: keyof typeof form, value: string) {
     setForm((prev) => ({ ...prev, [key]: value }))
-    setSaved(false)
+    if (feedback?.type === "success") {
+      setFeedback(null)
+    }
   }
 
   async function handleSave() {
     setSaving(true)
-    setError("")
-    setSaved(false)
+    setFeedback(null)
     try {
       const res = await fetch("/api/admin/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       })
-      if (!res.ok) { setError("Erro ao salvar configurações."); return }
-      setSaved(true)
-      setTimeout(() => setSaved(false), 3000)
-    } catch { setError("Erro de conexão.") }
+      if (!res.ok) {
+        setFeedback({ type: "error", message: "Erro ao salvar configurações." })
+        return
+      }
+      setFeedback({ type: "success", message: "Configurações salvas com sucesso." })
+    } catch {
+      setFeedback({ type: "error", message: "Erro de conexão." })
+    }
     finally { setSaving(false) }
   }
 
   return (
     <div className="bg-zinc-900 border border-white/5 rounded-sm p-8 space-y-6">
-      {error && <p className="text-red-400 text-sm bg-red-500/10 border border-red-500/20 rounded-sm px-4 py-3">{error}</p>}
+      <AdminInlineFeedback feedback={feedback} />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
@@ -118,8 +132,6 @@ export default function SettingsForm({ settings }: { settings: Settings }) {
         >
           {saving ? (
             <><Loader2 className="w-5 h-5 animate-spin" /> Salvando...</>
-          ) : saved ? (
-            <><Check className="w-5 h-5" /> Salvo!</>
           ) : (
             <><Save className="w-5 h-5" /> Salvar Configurações</>
           )}
