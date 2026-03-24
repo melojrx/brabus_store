@@ -259,32 +259,32 @@ Este documento e a fonte da verdade operacional do projeto. Aqui ficam:
 
 #### TASK-S1-ADMIN-03 — Tabela de produtos com scroll horizontal correto
 
-- [ ] Ajustar container da tabela para `overflow-x`
-- [ ] Preservar alinhamento de colunas e acoes
-- [ ] Validar uso em viewport reduzida
+- [x] Ajustar container da tabela para `overflow-x`
+- [x] Preservar alinhamento de colunas e acoes
+- [x] Validar uso em viewport reduzida
 
 #### TASK-S1-ADMIN-04 — Busca no admin de produtos
 
-- [ ] Definir busca server-side
-- [ ] Adicionar campo de busca na tela
-- [ ] Suportar busca por nome
-- [ ] Suportar busca por slug
-- [ ] Avaliar suporte inicial por SKU
+- [x] Definir busca server-side
+- [x] Adicionar campo de busca na tela
+- [x] Suportar busca por nome
+- [x] Suportar busca por slug
+- [x] Avaliar suporte inicial por SKU
 
 #### TASK-S1-ADMIN-05 — Filtros no admin de produtos
 
-- [ ] Adicionar filtro por status ativo/inativo
-- [ ] Adicionar filtro por categoria pai
-- [ ] Adicionar filtro por subcategoria
-- [ ] Adicionar filtro por destaque
-- [ ] Refletir filtros em query e resposta
+- [x] Adicionar filtro por status ativo/inativo
+- [x] Adicionar filtro por categoria pai
+- [x] Adicionar filtro por subcategoria
+- [x] Adicionar filtro por destaque
+- [x] Refletir filtros em query e resposta
 
 #### TASK-S1-ADMIN-06 — Paginacao no admin de produtos
 
-- [ ] Paginar consulta server-side
-- [ ] Adicionar metadados de paginacao
-- [ ] Implementar controles de pagina no frontend
-- [ ] Preservar busca e filtros entre paginas
+- [x] Paginar consulta server-side
+- [x] Adicionar metadados de paginacao
+- [x] Implementar controles de pagina no frontend
+- [x] Preservar busca e filtros entre paginas
 
 #### TASK-S1-ADMIN-07 — Ergonomia inicial do PDV
 

@@ -203,12 +203,12 @@ export default function AdminNavigation() {
           ))}
         </nav>
 
-        <div className={`border-t border-white/5 ${desktopCollapsed ? "p-2" : "p-4"}`}>
+        <div className={`border-t border-white/5 ${desktopCollapsed ? "px-2 py-4" : "px-3 py-4"}`}>
           <Link
             href="/api/auth/signout"
             aria-label={desktopCollapsed ? "Sair" : undefined}
             title={desktopCollapsed ? "Sair" : undefined}
-            className={`flex items-center rounded-sm px-3 py-3 text-sm font-medium text-red-400 transition-colors hover:bg-red-400/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 ${
+            className={`flex items-center rounded-sm px-3 py-3 text-sm font-medium text-red-400 transition-colors hover:bg-red-400/10 hover:text-red-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 ${
               desktopCollapsed ? "justify-center" : ""
             }`}
           >
