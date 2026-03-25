@@ -288,9 +288,9 @@ Este documento e a fonte da verdade operacional do projeto. Aqui ficam:
 
 #### TASK-S1-ADMIN-07 — Ergonomia inicial do PDV
 
-- [ ] Revisar ordem de cliente, produtos, entrega, pagamento e pedido atual
-- [ ] Reduzir necessidade de voltar entre secoes
-- [ ] Revisar labels, feedbacks e estados de conclusao
+- [x] Revisar ordem de cliente, produtos, entrega, pagamento e pedido atual
+- [x] Reduzir necessidade de voltar entre secoes
+- [x] Revisar labels, feedbacks e estados de conclusao
 
 ### 5.4 Dashboard e KPI
 

@@ -141,14 +141,6 @@ export const createPdvOrderSchema = z
       })
     }
 
-    if (!data.customerId && !data.customerName && !data.customerEmail && !data.customerPhone) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Informe ao menos um dado do cliente balcão ou selecione um cliente existente.",
-        path: ["customerName"],
-      })
-    }
-
     if (data.shippingType !== ShippingType.PICKUP) {
       const requiredFields: Array<keyof typeof data.address> = [
         "addressStreet",
