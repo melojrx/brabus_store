@@ -1,4 +1,5 @@
 import {
+  OrderChannel,
   OrderStatus,
   PaymentMethod,
   PaymentStatus,
@@ -33,6 +34,7 @@ export type ManualOrderAddressInput = {
 
 export type ManualOrderCreateInput = {
   userId: string
+  channel: OrderChannel
   customerNameSnapshot?: string | null
   customerEmailSnapshot?: string | null
   customerPhoneSnapshot?: string | null
@@ -349,6 +351,7 @@ export async function createManualOrder(
     return tx.order.create({
       data: {
         userId: input.userId,
+        channel: input.channel,
         status: input.paymentStatus === PaymentStatus.PAID ? OrderStatus.PAID : OrderStatus.PENDING,
         paymentMethod: input.paymentMethod,
         paymentStatus: input.paymentStatus,

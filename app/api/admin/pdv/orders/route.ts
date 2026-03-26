@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { PaymentStatus } from "@prisma/client"
+import { OrderChannel, PaymentStatus } from "@prisma/client"
 import { ZodError } from "zod"
 import { auth } from "@/auth"
 import { createManualOrder } from "@/lib/manual-orders"
@@ -61,6 +61,7 @@ export async function POST(req: Request) {
 
     const createdOrder = await createManualOrder(prisma, {
       userId: customerId,
+      channel: OrderChannel.PDV,
       customerNameSnapshot,
       customerEmailSnapshot,
       customerPhoneSnapshot,

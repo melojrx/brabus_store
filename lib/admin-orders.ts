@@ -1,6 +1,7 @@
 import { OrderStatus, PaymentStatus, Prisma, PrismaClient } from "@prisma/client"
 import { z } from "zod"
 import {
+  ADMIN_ORDER_STATUS_OPTIONS,
   type AdminOrderStatusFilter,
   type OrderStatusValue,
   ORDER_STATUS_VALUES,
@@ -15,6 +16,19 @@ import {
 import { PDV_WALK_IN_CUSTOMER_EMAIL } from "@/lib/pdv"
 
 export const ADMIN_ORDERS_PAGE_SIZE = 12
+export const ADMIN_ORDER_MANUAL_STATUS_OPTIONS = ADMIN_ORDER_STATUS_OPTIONS.filter(
+  (option) => option.value !== "ALL" && option.value !== "CANCELLED" && option.value !== "REFUNDED",
+)
+
+const NON_CANCELLABLE_ORDER_STATUSES = new Set<OrderStatusValue>([
+  "SHIPPED",
+  "DELIVERED",
+  "CANCELLED",
+  "REFUNDED",
+  "FAILED",
+])
+
+const FINALIZED_PAYMENT_STATUSES = new Set<PaymentStatusValue>(["CANCELLED", "REFUNDED"])
 
 const adminOrderListInclude = Prisma.validator<Prisma.OrderInclude>()({
   user: {
@@ -298,4 +312,12 @@ export function getNextOperationalStatusForPayment(
   }
 
   return currentStatus
+}
+
+export function canAdminCancelOrder(
+  status: OrderStatus | OrderStatusValue,
+  paymentStatus: PaymentStatus | PaymentStatusValue,
+) {
+  return !NON_CANCELLABLE_ORDER_STATUSES.has(status as OrderStatusValue) &&
+    !FINALIZED_PAYMENT_STATUSES.has(paymentStatus as PaymentStatusValue)
 }

@@ -37,7 +37,7 @@ Este documento e a fonte da verdade operacional do projeto. Aqui ficam:
 | Sprint | Foco | Complexidade | Status |
 |---|---|---|---|
 | Historico Consolidado | Fundacao + MVP + estabilizacao entregue | Concluida | Concluida |
-| Sprint 1 | Conversao, dashboard e operacao imediata | Baixa a media | Planejada |
+| Sprint 1 | Conversao, dashboard e operacao imediata | Baixa a media | Em andamento |
 | Sprint 2 | Maturidade visual e operacional media | Media | Planejada |
 | Sprint 3 | Governanca, cadastros mestres e PDV avancado | Alta | Planejada |
 
@@ -150,7 +150,7 @@ Este documento e a fonte da verdade operacional do projeto. Aqui ficam:
 
 **Objetivo:** atacar friccoes imediatas de compra e operacao, enquanto a dashboard passa a refletir leitura comercial real do negocio.
 
-**Status da sprint:** Planejada
+**Status da sprint:** Em andamento
 
 ### 5.1 Aplicacao Geral
 
@@ -185,7 +185,7 @@ Este documento e a fonte da verdade operacional do projeto. Aqui ficam:
 
 #### TASK-S1-STORE-02 — Continuidade da jornada de login e cadastro
 
-- [ ] Revisar `callbackUrl` no login
+- [x] Revisar `callbackUrl` no login
 - [ ] Revisar fluxo de cadastro para retorno ao checkout
 - [ ] Exibir feedback claro de continuidade da jornada
 - [ ] Validar manualmente login e cadastro com carrinho existente
@@ -205,9 +205,9 @@ Este documento e a fonte da verdade operacional do projeto. Aqui ficam:
 
 #### TASK-S1-STORE-05 — Reset inteligente de endereco e frete
 
-- [ ] Limpar transportadora selecionada ao trocar CEP
+- [x] Limpar transportadora selecionada ao trocar CEP
 - [ ] Limpar resultados de frete ao trocar contexto do endereco
-- [ ] Limpar feedbacks de frete quando necessario
+- [x] Limpar feedbacks de frete quando necessario
 - [ ] Impedir reutilizacao silenciosa de frete de outro endereco
 
 #### TASK-S1-STORE-06 — Reordenacao estrutural do checkout
@@ -219,21 +219,21 @@ Este documento e a fonte da verdade operacional do projeto. Aqui ficam:
 
 #### TASK-S1-STORE-07 — Checkout publico local com pagamentos manuais
 
-- [ ] Expor selecao de forma de pagamento no checkout publico
-- [ ] Manter `NATIONAL` restrito ao fluxo Stripe
-- [ ] Permitir `STRIPE_CARD`, `MANUAL_PIX` e `CASH` para `PICKUP`
-- [ ] Permitir `STRIPE_CARD`, `MANUAL_PIX` e `CASH` para `LOCAL_DELIVERY`
-- [ ] Exibir chave Pix da loja quando `MANUAL_PIX` for selecionado
-- [ ] Permitir informar valor em maos para `CASH`
-- [ ] Evoluir `POST /api/checkout` para aceitar `paymentMethod`
-- [ ] Bifurcar fluxo entre sessao Stripe e criacao de pedido manual
-- [ ] Extrair servico compartilhado de criacao de pedido manual
-- [ ] Criar pedidos manuais publicos com `paymentStatus = PENDING`
-- [ ] Garantir que pedidos `MANUAL_PIX` e `CASH` nao baixem estoque na criacao
-- [ ] Garantir baixa na confirmacao manual no admin
-- [ ] Ajustar `/checkout/success` para `MANUAL_PIX`
-- [ ] Ajustar `/checkout/success` para `CASH`
-- [ ] Adicionar CTA de WhatsApp na confirmacao
+- [x] Expor selecao de forma de pagamento no checkout publico
+- [x] Manter `NATIONAL` restrito ao fluxo Stripe
+- [x] Permitir `STRIPE_CARD`, `MANUAL_PIX` e `CASH` para `PICKUP`
+- [x] Permitir `STRIPE_CARD`, `MANUAL_PIX` e `CASH` para `LOCAL_DELIVERY`
+- [x] Exibir chave Pix da loja quando `MANUAL_PIX` for selecionado
+- [x] Permitir informar valor em maos para `CASH`
+- [x] Evoluir `POST /api/checkout` para aceitar `paymentMethod`
+- [x] Bifurcar fluxo entre sessao Stripe e criacao de pedido manual
+- [x] Extrair servico compartilhado de criacao de pedido manual
+- [x] Criar pedidos manuais publicos com `paymentStatus = PENDING`
+- [x] Garantir que pedidos `MANUAL_PIX` e `CASH` nao baixem estoque na criacao
+- [x] Garantir baixa na confirmacao manual no admin
+- [x] Ajustar `/checkout/success` para `MANUAL_PIX`
+- [x] Ajustar `/checkout/success` para `CASH`
+- [x] Adicionar CTA de WhatsApp na confirmacao
 - [ ] Validar ponta a ponta `PICKUP` com `MANUAL_PIX`
 - [ ] Validar ponta a ponta `PICKUP` com `CASH`
 - [ ] Validar ponta a ponta `LOCAL_DELIVERY` com `MANUAL_PIX`
@@ -296,36 +296,44 @@ Este documento e a fonte da verdade operacional do projeto. Aqui ficam:
 
 #### TASK-S1-DASH-01 — Filtro global de periodo
 
-- [ ] Definir opcoes iniciais de periodo
-- [ ] Refletir filtro na URL
-- [ ] Adaptar agregacoes para respeitar o periodo selecionado
-- [ ] Garantir consistencia entre cards, graficos e rankings
+- [x] Definir opcoes iniciais de periodo
+- [x] Refletir filtro na URL
+- [x] Adaptar agregacoes para respeitar o periodo selecionado
+- [x] Garantir consistencia entre cards, graficos e rankings
 
 #### TASK-S1-DASH-02 — Novos cards principais
 
-- [ ] Adicionar `Lucro Total`
-- [ ] Adicionar `Margem de Lucro`
-- [ ] Adicionar `Total em Vendas`
-- [ ] Adicionar `Quantidade de Produtos Cadastrados`
-- [ ] Adicionar `Total em R$ de Estoque`
+- [x] Adicionar `Lucro Total`
+- [x] Adicionar `Margem de Lucro`
+- [x] Adicionar `Total em Vendas`
+- [x] Adicionar `Quantidade de Produtos Cadastrados`
+- [x] Adicionar `Total em R$ de Estoque`
 - [ ] Reorganizar indicadores por dominio:
-  - [ ] financeiro
-  - [ ] comercial
-  - [ ] estoque
-  - [ ] clientes
+  - [x] visao geral
+  - [x] financeiro
+  - [x] comercial
+  - [x] estoque
 
 #### TASK-S1-DASH-03 — Valor total em estoque
 
-- [ ] Agregar `stock atual x costPrice`
-- [ ] Definir politica para produtos sem custo
-- [ ] Exibir regra de calculo de forma clara
+- [x] Agregar `stock atual x costPrice`
+- [x] Definir politica para produtos sem custo
+- [x] Exibir regra de calculo de forma clara
+
+#### TASK-S1-DASH-03B — Canal/origem do pedido para leitura gerencial
+
+- [x] Adicionar campo de canal/origem no dominio de `Order`
+- [x] Preencher `ONLINE` no checkout publico
+- [x] Preencher `PDV` no fluxo administrativo de balcao
+- [x] Tratar pedidos historicos como `LEGACY`
+- [x] Expor canal/origem para a dashboard gerencial
 
 #### TASK-S1-DASH-04 — Grafico de faturamento vs lucro bruto
 
-- [ ] Adicionar pontos por periodo
+- [x] Adicionar pontos por periodo
 - [ ] Exibir valores por ponto
-- [ ] Responder ao filtro global de periodo
-- [ ] Validar legibilidade em desktop e mobile
+- [x] Responder ao filtro global de periodo
+- [x] Validar legibilidade em desktop e mobile
 
 #### TASK-S1-DASH-05 — Grafico de vendas por dia, mes e ano
 
@@ -336,15 +344,15 @@ Este documento e a fonte da verdade operacional do projeto. Aqui ficam:
 
 #### TASK-S1-DASH-06 — Receitas por tipo de pagamento
 
-- [ ] Agregar pedidos validos por `paymentMethod`
-- [ ] Definir nomes amigaveis para exibicao
-- [ ] Exibir visualizacao comparativa
+- [x] Agregar pedidos validos por `paymentMethod`
+- [x] Definir nomes amigaveis para exibicao
+- [x] Exibir visualizacao comparativa
 
 #### TASK-S1-DASH-07 — Vendas por categoria e subcategoria
 
-- [ ] Trocar agregacao de lucro por agregacao de vendas
-- [ ] Manter separacao entre categoria pai e subcategoria
-- [ ] Revisar labels e ordenacao dos graficos
+- [x] Trocar agregacao de lucro por agregacao de vendas
+- [x] Manter separacao entre categoria pai e subcategoria
+- [x] Revisar labels e ordenacao dos graficos
 
 #### TASK-S1-DASH-08 — Produtos mais vendidos
 
@@ -358,10 +366,21 @@ Este documento e a fonte da verdade operacional do projeto. Aqui ficam:
 - [ ] Agregar clientes do periodo
 - [ ] Tratar corretamente cliente de PDV/balcao quando necessario
 
+#### TASK-S1-DASH-10 — Estrutura final das abas da dashboard
+
+- [x] Aba `Visao Geral` com cards de vendas totais, total de pedidos, R$ em estoque e produtos cadastrados
+- [x] Aba `Visao Geral` com grafico de vendas por periodo
+- [x] Aba `Visao Geral` com grafico de vendas por metodo de pagamento
+- [x] Aba `Financeiro` mantendo cards e leituras financeiras detalhadas
+- [x] Aba `Comercial` com KPI de total de vendas
+- [x] Aba `Comercial` com graficos de metodo de pagamento, categoria, subcategoria e canal
+- [x] Aba `Estoque` com KPIs de alertas, valor total em estoque e produtos cadastrados
+- [x] Aba `Estoque` com visualizacao de top produtos
+
 ### 5.5 Validacao da Sprint 1
 
 - [ ] Rodar `npm run lint -- .`
-- [ ] Rodar `npm run build`
+- [x] Rodar `npm run build`
 - [ ] Validar login/cadastro com carrinho existente
 - [ ] Validar mudanca de CEP e limpeza de frete
 - [ ] Validar busca, filtros e paginacao no admin de produtos

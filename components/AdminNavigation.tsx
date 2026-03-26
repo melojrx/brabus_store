@@ -15,27 +15,51 @@ import {
   ShoppingBasket,
   Tags,
   Truck,
+  User,
   Users,
   X,
   type LucideIcon,
 } from "lucide-react"
 
 type AdminNavItem = {
-  href: string
+  href?: string
   label: string
   icon: LucideIcon
+  disabled?: boolean
 }
 
-const ADMIN_NAV_ITEMS: AdminNavItem[] = [
-  { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/products", label: "Produtos", icon: Package },
-  { href: "/admin/orders", label: "Pedidos", icon: Receipt },
-  { href: "/admin/pdv", label: "PDV", icon: ShoppingBasket },
-  { href: "/admin/categories", label: "Categorias", icon: Tags },
-  { href: "/admin/customers", label: "Clientes", icon: Users },
-  { href: "/admin/shipping", label: "Entrega", icon: Truck },
-  { href: "/admin/settings", label: "Configurações", icon: Settings },
+type AdminNavSection = {
+  label?: string
+  items: AdminNavItem[]
+}
+
+const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
+  {
+    items: [
+      { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
+      { href: "/admin/pdv", label: "PDV", icon: ShoppingBasket },
+      { href: "/admin/orders", label: "Pedidos", icon: Receipt },
+    ],
+  },
+  {
+    label: "Cadastros",
+    items: [
+      { href: "/admin/products", label: "Produtos", icon: Package },
+      { href: "/admin/categories", label: "Categorias", icon: Tags },
+      { href: "/admin/customers", label: "Clientes", icon: Users },
+      { label: "Usuários", icon: User, disabled: true },
+    ],
+  },
+  {
+    label: "Configurações",
+    items: [
+      { href: "/admin/settings", label: "Geral", icon: Settings },
+      { href: "/admin/shipping", label: "Entregas", icon: Truck },
+    ],
+  },
 ]
+
+const ADMIN_NAV_ITEMS = ADMIN_NAV_SECTIONS.flatMap((section) => section.items)
 
 function isItemActive(pathname: string, href: string) {
   if (href === "/admin") {
@@ -49,6 +73,7 @@ function AdminNavLink({
   href,
   label,
   icon: Icon,
+  disabled,
   pathname,
   onClick,
   collapsed = false,
@@ -57,7 +82,34 @@ function AdminNavLink({
   onClick?: () => void
   collapsed?: boolean
 }) {
-  const isActive = isItemActive(pathname, href)
+  const isActive = href ? isItemActive(pathname, href) : false
+  const commonClassName = `flex items-center rounded-sm px-3 py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 ${
+    collapsed ? "justify-center" : ""
+  }`
+  const iconClassName = `h-5 w-5 ${isActive ? "text-[var(--color-primary)]" : "text-gray-400"}`
+
+  if (!href || disabled) {
+    return (
+      <div
+        aria-disabled="true"
+        aria-label={collapsed ? label : undefined}
+        title={collapsed ? label : undefined}
+        className={`${commonClassName} cursor-not-allowed border border-dashed border-white/10 text-gray-500 opacity-70 ${
+          collapsed ? "" : "justify-between gap-3"
+        }`}
+      >
+        <div className={`flex items-center ${collapsed ? "justify-center" : ""}`}>
+          <Icon className={iconClassName} />
+          <span className={collapsed ? "sr-only" : "ml-3"}>{label}</span>
+        </div>
+        {collapsed ? null : (
+          <span className="rounded-full border border-white/10 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.18em] text-gray-500">
+            Em breve
+          </span>
+        )}
+      </div>
+    )
+  }
 
   return (
     <Link
@@ -66,11 +118,9 @@ function AdminNavLink({
       aria-current={isActive ? "page" : undefined}
       aria-label={collapsed ? label : undefined}
       title={collapsed ? label : undefined}
-      className={`flex items-center rounded-sm px-3 py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 ${
-        collapsed ? "justify-center" : ""
-      } ${isActive ? "bg-[var(--color-primary)]/15 text-white" : "text-gray-300 hover:bg-white/5 hover:text-white"}`}
+      className={`${commonClassName} ${isActive ? "bg-[var(--color-primary)]/15 text-white" : "text-gray-300 hover:bg-white/5 hover:text-white"}`}
     >
-      <Icon className={`h-5 w-5 ${isActive ? "text-[var(--color-primary)]" : "text-gray-400"}`} />
+      <Icon className={iconClassName} />
       <span className={collapsed ? "sr-only" : "ml-3"}>{label}</span>
     </Link>
   )
@@ -81,7 +131,7 @@ export default function AdminNavigation() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [desktopCollapsed, setDesktopCollapsed] = useState(false)
   const mobileNavId = useId()
-  const currentItem = ADMIN_NAV_ITEMS.find((item) => isItemActive(pathname, item.href)) ?? ADMIN_NAV_ITEMS[0]
+  const currentItem = ADMIN_NAV_ITEMS.find((item) => item.href && isItemActive(pathname, item.href)) ?? ADMIN_NAV_ITEMS[0]
   const CurrentItemIcon = currentItem.icon
 
   return (
@@ -127,14 +177,24 @@ export default function AdminNavigation() {
 
         {menuOpen ? (
           <div id={mobileNavId} className="border-t border-white/5 px-4 py-4">
-            <nav aria-label="Admin mobile" className="space-y-2">
-              {ADMIN_NAV_ITEMS.map((item) => (
-                <AdminNavLink
-                  key={item.href}
-                  {...item}
-                  pathname={pathname}
-                  onClick={() => setMenuOpen(false)}
-                />
+            <nav aria-label="Admin mobile" className="space-y-4">
+              {ADMIN_NAV_SECTIONS.map((section, sectionIndex) => (
+                <div key={section.label ?? `mobile-section-${sectionIndex}`}>
+                  {section.label ? (
+                    <p className="mb-2 px-1 text-[10px] font-bold uppercase tracking-[0.22em] text-gray-500">{section.label}</p>
+                  ) : null}
+
+                  <div className="space-y-2">
+                    {section.items.map((item) => (
+                      <AdminNavLink
+                        key={item.href ?? item.label}
+                        {...item}
+                        pathname={pathname}
+                        onClick={() => setMenuOpen(false)}
+                      />
+                    ))}
+                  </div>
+                </div>
               ))}
             </nav>
 
@@ -197,25 +257,44 @@ export default function AdminNavigation() {
           ) : null}
         </div>
 
-        <nav aria-label="Admin desktop" className={`flex-1 space-y-1 ${desktopCollapsed ? "px-2 py-4" : "px-3 py-6"}`}>
-          {ADMIN_NAV_ITEMS.map((item) => (
-            <AdminNavLink key={item.href} {...item} pathname={pathname} collapsed={desktopCollapsed} />
-          ))}
+        <nav aria-label="Admin desktop" className={`flex-1 ${desktopCollapsed ? "px-2 py-4" : "px-3 py-6"}`}>
+          <div className="space-y-6">
+            {ADMIN_NAV_SECTIONS.map((section, sectionIndex) => (
+              <div key={section.label ?? `desktop-section-${sectionIndex}`}>
+                {!desktopCollapsed && section.label ? (
+                  <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.22em] text-gray-500">{section.label}</p>
+                ) : null}
+
+                <div className="space-y-1">
+                  {section.items.map((item) => (
+                    <AdminNavLink
+                      key={item.href ?? item.label}
+                      {...item}
+                      pathname={pathname}
+                      collapsed={desktopCollapsed}
+                    />
+                  ))}
+                </div>
+              </div>
+            ))}
+
+            <div>
+              <Link
+                href="/api/auth/signout"
+                aria-label={desktopCollapsed ? "Sair" : undefined}
+                title={desktopCollapsed ? "Sair" : undefined}
+                className={`flex items-center rounded-sm px-3 py-3 text-sm font-medium text-red-400 transition-colors hover:bg-red-400/10 hover:text-red-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 ${
+                  desktopCollapsed ? "justify-center" : ""
+                }`}
+              >
+                <LogOut className="h-5 w-5" />
+                <span className={desktopCollapsed ? "sr-only" : "ml-3"}>Sair</span>
+              </Link>
+            </div>
+          </div>
         </nav>
 
-        <div className={`border-t border-white/5 ${desktopCollapsed ? "px-2 py-4" : "px-3 py-4"}`}>
-          <Link
-            href="/api/auth/signout"
-            aria-label={desktopCollapsed ? "Sair" : undefined}
-            title={desktopCollapsed ? "Sair" : undefined}
-            className={`flex items-center rounded-sm px-3 py-3 text-sm font-medium text-red-400 transition-colors hover:bg-red-400/10 hover:text-red-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 ${
-              desktopCollapsed ? "justify-center" : ""
-            }`}
-          >
-            <LogOut className="h-5 w-5" />
-            <span className={desktopCollapsed ? "sr-only" : "ml-3"}>Sair</span>
-          </Link>
-        </div>
+        <div className={`border-t border-white/5 ${desktopCollapsed ? "px-2 py-4" : "px-3 py-4"}`} />
       </aside>
     </>
   )

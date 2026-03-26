@@ -160,11 +160,19 @@ Decisao vigente:
 
 - `paymentStatus` e `status` operacional sao independentes;
 - baixa de estoque acontece no evento financeiro correto;
-- reposicao ocorre em cancelamento ou reembolso quando aplicavel.
+- reposicao ocorre em cancelamento ou reembolso quando aplicavel;
+- pedido deve registrar `channel/origin` automaticamente no momento da criacao.
 
 Impacto:
 
-- PDV avancado, fiado, metodos configuraveis e fiscal precisam respeitar essa separacao.
+- PDV avancado, fiado, metodos configuraveis e fiscal precisam respeitar essa separacao;
+- dashboard gerencial passa a separar com precisao vendas `ONLINE`, `PDV` e historico `LEGACY`.
+
+Decisao operacional complementar:
+
+- pedidos criados no checkout publico devem nascer com canal `ONLINE`;
+- pedidos criados no PDV administrativo devem nascer com canal `PDV`;
+- pedidos antigos sem rastreabilidade formal devem ser tratados como `LEGACY` ate saneamento posterior.
 
 ### 5.3 Cliente x usuario do sistema
 
@@ -264,6 +272,12 @@ Decisao alvo:
 - exportacao da lista de produtos para Excel
 - campo `codigo do produto`
 - dashboard ampliada com filtros e novos indicadores
+- dashboard reorganizada por abas:
+  - visao geral
+  - financeiro
+  - comercial
+  - estoque
+- separacao gerencial entre vendas online, PDV e legado
 - QR Code para Pix manual conforme estrategia aprovada
 - CRUD de clientes
 - CPF/CNPJ no cadastro de cliente
@@ -400,4 +414,3 @@ Nao pertencem ao escopo deste repositorio, neste momento:
 - `docs/PRD.md` define a visao de produto e os requisitos
 - `docs/PLAN.md` define o que vamos implementar e a ordem recomendada
 - `docs/TASKS.md` e a fonte da verdade operacional para sprints e acompanhamento continuo
-

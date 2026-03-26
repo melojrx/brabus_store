@@ -19,6 +19,13 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
     const body = await req.json()
     const { status } = updateOrderStatusSchema.parse(body)
 
+    if (status === "CANCELLED" || status === "REFUNDED") {
+      return NextResponse.json(
+        { error: "Use a ação de cancelamento ou o controle de pagamento para cancelar/reembolsar o pedido." },
+        { status: 400 },
+      )
+    }
+
     const order = await prisma.order.findUnique({
       where: { id },
       select: { id: true },

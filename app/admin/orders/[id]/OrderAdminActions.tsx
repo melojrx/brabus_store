@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { Loader2, Save } from "lucide-react"
+import { ADMIN_ORDER_MANUAL_STATUS_OPTIONS } from "@/lib/admin-orders"
 import {
   formatChangeAmount,
   formatCurrencyInputValue,
@@ -10,7 +11,6 @@ import {
   parseCurrencyInputValue,
 } from "@/lib/currency-input"
 import {
-  ADMIN_ORDER_STATUS_OPTIONS,
   type OrderStatusValue,
   getOrderStatusMeta,
 } from "@/lib/order-status"
@@ -454,7 +454,7 @@ export default function OrderAdminActions({
           <div>
             <h2 className="font-heading text-sm uppercase tracking-wider text-white">Status Operacional</h2>
             <p className="mt-2 text-sm text-gray-500">
-              Atualize manualmente o andamento do pedido sem alterar pagamentos ou estoque.
+              Atualize manualmente o andamento do pedido sem alterar pagamentos ou estoque. Cancelamentos e reembolsos devem usar o fluxo dedicado.
             </p>
           </div>
           <span className={`rounded-sm px-3 py-1.5 text-xs font-bold uppercase tracking-[0.2em] ${currentStatusMeta.outlinedClassName}`}>
@@ -471,7 +471,7 @@ export default function OrderAdminActions({
               className="input-admin"
               disabled={isStatusPending}
             >
-              {ADMIN_ORDER_STATUS_OPTIONS.filter((option) => option.value !== "ALL").map((option) => (
+              {ADMIN_ORDER_MANUAL_STATUS_OPTIONS.map((option: { value: string; label: string }) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>

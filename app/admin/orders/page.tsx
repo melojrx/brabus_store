@@ -1,7 +1,8 @@
 import Link from "next/link"
 import { redirect } from "next/navigation"
-import { ArrowRight, PackageSearch } from "lucide-react"
+import { PackageSearch } from "lucide-react"
 import { auth } from "@/auth"
+import OrderRowActions from "@/components/admin/OrderRowActions"
 import {
   ADMIN_ORDERS_PAGE_SIZE,
   getAdminOrders,
@@ -234,12 +235,12 @@ export default async function AdminOrdersPage({
                           </span>
                         </td>
                         <td className="px-4 py-4 text-right">
-                          <Link
-                            href={`/admin/orders/${order.id}`}
-                            className="inline-flex items-center gap-2 rounded-sm border border-white/15 px-3 py-2 text-xs font-bold uppercase tracking-[0.2em] text-gray-200 transition-colors hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
-                          >
-                            Visualizar <ArrowRight className="h-4 w-4" />
-                          </Link>
+                          <OrderRowActions
+                            orderId={order.id}
+                            customerName={order.customerName}
+                            status={order.status}
+                            paymentStatus={order.paymentStatus}
+                          />
                         </td>
                       </tr>
                     )

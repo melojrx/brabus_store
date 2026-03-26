@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { PaymentMethod, PaymentStatus, Prisma, ShippingType } from "@prisma/client"
+import { OrderChannel, PaymentMethod, PaymentStatus, Prisma, ShippingType } from "@prisma/client"
 import type Stripe from "stripe"
 import { ZodError } from "zod"
 import { auth } from "@/auth"
@@ -277,6 +277,7 @@ export async function POST(req: Request) {
       const order = await prisma.order.create({
         data: {
           userId,
+          channel: OrderChannel.ONLINE,
           paymentMethod: inferOrderPaymentMethodFromCheckoutConfig(configuredPaymentMethods),
           paymentStatus: PaymentStatus.PENDING,
           total,
@@ -325,6 +326,7 @@ export async function POST(req: Request) {
 
     const manualOrder = await createManualOrder(prisma, {
       userId,
+      channel: OrderChannel.ONLINE,
       customerNameSnapshot: sessionAuth.user?.name ?? null,
       customerEmailSnapshot: sessionAuth.user?.email ?? null,
       customerPhoneSnapshot: sessionAuth.user?.phone ?? null,

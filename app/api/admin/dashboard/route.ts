@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/auth"
-import { DASHBOARD_ORDERS_PAGE_SIZE, getAdminDashboardData } from "@/lib/admin-dashboard"
+import {
+  DASHBOARD_ORDERS_PAGE_SIZE,
+  getAdminDashboardData,
+  parseDashboardPeriod,
+} from "@/lib/admin-dashboard"
 import prisma from "@/lib/prisma"
 
 export async function GET(req: Request) {
@@ -13,8 +17,9 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url)
     const requestedPage = Number.parseInt(searchParams.get("page") || "1", 10)
     const page = Number.isFinite(requestedPage) && requestedPage > 0 ? requestedPage : 1
+    const period = parseDashboardPeriod(searchParams.get("period"))
 
-    const dashboard = await getAdminDashboardData(prisma, page, DASHBOARD_ORDERS_PAGE_SIZE)
+    const dashboard = await getAdminDashboardData(prisma, page, DASHBOARD_ORDERS_PAGE_SIZE, period)
 
     return NextResponse.json(dashboard)
   } catch (error) {
