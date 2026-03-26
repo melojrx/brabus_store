@@ -221,6 +221,7 @@ export async function createManualOrder(
   let shippingCost = 0
   let shippingCarrier: string | null = null
   let shippingDeadline: string | null = null
+  const allowNegativeStock = input.channel === OrderChannel.PDV
 
   const orderItemsRecord: Prisma.OrderItemUncheckedCreateWithoutOrderInput[] = input.items.map((item) => {
     const variant = variantsById.get(item.productVariantId)
@@ -229,7 +230,7 @@ export async function createManualOrder(
       throw new Error("Um dos itens do pedido está com produto ou variação inválidos.")
     }
 
-    if (item.quantity > variant.stock) {
+    if (!allowNegativeStock && item.quantity > variant.stock) {
       throw new Error(`Estoque insuficiente para ${variant.product.name}. Disponível: ${variant.stock}.`)
     }
 
@@ -345,7 +346,7 @@ export async function createManualOrder(
     }))
 
     if (input.paymentStatus === PaymentStatus.PAID) {
-      await decrementOrderItemStock(tx, stockItems)
+      await decrementOrderItemStock(tx, stockItems, { allowNegativeStock })
     }
 
     return tx.order.create({

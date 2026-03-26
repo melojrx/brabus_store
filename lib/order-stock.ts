@@ -7,9 +7,14 @@ type OrderStockItem = {
   quantity: number
 }
 
+type DecrementOrderItemStockOptions = {
+  allowNegativeStock?: boolean
+}
+
 export async function decrementOrderItemStock(
   tx: Prisma.TransactionClient,
   items: OrderStockItem[],
+  options: DecrementOrderItemStockOptions = {},
 ) {
   for (const item of items) {
     if (!item.productVariantId) {
@@ -20,7 +25,7 @@ export async function decrementOrderItemStock(
       where: {
         id: item.productVariantId,
         productId: item.productId,
-        stock: { gte: item.quantity },
+        ...(options.allowNegativeStock ? {} : { stock: { gte: item.quantity } }),
       },
       data: {
         stock: {

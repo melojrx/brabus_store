@@ -69,6 +69,18 @@ function isItemActive(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`)
 }
 
+function SidebarTooltip({ label, collapsed }: { label: string; collapsed: boolean }) {
+  if (!collapsed) {
+    return null
+  }
+
+  return (
+    <span className="pointer-events-none absolute left-full top-1/2 z-20 ml-3 hidden -translate-y-1/2 whitespace-nowrap rounded-sm border border-white/10 bg-zinc-950 px-3 py-2 text-[11px] font-bold uppercase tracking-[0.18em] text-white opacity-0 shadow-lg transition-all duration-150 group-hover:block group-hover:opacity-100 group-focus-visible:block group-focus-visible:opacity-100 md:block">
+      {label}
+    </span>
+  )
+}
+
 function AdminNavLink({
   href,
   label,
@@ -83,7 +95,7 @@ function AdminNavLink({
   collapsed?: boolean
 }) {
   const isActive = href ? isItemActive(pathname, href) : false
-  const commonClassName = `flex items-center rounded-sm px-3 py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 ${
+  const commonClassName = `group relative flex items-center rounded-sm px-3 py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 ${
     collapsed ? "justify-center" : ""
   }`
   const iconClassName = `h-5 w-5 ${isActive ? "text-[var(--color-primary)]" : "text-gray-400"}`
@@ -107,6 +119,7 @@ function AdminNavLink({
             Em breve
           </span>
         )}
+        <SidebarTooltip label={label} collapsed={collapsed} />
       </div>
     )
   }
@@ -122,6 +135,7 @@ function AdminNavLink({
     >
       <Icon className={iconClassName} />
       <span className={collapsed ? "sr-only" : "ml-3"}>{label}</span>
+      <SidebarTooltip label={label} collapsed={collapsed} />
     </Link>
   )
 }
@@ -129,7 +143,7 @@ function AdminNavLink({
 export default function AdminNavigation() {
   const pathname = usePathname()
   const [menuOpen, setMenuOpen] = useState(false)
-  const [desktopCollapsed, setDesktopCollapsed] = useState(false)
+  const [desktopCollapsed, setDesktopCollapsed] = useState(true)
   const mobileNavId = useId()
   const currentItem = ADMIN_NAV_ITEMS.find((item) => item.href && isItemActive(pathname, item.href)) ?? ADMIN_NAV_ITEMS[0]
   const CurrentItemIcon = currentItem.icon
@@ -239,9 +253,13 @@ export default function AdminNavigation() {
               aria-label={desktopCollapsed ? "Expandir sidebar do admin" : "Recolher sidebar do admin"}
               title={desktopCollapsed ? "Expandir sidebar" : "Recolher sidebar"}
               onClick={() => setDesktopCollapsed((current) => !current)}
-              className="rounded-sm border border-white/10 p-2 text-gray-300 transition-colors hover:border-white/30 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
+              className="group relative rounded-sm border border-white/10 p-2 text-gray-300 transition-colors hover:border-white/30 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
             >
               <ChevronLeft className={`h-4 w-4 transition-transform ${desktopCollapsed ? "rotate-180" : ""}`} />
+              <SidebarTooltip
+                label={desktopCollapsed ? "Expandir sidebar" : "Recolher sidebar"}
+                collapsed={desktopCollapsed}
+              />
             </button>
           </div>
 
@@ -250,9 +268,10 @@ export default function AdminNavigation() {
               href="/"
               aria-label="Voltar para a loja"
               title="Voltar para a loja"
-              className="mt-4 flex justify-center rounded-sm border border-white/10 px-3 py-2 text-xs font-bold uppercase tracking-[0.18em] text-white transition-colors hover:border-white/30 hover:text-[var(--color-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
+              className="group relative mt-4 flex justify-center rounded-sm border border-white/10 px-3 py-2 text-xs font-bold uppercase tracking-[0.18em] text-white transition-colors hover:border-white/30 hover:text-[var(--color-primary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-primary)] focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950"
             >
               <House className="h-4 w-4" />
+              <SidebarTooltip label="Voltar para a loja" collapsed={desktopCollapsed} />
             </Link>
           ) : null}
         </div>
@@ -283,12 +302,13 @@ export default function AdminNavigation() {
                 href="/api/auth/signout"
                 aria-label={desktopCollapsed ? "Sair" : undefined}
                 title={desktopCollapsed ? "Sair" : undefined}
-                className={`flex items-center rounded-sm px-3 py-3 text-sm font-medium text-red-400 transition-colors hover:bg-red-400/10 hover:text-red-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 ${
+                className={`group relative flex items-center rounded-sm px-3 py-3 text-sm font-medium text-red-400 transition-colors hover:bg-red-400/10 hover:text-red-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950 ${
                   desktopCollapsed ? "justify-center" : ""
                 }`}
               >
                 <LogOut className="h-5 w-5" />
                 <span className={desktopCollapsed ? "sr-only" : "ml-3"}>Sair</span>
+                <SidebarTooltip label="Sair" collapsed={desktopCollapsed} />
               </Link>
             </div>
           </div>

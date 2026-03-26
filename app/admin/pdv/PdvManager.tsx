@@ -186,6 +186,7 @@ export default function PdvManager({ pixKey }: { pixKey: string | null }) {
   const [cashReceivedAmount, setCashReceivedAmount] = useState("")
   const [productsFeedback, setProductsFeedback] = useState<Feedback>(null)
   const [shippingFeedback, setShippingFeedback] = useState<Feedback>(null)
+  const [currentOrderFeedback, setCurrentOrderFeedback] = useState<Feedback>(null)
   const [checkoutFeedback, setCheckoutFeedback] = useState<Feedback>(null)
   const [isLoadingProducts, setIsLoadingProducts] = useState(false)
   const [isLoadingCustomers, setIsLoadingCustomers] = useState(false)
@@ -396,6 +397,10 @@ export default function PdvManager({ pixKey }: { pixKey: string | null }) {
     [items],
   )
 
+  function shouldAlertNegativeStock(stock: number, quantity: number) {
+    return quantity > stock
+  }
+
   function handleAddVariant(product: PdvProduct, variant: PdvProduct["variants"][number]) {
     setProductsFeedback(null)
 
@@ -403,22 +408,30 @@ export default function PdvManager({ pixKey }: { pixKey: string | null }) {
       const existingItem = currentItems.find((item) => item.variantId === variant.id)
 
       if (existingItem) {
-        if (existingItem.quantity >= variant.stock) {
+        const nextQuantity = existingItem.quantity + 1
+
+        if (shouldAlertNegativeStock(variant.stock, nextQuantity)) {
           setProductsFeedback({
             type: "error",
             message: `O estoque disponível de ${product.name} já foi atingido no pedido atual.`,
           })
-          return currentItems
         }
 
         return currentItems.map((item) =>
           item.variantId === variant.id
             ? {
                 ...item,
-                quantity: item.quantity + 1,
+                quantity: nextQuantity,
               }
             : item,
         )
+      }
+
+      if (shouldAlertNegativeStock(variant.stock, 1)) {
+        setProductsFeedback({
+          type: "error",
+          message: `O estoque disponível de ${product.name} já foi atingido no pedido atual.`,
+        })
       }
 
       return [
@@ -452,7 +465,7 @@ export default function PdvManager({ pixKey }: { pixKey: string | null }) {
   }
 
   function handleQuantityChange(variantId: string, nextQuantity: number) {
-    setCheckoutFeedback(null)
+    setCurrentOrderFeedback(null)
 
     setItems((currentItems) => {
       if (nextQuantity <= 0) {
@@ -464,12 +477,11 @@ export default function PdvManager({ pixKey }: { pixKey: string | null }) {
           return item
         }
 
-        if (nextQuantity > item.stock) {
-          setCheckoutFeedback({
+        if (shouldAlertNegativeStock(item.stock, nextQuantity)) {
+          setCurrentOrderFeedback({
             type: "error",
             message: `A quantidade de ${item.productName} não pode ultrapassar o estoque disponível.`,
           })
-          return item
         }
 
         return {
@@ -531,6 +543,7 @@ export default function PdvManager({ pixKey }: { pixKey: string | null }) {
     setManualPaymentReference("")
     setManualPaymentNotes("")
     setCashReceivedAmount("")
+    setCurrentOrderFeedback(null)
     setCheckoutFeedback(null)
     setShippingFeedback(null)
   }
@@ -677,8 +690,8 @@ export default function PdvManager({ pixKey }: { pixKey: string | null }) {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
-        <div className="space-y-6">
-          <section className="rounded-sm border border-white/5 bg-zinc-900 p-6">
+        <div className="space-y-6 xl:sticky xl:top-24 xl:self-start">
+          <section className="rounded-sm border border-white/5 bg-zinc-900 p-6 xl:flex xl:h-[calc(100vh-8rem)] xl:flex-col">
             <div className="flex items-center gap-3">
               <ShoppingBasket className="h-5 w-5 text-[var(--color-primary)]" />
               <div>
@@ -689,7 +702,7 @@ export default function PdvManager({ pixKey }: { pixKey: string | null }) {
               </div>
             </div>
 
-            <div className="mt-6 space-y-4">
+            <div className="mt-6 space-y-4 xl:flex xl:min-h-0 xl:flex-1 xl:flex-col xl:space-y-0 xl:gap-4">
               <div>
                 <label className="label-admin">Buscar Produto</label>
                 <div className="relative">
@@ -699,7 +712,7 @@ export default function PdvManager({ pixKey }: { pixKey: string | null }) {
                     onChange={(event) => {
                       setProductSearch(event.target.value)
                     }}
-                    className="input-admin pl-12"
+                    className="input-admin !pl-12"
                     placeholder="Nome ou slug do produto"
                   />
                 </div>
@@ -717,269 +730,271 @@ export default function PdvManager({ pixKey }: { pixKey: string | null }) {
                 </p>
               )}
 
-              {isLoadingProducts ? (
-                <div className="flex items-center gap-2 text-sm text-gray-400">
-                  <Loader2 className="h-4 w-4 animate-spin" /> Carregando catálogo do PDV...
-                </div>
-              ) : products.length === 0 ? (
-                <p className="text-sm text-gray-500">Nenhum produto disponível para o termo informado.</p>
-              ) : (
-                <div className="space-y-5">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.2em] text-gray-500">
-                      <span>{productPagination.totalItems} produto(s) encontrados</span>
-                      <span>
-                        Página {productPagination.page} de {productPagination.totalPages}
-                      </span>
-                    </div>
-
-                    <div className="inline-flex rounded-sm border border-white/10 bg-black/20 p-1">
-                      <button
-                        type="button"
-                        onClick={() => setProductViewMode("cards")}
-                        className={`inline-flex items-center gap-2 rounded-sm px-3 py-2 text-[11px] font-bold uppercase tracking-[0.2em] transition-colors ${
-                          productViewMode === "cards"
-                            ? "bg-[var(--color-primary)] text-black"
-                            : "text-gray-300 hover:text-white"
-                        }`}
-                      >
-                        <LayoutGrid className="h-3.5 w-3.5" />
-                        Cards
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setProductViewMode("table")}
-                        className={`inline-flex items-center gap-2 rounded-sm px-3 py-2 text-[11px] font-bold uppercase tracking-[0.2em] transition-colors ${
-                          productViewMode === "table"
-                            ? "bg-[var(--color-primary)] text-black"
-                            : "text-gray-300 hover:text-white"
-                        }`}
-                      >
-                        <Rows3 className="h-3.5 w-3.5" />
-                        Tabela
-                      </button>
-                    </div>
+              <div className="xl:min-h-0 xl:flex-1 xl:overflow-y-auto xl:overscroll-contain xl:pr-2">
+                {isLoadingProducts ? (
+                  <div className="flex items-center gap-2 text-sm text-gray-400">
+                    <Loader2 className="h-4 w-4 animate-spin" /> Carregando catálogo do PDV...
                   </div>
-
-                  {productViewMode === "cards" ? (
-                    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
-                      {products.map((product) => (
-                        <article
-                          key={product.id}
-                          className={`rounded-sm border p-3 transition-colors ${
-                            product.variants.some((variant) => selectedVariantQuantityMap.has(variant.id))
-                              ? "border-[var(--color-primary)]/40 bg-[var(--color-primary)]/5"
-                              : "border-white/5 bg-black/20"
-                          }`}
-                        >
-                          <div className="relative overflow-hidden rounded-sm bg-white/5">
-                            {product.variants.some((variant) => selectedVariantQuantityMap.has(variant.id)) && (
-                              <span className="absolute right-2 top-2 z-10 rounded-sm bg-[var(--color-primary)] px-2 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-black">
-                                No pedido
-                              </span>
-                            )}
-
-                            <div className="aspect-square w-full">
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img
-                                src={product.image || "/placeholder.jpg"}
-                                alt={product.name}
-                                className="h-full w-full object-cover"
-                              />
-                            </div>
-                          </div>
-
-                          <div className="mt-3 min-w-0">
-                            <div className="flex items-start justify-between gap-3">
-                              <button
-                                type="button"
-                                onClick={() => handleAddProduct(product)}
-                                className="line-clamp-2 text-left text-sm font-medium text-white transition-colors hover:text-[var(--color-primary)]"
-                              >
-                                {product.name}
-                              </button>
-                              <p className="shrink-0 text-sm font-semibold text-white">{formatCurrency(product.price)}</p>
-                            </div>
-                            <p className="mt-1 line-clamp-2 text-[11px] text-gray-500">
-                              {product.categoryName}
-                              {product.subcategoryName ? ` / ${product.subcategoryName}` : ""}
-                            </p>
-                          </div>
-
-                          <div className="mt-4 flex flex-wrap gap-2">
-                            {product.variants.map((variant) => {
-                              const selectedQuantity = selectedVariantQuantityMap.get(variant.id) ?? 0
-
-                              return (
-                                <button
-                                  key={variant.id}
-                                  type="button"
-                                  onClick={() => handleAddVariant(product, variant)}
-                                  className={`min-w-0 rounded-sm border px-3 py-2 text-left text-xs transition-colors ${
-                                    selectedQuantity > 0
-                                      ? "border-[var(--color-primary)] bg-[var(--color-primary)]/10 text-white"
-                                      : "border-white/10 text-gray-300 hover:border-[var(--color-primary)] hover:text-white"
-                                  }`}
-                                >
-                                  <span className="block truncate font-medium text-white">{variant.label}</span>
-                                  <span className="mt-1 block text-[10px] uppercase tracking-[0.2em] text-gray-500">
-                                    Estoque: {variant.stock}
-                                  </span>
-                                  {selectedQuantity > 0 && (
-                                    <span className="mt-1 block text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--color-primary)]">
-                                      Selecionado: {selectedQuantity}
-                                    </span>
-                                  )}
-                                </button>
-                              )
-                            })}
-                          </div>
-                        </article>
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="overflow-x-auto rounded-sm border border-white/5">
-                      <table className="min-w-full divide-y divide-white/5 text-sm">
-                        <thead className="bg-black/30">
-                          <tr className="text-left text-[11px] uppercase tracking-[0.2em] text-gray-500">
-                            <th className="px-4 py-3 font-medium">Produto</th>
-                            <th className="px-4 py-3 font-medium">Categoria</th>
-                            <th className="px-4 py-3 font-medium">Variantes</th>
-                            <th className="px-4 py-3 font-medium">Preço</th>
-                          </tr>
-                        </thead>
-                        <tbody className="divide-y divide-white/5 bg-zinc-950/30">
-                          {products.map((product) => (
-                            <tr
-                              key={product.id}
-                              className={`align-top transition-colors ${
-                                product.variants.some((variant) => selectedVariantQuantityMap.has(variant.id))
-                                  ? "bg-[var(--color-primary)]/5"
-                                  : ""
-                              }`}
-                            >
-                              <td className="px-4 py-4">
-                                <div className="flex min-w-[240px] items-start gap-3">
-                                  <div className="h-14 w-14 shrink-0 overflow-hidden rounded-sm bg-white/5">
-                                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                                    <img
-                                      src={product.image || "/placeholder.jpg"}
-                                      alt={product.name}
-                                      className="h-full w-full object-cover"
-                                    />
-                                  </div>
-                                  <div className="min-w-0">
-                                    <button
-                                      type="button"
-                                      onClick={() => handleAddProduct(product)}
-                                      className="text-left text-sm font-medium text-white transition-colors hover:text-[var(--color-primary)]"
-                                    >
-                                      {product.name}
-                                    </button>
-                                    <p className="mt-1 text-xs text-gray-500">{product.slug}</p>
-                                    {product.variants.some((variant) => selectedVariantQuantityMap.has(variant.id)) ? (
-                                      <span className="mt-2 inline-flex rounded-sm bg-[var(--color-primary)] px-2 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-black">
-                                        No pedido
-                                      </span>
-                                    ) : null}
-                                  </div>
-                                </div>
-                              </td>
-                              <td className="px-4 py-4 text-gray-300">
-                                <div className="min-w-[180px]">
-                                  {product.categoryName}
-                                  {product.subcategoryName ? ` / ${product.subcategoryName}` : ""}
-                                </div>
-                              </td>
-                              <td className="px-4 py-4">
-                                <div className="flex min-w-[340px] flex-wrap gap-2">
-                                  {product.variants.map((variant) => {
-                                    const selectedQuantity = selectedVariantQuantityMap.get(variant.id) ?? 0
-
-                                    return (
-                                      <button
-                                        key={variant.id}
-                                        type="button"
-                                        onClick={() => handleAddVariant(product, variant)}
-                                        className={`min-w-[180px] flex-1 rounded-sm border px-3 py-2 text-left text-xs transition-colors ${
-                                          selectedQuantity > 0
-                                            ? "border-[var(--color-primary)] bg-[var(--color-primary)]/10 text-white"
-                                            : "border-white/10 text-gray-300 hover:border-[var(--color-primary)] hover:text-white"
-                                        }`}
-                                      >
-                                        <span className="block truncate font-medium text-white">{variant.label}</span>
-                                        <span className="mt-1 block text-[10px] uppercase tracking-[0.2em] text-gray-500">
-                                          Estoque: {variant.stock}
-                                        </span>
-                                        {selectedQuantity > 0 ? (
-                                          <span className="mt-1 block text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--color-primary)]">
-                                            Selecionado: {selectedQuantity}
-                                          </span>
-                                        ) : null}
-                                      </button>
-                                    )
-                                  })}
-                                </div>
-                              </td>
-                              <td className="px-4 py-4">
-                                <span className="whitespace-nowrap font-semibold text-white">
-                                  {formatCurrency(product.price)}
-                                </span>
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-
-                  {productPagination.totalPages > 1 && (
+                ) : products.length === 0 ? (
+                  <p className="text-sm text-gray-500">Nenhum produto disponível para o termo informado.</p>
+                ) : (
+                  <div className="space-y-5">
                     <div className="flex flex-wrap items-center justify-between gap-3">
-                      <button
-                        type="button"
-                        onClick={() => setProductPage((current) => Math.max(1, current - 1))}
-                        disabled={productPagination.page <= 1}
-                        className="rounded-sm border border-white/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-gray-300 transition-colors hover:border-white/30 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
-                      >
-                        Anterior
-                      </button>
-
-                      <div className="flex flex-wrap gap-2">
-                        {Array.from({ length: productPagination.totalPages }, (_, index) => index + 1)
-                          .slice(
-                            Math.max(0, productPagination.page - 3),
-                            Math.max(0, productPagination.page - 3) + 5,
-                          )
-                          .map((page) => (
-                            <button
-                              key={page}
-                              type="button"
-                              onClick={() => setProductPage(page)}
-                              className={`rounded-sm px-3 py-2 text-xs font-bold uppercase tracking-[0.2em] transition-colors ${
-                                page === productPagination.page
-                                  ? "bg-[var(--color-primary)] text-black"
-                                  : "border border-white/10 text-gray-300 hover:border-white/30 hover:text-white"
-                              }`}
-                            >
-                              {page}
-                            </button>
-                          ))}
+                      <div className="flex flex-wrap items-center gap-3 text-xs uppercase tracking-[0.2em] text-gray-500">
+                        <span>{productPagination.totalItems} produto(s) encontrados</span>
+                        <span>
+                          Página {productPagination.page} de {productPagination.totalPages}
+                        </span>
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setProductPage((current) => Math.min(productPagination.totalPages, current + 1))
-                        }
-                        disabled={productPagination.page >= productPagination.totalPages}
-                        className="rounded-sm border border-white/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-gray-300 transition-colors hover:border-white/30 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
-                      >
-                        Próxima
-                      </button>
+                      <div className="inline-flex rounded-sm border border-white/10 bg-black/20 p-1">
+                        <button
+                          type="button"
+                          onClick={() => setProductViewMode("cards")}
+                          className={`inline-flex items-center gap-2 rounded-sm px-3 py-2 text-[11px] font-bold uppercase tracking-[0.2em] transition-colors ${
+                            productViewMode === "cards"
+                              ? "bg-[var(--color-primary)] text-black"
+                              : "text-gray-300 hover:text-white"
+                          }`}
+                        >
+                          <LayoutGrid className="h-3.5 w-3.5" />
+                          Cards
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setProductViewMode("table")}
+                          className={`inline-flex items-center gap-2 rounded-sm px-3 py-2 text-[11px] font-bold uppercase tracking-[0.2em] transition-colors ${
+                            productViewMode === "table"
+                              ? "bg-[var(--color-primary)] text-black"
+                              : "text-gray-300 hover:text-white"
+                          }`}
+                        >
+                          <Rows3 className="h-3.5 w-3.5" />
+                          Tabela
+                        </button>
+                      </div>
                     </div>
-                  )}
-                </div>
-              )}
+
+                    {productViewMode === "cards" ? (
+                      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
+                        {products.map((product) => (
+                          <article
+                            key={product.id}
+                            className={`rounded-sm border p-3 transition-colors ${
+                              product.variants.some((variant) => selectedVariantQuantityMap.has(variant.id))
+                                ? "border-[var(--color-primary)]/40 bg-[var(--color-primary)]/5"
+                                : "border-white/5 bg-black/20"
+                            }`}
+                          >
+                            <div className="relative overflow-hidden rounded-sm bg-white/5">
+                              {product.variants.some((variant) => selectedVariantQuantityMap.has(variant.id)) && (
+                                <span className="absolute right-2 top-2 z-10 rounded-sm bg-[var(--color-primary)] px-2 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-black">
+                                  No pedido
+                                </span>
+                              )}
+
+                              <div className="aspect-square w-full">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={product.image || "/placeholder.jpg"}
+                                  alt={product.name}
+                                  className="h-full w-full object-cover"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="mt-3 min-w-0">
+                              <div className="flex items-start justify-between gap-3">
+                                <button
+                                  type="button"
+                                  onClick={() => handleAddProduct(product)}
+                                  className="line-clamp-2 text-left text-sm font-medium text-white transition-colors hover:text-[var(--color-primary)]"
+                                >
+                                  {product.name}
+                                </button>
+                                <p className="shrink-0 text-sm font-semibold text-white">{formatCurrency(product.price)}</p>
+                              </div>
+                              <p className="mt-1 line-clamp-2 text-[11px] text-gray-500">
+                                {product.categoryName}
+                                {product.subcategoryName ? ` / ${product.subcategoryName}` : ""}
+                              </p>
+                            </div>
+
+                            <div className="mt-4 flex flex-wrap gap-2">
+                              {product.variants.map((variant) => {
+                                const selectedQuantity = selectedVariantQuantityMap.get(variant.id) ?? 0
+
+                                return (
+                                  <button
+                                    key={variant.id}
+                                    type="button"
+                                    onClick={() => handleAddVariant(product, variant)}
+                                    className={`min-w-0 rounded-sm border px-3 py-2 text-left text-xs transition-colors ${
+                                      selectedQuantity > 0
+                                        ? "border-[var(--color-primary)] bg-[var(--color-primary)]/10 text-white"
+                                        : "border-white/10 text-gray-300 hover:border-[var(--color-primary)] hover:text-white"
+                                    }`}
+                                  >
+                                    <span className="block truncate font-medium text-white">{variant.label}</span>
+                                    <span className="mt-1 block text-[10px] uppercase tracking-[0.2em] text-gray-500">
+                                      Estoque: {variant.stock}
+                                    </span>
+                                    {selectedQuantity > 0 && (
+                                      <span className="mt-1 block text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--color-primary)]">
+                                        Selecionado: {selectedQuantity}
+                                      </span>
+                                    )}
+                                  </button>
+                                )
+                              })}
+                            </div>
+                          </article>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto rounded-sm border border-white/5">
+                        <table className="min-w-full divide-y divide-white/5 text-sm">
+                          <thead className="bg-black/30">
+                            <tr className="text-left text-[11px] uppercase tracking-[0.2em] text-gray-500">
+                              <th className="px-4 py-3 font-medium">Produto</th>
+                              <th className="px-4 py-3 font-medium">Categoria</th>
+                              <th className="px-4 py-3 font-medium">Variantes</th>
+                              <th className="px-4 py-3 font-medium">Preço</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y divide-white/5 bg-zinc-950/30">
+                            {products.map((product) => (
+                              <tr
+                                key={product.id}
+                                className={`align-top transition-colors ${
+                                  product.variants.some((variant) => selectedVariantQuantityMap.has(variant.id))
+                                    ? "bg-[var(--color-primary)]/5"
+                                    : ""
+                                }`}
+                              >
+                                <td className="px-4 py-4">
+                                  <div className="flex min-w-[240px] items-start gap-3">
+                                    <div className="h-14 w-14 shrink-0 overflow-hidden rounded-sm bg-white/5">
+                                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                                      <img
+                                        src={product.image || "/placeholder.jpg"}
+                                        alt={product.name}
+                                        className="h-full w-full object-cover"
+                                      />
+                                    </div>
+                                    <div className="min-w-0">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleAddProduct(product)}
+                                        className="text-left text-sm font-medium text-white transition-colors hover:text-[var(--color-primary)]"
+                                      >
+                                        {product.name}
+                                      </button>
+                                      <p className="mt-1 text-xs text-gray-500">{product.slug}</p>
+                                      {product.variants.some((variant) => selectedVariantQuantityMap.has(variant.id)) ? (
+                                        <span className="mt-2 inline-flex rounded-sm bg-[var(--color-primary)] px-2 py-1 text-[10px] font-bold uppercase tracking-[0.2em] text-black">
+                                          No pedido
+                                        </span>
+                                      ) : null}
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="px-4 py-4 text-gray-300">
+                                  <div className="min-w-[180px]">
+                                    {product.categoryName}
+                                    {product.subcategoryName ? ` / ${product.subcategoryName}` : ""}
+                                  </div>
+                                </td>
+                                <td className="px-4 py-4">
+                                  <div className="flex min-w-[340px] flex-wrap gap-2">
+                                    {product.variants.map((variant) => {
+                                      const selectedQuantity = selectedVariantQuantityMap.get(variant.id) ?? 0
+
+                                      return (
+                                        <button
+                                          key={variant.id}
+                                          type="button"
+                                          onClick={() => handleAddVariant(product, variant)}
+                                          className={`min-w-[180px] flex-1 rounded-sm border px-3 py-2 text-left text-xs transition-colors ${
+                                            selectedQuantity > 0
+                                              ? "border-[var(--color-primary)] bg-[var(--color-primary)]/10 text-white"
+                                              : "border-white/10 text-gray-300 hover:border-[var(--color-primary)] hover:text-white"
+                                          }`}
+                                        >
+                                          <span className="block truncate font-medium text-white">{variant.label}</span>
+                                          <span className="mt-1 block text-[10px] uppercase tracking-[0.2em] text-gray-500">
+                                            Estoque: {variant.stock}
+                                          </span>
+                                          {selectedQuantity > 0 ? (
+                                            <span className="mt-1 block text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--color-primary)]">
+                                              Selecionado: {selectedQuantity}
+                                            </span>
+                                          ) : null}
+                                        </button>
+                                      )
+                                    })}
+                                  </div>
+                                </td>
+                                <td className="px-4 py-4">
+                                  <span className="whitespace-nowrap font-semibold text-white">
+                                    {formatCurrency(product.price)}
+                                  </span>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+
+                    {productPagination.totalPages > 1 && (
+                      <div className="flex flex-wrap items-center justify-between gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setProductPage((current) => Math.max(1, current - 1))}
+                          disabled={productPagination.page <= 1}
+                          className="rounded-sm border border-white/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-gray-300 transition-colors hover:border-white/30 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          Anterior
+                        </button>
+
+                        <div className="flex flex-wrap gap-2">
+                          {Array.from({ length: productPagination.totalPages }, (_, index) => index + 1)
+                            .slice(
+                              Math.max(0, productPagination.page - 3),
+                              Math.max(0, productPagination.page - 3) + 5,
+                            )
+                            .map((page) => (
+                              <button
+                                key={page}
+                                type="button"
+                                onClick={() => setProductPage(page)}
+                                className={`rounded-sm px-3 py-2 text-xs font-bold uppercase tracking-[0.2em] transition-colors ${
+                                  page === productPagination.page
+                                    ? "bg-[var(--color-primary)] text-black"
+                                    : "border border-white/10 text-gray-300 hover:border-white/30 hover:text-white"
+                                }`}
+                              >
+                                {page}
+                              </button>
+                            ))}
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setProductPage((current) => Math.min(productPagination.totalPages, current + 1))
+                          }
+                          disabled={productPagination.page >= productPagination.totalPages}
+                          className="rounded-sm border border-white/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-gray-300 transition-colors hover:border-white/30 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                        >
+                          Próxima
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
             </div>
           </section>
         </div>
@@ -1022,7 +1037,7 @@ export default function PdvManager({ pixKey }: { pixKey: string | null }) {
                     <input
                       value={customerSearch}
                       onChange={(event) => setCustomerSearch(event.target.value)}
-                      className="input-admin pl-12"
+                      className="input-admin !pl-12"
                       placeholder="Nome, e-mail ou telefone"
                     />
 
@@ -1120,6 +1135,18 @@ export default function PdvManager({ pixKey }: { pixKey: string | null }) {
             </p>
 
             <div className="mt-6 space-y-4">
+              {currentOrderFeedback ? (
+                <p
+                  className={`rounded-sm border px-4 py-3 text-sm ${
+                    currentOrderFeedback.type === "success"
+                      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+                      : "border-red-500/30 bg-red-500/10 text-red-300"
+                  }`}
+                >
+                  {currentOrderFeedback.message}
+                </p>
+              ) : null}
+
               {items.length === 0 ? (
                 <div className="rounded-sm border border-dashed border-white/10 px-4 py-12 text-center text-sm text-gray-500">
                   Adicione produtos para começar a venda presencial.

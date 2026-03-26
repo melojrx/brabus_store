@@ -25,9 +25,6 @@ export async function GET(req: Request) {
     variants: {
       some: {
         active: true,
-        stock: {
-          gt: 0,
-        },
       },
     },
     ...(query
@@ -66,9 +63,6 @@ export async function GET(req: Request) {
         variants: {
           where: {
             active: true,
-            stock: {
-              gt: 0,
-            },
           },
           orderBy: [{ createdAt: "asc" }],
           select: {

@@ -1,6 +1,6 @@
 import { ZodError } from "zod"
 import { NextResponse } from "next/server"
-import { PaymentMethod, PaymentStatus } from "@prisma/client"
+import { OrderChannel, PaymentMethod, PaymentStatus } from "@prisma/client"
 import { auth } from "@/auth"
 import {
   getNextOperationalStatusForPayment,
@@ -28,6 +28,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
       where: { id },
       select: {
         id: true,
+        channel: true,
         total: true,
         status: true,
         paymentStatus: true,
@@ -88,9 +89,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
           ? null
           : order.paidAt
 
+    const allowNegativeStock = order.channel === OrderChannel.PDV
+
     const updatedOrder = await prisma.$transaction(async (tx) => {
       if (shouldDecrementStock) {
-        await decrementOrderItemStock(tx, order.items)
+        await decrementOrderItemStock(tx, order.items, { allowNegativeStock })
       }
 
       if (shouldIncrementStock) {
