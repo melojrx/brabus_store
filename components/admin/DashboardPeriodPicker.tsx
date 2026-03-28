@@ -26,7 +26,7 @@ export default function DashboardPeriodPicker({
   function handleChange(nextPeriod: DashboardPeriod) {
     const params = new URLSearchParams(searchParams.toString())
 
-    if (nextPeriod === "30d") {
+    if (nextPeriod === "7d") {
       params.delete("period")
     } else {
       params.set("period", nextPeriod)

@@ -4,10 +4,10 @@ import { PAYMENT_METHOD_LABELS, type PaymentMethodValue } from "@/lib/payment-st
 export const DASHBOARD_TAB_VALUES = ["overview", "financial", "commercial", "stock"] as const
 export type DashboardTab = (typeof DASHBOARD_TAB_VALUES)[number]
 
-export const DASHBOARD_PERIOD_VALUES = ["7d", "30d", "6m", "12m", "all"] as const
+export const DASHBOARD_PERIOD_VALUES = ["today", "7d", "30d", "6m", "12m", "all"] as const
 export type DashboardPeriod = (typeof DASHBOARD_PERIOD_VALUES)[number]
 
-export const DEFAULT_DASHBOARD_PERIOD: DashboardPeriod = "30d"
+export const DEFAULT_DASHBOARD_PERIOD: DashboardPeriod = "7d"
 export const DASHBOARD_ORDERS_PAGE_SIZE = 8
 export const LOW_STOCK_THRESHOLD = 10
 
@@ -20,6 +20,9 @@ const monthLabelFormatter = new Intl.DateTimeFormat("pt-BR", {
   month: "short",
   year: "2-digit",
 })
+const hourLabelFormatter = new Intl.DateTimeFormat("pt-BR", {
+  hour: "2-digit",
+})
 
 const ORDER_CHANNEL_LABELS: Record<OrderChannel, string> = {
   ONLINE: "Online",
@@ -28,7 +31,7 @@ const ORDER_CHANNEL_LABELS: Record<OrderChannel, string> = {
 }
 
 type DashboardPrismaClient = PrismaClient
-type BucketUnit = "day" | "month"
+type BucketUnit = "hour" | "day" | "month"
 
 type TimelineBucket = {
   key: string
@@ -48,6 +51,13 @@ type DashboardPeriodOption = {
 }
 
 const DASHBOARD_PERIOD_OPTIONS_MAP: Record<DashboardPeriod, DashboardPeriodOption> = {
+  today: {
+    value: "today",
+    label: "Hoje",
+    shortLabel: "Hoje",
+    bucketUnit: "hour",
+    bucketLabel: "hora",
+  },
   "7d": {
     value: "7d",
     label: "Ultimos 7 dias",
@@ -105,8 +115,20 @@ function addMonths(date: Date, amount: number) {
   return new Date(date.getFullYear(), date.getMonth() + amount, 1)
 }
 
+function startOfHour(date: Date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate(), date.getHours())
+}
+
+function addHours(date: Date, amount: number) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate(), date.getHours() + amount)
+}
+
 function getDayKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
+}
+
+function getHourKey(date: Date) {
+  return `${getDayKey(date)}-${String(date.getHours()).padStart(2, "0")}`
 }
 
 function getMonthKey(date: Date) {
@@ -130,6 +152,10 @@ function getDashboardPeriodOption(period: DashboardPeriod) {
 }
 
 function getPeriodStartDate(period: DashboardPeriod, now: Date) {
+  if (period === "today") {
+    return startOfDay(now)
+  }
+
   if (period === "7d") {
     return startOfDay(addDays(now, -6))
   }
@@ -157,6 +183,31 @@ function createTimelineBuckets(period: DashboardPeriod, earliestDate: Date | nul
   const periodOption = getDashboardPeriodOption(period)
   const buckets: TimelineBucket[] = []
   const bucketIndexByKey = new Map<string, number>()
+
+  if (periodOption.bucketUnit === "hour") {
+    const startDate = startOfDay(now)
+
+    for (let index = 0; index < 24; index += 1) {
+      const bucketDate = addHours(startDate, index)
+      const key = getHourKey(bucketDate)
+      bucketIndexByKey.set(key, index)
+      buckets.push({
+        key,
+        label: hourLabelFormatter.format(bucketDate),
+        sales: 0,
+        revenue: 0,
+        cost: 0,
+        profit: 0,
+      })
+    }
+
+    return {
+      buckets,
+      bucketIndexByKey,
+      bucketUnit: periodOption.bucketUnit,
+      bucketLabel: periodOption.bucketLabel,
+    }
+  }
 
   if (periodOption.bucketUnit === "day") {
     const totalDays = period === "7d" ? 7 : 30
@@ -268,6 +319,10 @@ function getOrderChannelLabel(value: OrderChannel) {
 }
 
 function getBucketKey(date: Date, bucketUnit: BucketUnit) {
+  if (bucketUnit === "hour") {
+    return getHourKey(startOfHour(date))
+  }
+
   return bucketUnit === "day" ? getDayKey(startOfDay(date)) : getMonthKey(startOfMonth(date))
 }
 

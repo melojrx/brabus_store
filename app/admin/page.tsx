@@ -127,6 +127,7 @@ function TimelineChart({
   subtitle,
   data,
   series,
+  formatValue = formatCurrency,
 }: {
   title: string
   subtitle: string
@@ -136,6 +137,7 @@ function TimelineChart({
     label: string
     color: string
   }>
+  formatValue?: (value: number) => string
 }) {
   const hasValues = data.some((point) => series.some((item) => Number(point[item.key] ?? 0) > 0))
 
@@ -157,6 +159,9 @@ function TimelineChart({
     1,
   )
   const stepX = data.length > 1 ? (width - padding * 2) / (data.length - 1) : 0
+  const labelStep = data.length > 24 ? 4 : data.length > 16 ? 3 : data.length > 10 ? 2 : 1
+  const shouldHighlightPoint = (index: number, value: number) =>
+    value > 0 || index === 0 || index === data.length - 1 || index % labelStep === 0
 
   function buildLine(key: string) {
     return data
@@ -191,18 +196,74 @@ function TimelineChart({
             <line x1={padding} y1={padding} x2={padding} y2={height - padding} stroke="rgba(255,255,255,0.08)" />
 
             {series.map((item) => (
-              <polyline
-                key={item.key}
-                fill="none"
-                stroke={item.color}
-                strokeWidth="3"
-                strokeLinejoin="round"
-                strokeLinecap="round"
-                points={buildLine(item.key)}
-              />
+              <g key={item.key}>
+                <polyline
+                  fill="none"
+                  stroke={item.color}
+                  strokeWidth="3"
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
+                  points={buildLine(item.key)}
+                />
+
+                {data.map((point, index) => {
+                  const x = padding + index * stepX
+                  const value = Number(point[item.key] ?? 0)
+                  const y = height - padding - (value / maxValue) * (height - padding * 2)
+                  const isHighlighted = shouldHighlightPoint(index, value)
+                  const tooltipLabel = `${item.label} • ${String(point.label)}: ${formatValue(value)}`
+                  const tooltipWidth = Math.max(132, tooltipLabel.length * 6.4)
+                  const tooltipX = Math.min(width - padding - tooltipWidth, Math.max(padding, x - tooltipWidth / 2))
+                  const tooltipY = Math.max(12, y - 38)
+
+                  return (
+                    <g key={`${item.key}-${String(point.label)}-${index}`} className="group">
+                      <circle cx={x} cy={y} r={12} fill="transparent" />
+                      {isHighlighted ? (
+                        <circle
+                          cx={x}
+                          cy={y}
+                          r={3.5}
+                          fill={item.color}
+                          stroke="rgba(10,10,10,0.95)"
+                          strokeWidth="1.5"
+                        />
+                      ) : null}
+
+                      <g className="pointer-events-none opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+                        <rect
+                          x={tooltipX}
+                          y={tooltipY}
+                          width={tooltipWidth}
+                          height={24}
+                          rx={8}
+                          fill="rgba(10,10,10,0.94)"
+                          stroke={item.color}
+                          strokeWidth="1"
+                        />
+                        <text
+                          x={tooltipX + tooltipWidth / 2}
+                          y={tooltipY + 16}
+                          textAnchor="middle"
+                          fontSize="11"
+                          fill="rgba(255,255,255,0.92)"
+                        >
+                          {tooltipLabel}
+                        </text>
+                      </g>
+                    </g>
+                  )
+                })}
+              </g>
             ))}
 
             {data.map((point, index) => {
+              const shouldRenderLabel = index === data.length - 1 || index % labelStep === 0
+
+              if (!shouldRenderLabel) {
+                return null
+              }
+
               const x = padding + index * stepX
               return (
                 <g key={`${String(point.label)}-${index}`}>
