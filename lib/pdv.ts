@@ -60,6 +60,20 @@ export function normalizePdvText(value: unknown) {
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : null
 }
 
+export function buildPdvManualPixReference(date = new Date()) {
+  const timestamp = [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, "0"),
+    String(date.getDate()).padStart(2, "0"),
+    String(date.getHours()).padStart(2, "0"),
+    String(date.getMinutes()).padStart(2, "0"),
+    String(date.getSeconds()).padStart(2, "0"),
+  ].join("")
+  const uniqueSuffix = crypto.randomUUID().slice(0, 8).toUpperCase()
+
+  return `PIX-PDV-${timestamp}-${uniqueSuffix}`
+}
+
 export const createPdvOrderSchema = z
   .object({
     customerId: z
@@ -125,14 +139,6 @@ export const createPdvOrderSchema = z
     changeAmount: optionalMoneyField,
   })
   .superRefine((data, ctx) => {
-    if (data.paymentMethod === "MANUAL_PIX" && data.paymentStatus === "PAID" && !data.manualPaymentReference) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Informe a referência do Pix manual antes de concluir o pagamento.",
-        path: ["manualPaymentReference"],
-      })
-    }
-
     if (data.paymentMethod === "POS_CREDIT" && !data.paymentInstallments) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
@@ -170,6 +176,13 @@ export const createPdvOrderSchema = z
       })
     }
   })
+  .transform((data) => ({
+    ...data,
+    manualPaymentReference:
+      data.paymentMethod === "MANUAL_PIX"
+        ? data.manualPaymentReference ?? buildPdvManualPixReference()
+        : data.manualPaymentReference,
+  }))
 
 type PdvUserClient = Pick<PrismaClient, "user">
 

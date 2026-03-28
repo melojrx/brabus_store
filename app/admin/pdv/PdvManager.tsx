@@ -25,6 +25,7 @@ import {
   maskCurrencyInput,
   parseCurrencyInputValue,
 } from "@/lib/currency-input"
+import { buildPdvManualPixReference } from "@/lib/pdv"
 import { getPaymentMethodLabel } from "@/lib/payment-status"
 
 type Feedback =
@@ -396,6 +397,20 @@ export default function PdvManager({ pixKey }: { pixKey: string | null }) {
     () => new Map(items.map((item) => [item.variantId, item.quantity])),
     [items],
   )
+
+  useEffect(() => {
+    if (isManualPixPayment) {
+      setManualPaymentReference((current) => current || buildPdvManualPixReference())
+      return
+    }
+
+    if (isCardTerminalPayment) {
+      setManualPaymentReference((current) => (current.startsWith("PIX-PDV-") ? "" : current))
+      return
+    }
+
+    setManualPaymentReference("")
+  }, [isCardTerminalPayment, isManualPixPayment])
 
   function shouldAlertNegativeStock(stock: number, quantity: number) {
     return quantity > stock
@@ -1480,16 +1495,27 @@ export default function PdvManager({ pixKey }: { pixKey: string | null }) {
                   <label className="label-admin">
                     {isManualPixPayment ? "Referência do Pix" : "Referência da Operação"}
                   </label>
-                  <input
-                    value={manualPaymentReference}
-                    onChange={(event) => setManualPaymentReference(event.target.value)}
-                    className="input-admin"
-                    placeholder={
-                      isManualPixPayment
-                        ? "Ex.: comprovante, ID da transação ou referência interna"
-                        : "Ex.: NSU, autorização ou observação da maquineta"
-                    }
-                  />
+                  {isManualPixPayment ? (
+                    <>
+                      <input
+                        value={manualPaymentReference}
+                        className="input-admin cursor-not-allowed opacity-80"
+                        placeholder="Gerada automaticamente ao selecionar Pix manual"
+                        readOnly
+                        aria-readonly="true"
+                      />
+                      <p className="mt-2 text-xs text-gray-500">
+                        A referência do Pix é gerada automaticamente para o pedido e não precisa ser preenchida pelo atendente.
+                      </p>
+                    </>
+                  ) : (
+                    <input
+                      value={manualPaymentReference}
+                      onChange={(event) => setManualPaymentReference(event.target.value)}
+                      className="input-admin"
+                      placeholder="Ex.: NSU, autorização ou observação da maquineta"
+                    />
+                  )}
                 </div>
               ) : null}
 
