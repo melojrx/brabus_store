@@ -678,7 +678,7 @@ export default function PdvManager({ pixKey }: { pixKey: string | null }) {
             PDV <span className="text-[var(--color-primary)]">Balcão</span>
           </h1>
           <p className="mt-3 max-w-2xl text-sm text-gray-400">
-            Monte pedidos presenciais, escolha os produtos primeiro e finalize com pagamento e entrega sem depender do Stripe. Cliente é opcional.
+            Monte pedidos presenciais, escolha os produtos primeiro e finalize com entrega e pagamento sem depender do Stripe. Cliente é opcional.
           </p>
         </div>
 
@@ -1256,127 +1256,6 @@ export default function PdvManager({ pixKey }: { pixKey: string | null }) {
 
           <section className="rounded-sm border border-white/5 bg-zinc-900 p-6">
             <div className="flex items-center gap-3">
-              <WalletCards className="h-5 w-5 text-[var(--color-primary)]" />
-              <div>
-                <h2 className="font-heading text-sm uppercase tracking-wider text-white">Pagamento</h2>
-                <p className="mt-1 text-sm text-gray-500">
-                  Defina como a venda presencial será registrada no pedido.
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-6 space-y-4">
-              <div className="grid gap-4 md:grid-cols-2">
-                <div>
-                  <label className="label-admin">Método</label>
-                  <select
-                    value={paymentMethod}
-                    onChange={(event) => setPaymentMethod(event.target.value as typeof paymentMethod)}
-                    className="input-admin"
-                  >
-                    {(["CASH", "MANUAL_PIX", "POS_DEBIT", "POS_CREDIT"] as const).map((method) => (
-                      <option key={method} value={method}>
-                        {getPaymentMethodLabel(method)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="label-admin">Status Inicial</label>
-                  <select
-                    value={paymentStatus}
-                    onChange={(event) => setPaymentStatus(event.target.value as typeof paymentStatus)}
-                    className="input-admin"
-                  >
-                    <option value="PAID">Pago</option>
-                    <option value="PENDING">Pendente</option>
-                  </select>
-                </div>
-              </div>
-
-              {isManualPixPayment ? (
-                <div className="rounded-sm border border-[var(--color-primary)]/20 bg-[var(--color-primary)]/5 px-4 py-4 text-sm text-gray-200">
-                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--color-primary)]">Chave Pix da Loja</p>
-                  <p className="mt-2 break-all font-mono text-xs text-white">{pixKey ?? "Cadastre a chave Pix nas configurações."}</p>
-                </div>
-              ) : null}
-
-              {shouldShowReference ? (
-                <div>
-                  <label className="label-admin">
-                    {isManualPixPayment ? "Referência do Pix" : "Referência da Operação"}
-                  </label>
-                  <input
-                    value={manualPaymentReference}
-                    onChange={(event) => setManualPaymentReference(event.target.value)}
-                    className="input-admin"
-                    placeholder={
-                      isManualPixPayment
-                        ? "Ex.: comprovante, ID da transação ou referência interna"
-                        : "Ex.: NSU, autorização ou observação da maquineta"
-                    }
-                  />
-                </div>
-              ) : null}
-
-              {isCashPayment ? (
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div>
-                    <label className="label-admin">Valor Recebido</label>
-                    <input
-                      value={cashReceivedAmount}
-                      onChange={(event) => setCashReceivedAmount(maskCurrencyInput(event.target.value))}
-                      className="input-admin"
-                      placeholder="R$ 0,00"
-                      inputMode="numeric"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="label-admin">Troco Calculado</label>
-                    <input
-                      value={formatCurrencyInputValue(computedChangeAmount)}
-                      className="input-admin"
-                      placeholder="R$ 0,00"
-                      inputMode="numeric"
-                      disabled
-                    />
-                  </div>
-                </div>
-              ) : null}
-
-              {paymentMethod === "POS_CREDIT" ? (
-                <div>
-                  <label className="label-admin">Parcelamento</label>
-                  <select
-                    value={paymentInstallments}
-                    onChange={(event) => setPaymentInstallments(event.target.value)}
-                    className="input-admin"
-                  >
-                    {Array.from({ length: 12 }, (_, index) => index + 1).map((installment) => (
-                      <option key={installment} value={String(installment)}>
-                        {installment}x
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              ) : null}
-
-              <div>
-                <label className="label-admin">Observações</label>
-                <textarea
-                  value={manualPaymentNotes}
-                  onChange={(event) => setManualPaymentNotes(event.target.value)}
-                  className="input-admin min-h-[120px] resize-y"
-                  placeholder="Notas de caixa, comprovante, operadora ou orientação interna."
-                />
-              </div>
-            </div>
-          </section>
-
-          <section className="rounded-sm border border-white/5 bg-zinc-900 p-6">
-            <div className="flex items-center gap-3">
               <MapPin className="h-5 w-5 text-[var(--color-primary)]" />
               <div>
                 <h2 className="font-heading text-sm uppercase tracking-wider text-white">Entrega</h2>
@@ -1549,21 +1428,134 @@ export default function PdvManager({ pixKey }: { pixKey: string | null }) {
           </section>
 
           <section className="rounded-sm border border-white/5 bg-zinc-900 p-6">
+            <div className="flex items-center gap-3">
+              <WalletCards className="h-5 w-5 text-[var(--color-primary)]" />
+              <div>
+                <h2 className="font-heading text-sm uppercase tracking-wider text-white">Pagamento</h2>
+                <p className="mt-1 text-sm text-gray-500">
+                  Defina como a venda presencial será registrada no pedido.
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="label-admin">Método</label>
+                  <select
+                    value={paymentMethod}
+                    onChange={(event) => setPaymentMethod(event.target.value as typeof paymentMethod)}
+                    className="input-admin"
+                  >
+                    {(["CASH", "MANUAL_PIX", "POS_DEBIT", "POS_CREDIT"] as const).map((method) => (
+                      <option key={method} value={method}>
+                        {getPaymentMethodLabel(method)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="label-admin">Status Inicial</label>
+                  <select
+                    value={paymentStatus}
+                    onChange={(event) => setPaymentStatus(event.target.value as typeof paymentStatus)}
+                    className="input-admin"
+                  >
+                    <option value="PAID">Pago</option>
+                    <option value="PENDING">Pendente</option>
+                  </select>
+                </div>
+              </div>
+
+              {isManualPixPayment ? (
+                <div className="rounded-sm border border-[var(--color-primary)]/20 bg-[var(--color-primary)]/5 px-4 py-4 text-sm text-gray-200">
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--color-primary)]">Chave Pix da Loja</p>
+                  <p className="mt-2 break-all font-mono text-xs text-white">{pixKey ?? "Cadastre a chave Pix nas configurações."}</p>
+                </div>
+              ) : null}
+
+              {shouldShowReference ? (
+                <div>
+                  <label className="label-admin">
+                    {isManualPixPayment ? "Referência do Pix" : "Referência da Operação"}
+                  </label>
+                  <input
+                    value={manualPaymentReference}
+                    onChange={(event) => setManualPaymentReference(event.target.value)}
+                    className="input-admin"
+                    placeholder={
+                      isManualPixPayment
+                        ? "Ex.: comprovante, ID da transação ou referência interna"
+                        : "Ex.: NSU, autorização ou observação da maquineta"
+                    }
+                  />
+                </div>
+              ) : null}
+
+              {isCashPayment ? (
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div>
+                    <label className="label-admin">Valor Recebido</label>
+                    <input
+                      value={cashReceivedAmount}
+                      onChange={(event) => setCashReceivedAmount(maskCurrencyInput(event.target.value))}
+                      className="input-admin"
+                      placeholder="R$ 0,00"
+                      inputMode="numeric"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="label-admin">Troco Calculado</label>
+                    <input
+                      value={formatCurrencyInputValue(computedChangeAmount)}
+                      className="input-admin"
+                      placeholder="R$ 0,00"
+                      inputMode="numeric"
+                      disabled
+                    />
+                  </div>
+                </div>
+              ) : null}
+
+              {paymentMethod === "POS_CREDIT" ? (
+                <div>
+                  <label className="label-admin">Parcelamento</label>
+                  <select
+                    value={paymentInstallments}
+                    onChange={(event) => setPaymentInstallments(event.target.value)}
+                    className="input-admin"
+                  >
+                    {Array.from({ length: 12 }, (_, index) => index + 1).map((installment) => (
+                      <option key={installment} value={String(installment)}>
+                        {installment}x
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ) : null}
+
+              <div>
+                <label className="label-admin">Observações</label>
+                <textarea
+                  value={manualPaymentNotes}
+                  onChange={(event) => setManualPaymentNotes(event.target.value)}
+                  className="input-admin min-h-[120px] resize-y"
+                  placeholder="Notas de caixa, comprovante, operadora ou orientação interna."
+                />
+              </div>
+            </div>
+          </section>
+
+          <section className="rounded-sm border border-white/5 bg-zinc-900 p-6">
             <h2 className="font-heading text-sm uppercase tracking-wider text-white">Conclusão do Pedido</h2>
             <p className="mt-2 text-sm text-gray-500">
-              Finalize a venda somente depois de revisar pagamento e entrega.
+              Finalize a venda somente depois de revisar entrega e pagamento.
             </p>
 
             <div className="mt-6 space-y-4">
               <div className="grid gap-3 sm:grid-cols-2">
-                <div className="rounded-sm border border-white/5 bg-black/30 px-4 py-4">
-                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-gray-500">Pagamento</p>
-                  <p className="mt-2 text-sm font-medium text-white">{getPaymentMethodLabel(paymentMethod)}</p>
-                  <p className="mt-1 text-xs text-gray-400">
-                    {paymentStatus === "PAID" ? "Marcado como pago" : "Marcado como pendente"}
-                  </p>
-                </div>
-
                 <div className="rounded-sm border border-white/5 bg-black/30 px-4 py-4">
                   <p className="text-xs font-bold uppercase tracking-[0.2em] text-gray-500">Entrega</p>
                   <p className="mt-2 text-sm font-medium text-white">
@@ -1579,6 +1571,14 @@ export default function PdvManager({ pixKey }: { pixKey: string | null }) {
                       : isDeliveryReady
                         ? "Configuração concluída"
                         : "Configuração pendente"}
+                  </p>
+                </div>
+
+                <div className="rounded-sm border border-white/5 bg-black/30 px-4 py-4">
+                  <p className="text-xs font-bold uppercase tracking-[0.2em] text-gray-500">Pagamento</p>
+                  <p className="mt-2 text-sm font-medium text-white">{getPaymentMethodLabel(paymentMethod)}</p>
+                  <p className="mt-1 text-xs text-gray-400">
+                    {paymentStatus === "PAID" ? "Marcado como pago" : "Marcado como pendente"}
                   </p>
                 </div>
               </div>
