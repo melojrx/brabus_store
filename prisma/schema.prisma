@@ -156,6 +156,7 @@ model Product {
 
 model Order {
   id              String        @id @default(cuid())
+  orderNumber     String?       @unique
   status          OrderStatus   @default(PENDING)
   channel         OrderChannel  @default(LEGACY)
   paymentMethod   PaymentMethod @default(STRIPE_CARD)
@@ -199,6 +200,18 @@ model Order {
   items OrderItem[]
 
   @@map("orders")
+}
+
+model OrderNumberCounter {
+  id        String       @id @default(cuid())
+  dateKey   String
+  channel   OrderChannel
+  lastValue Int          @default(0)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@unique([dateKey, channel])
+  @@map("order_number_counters")
 }
 
 model OrderItem {

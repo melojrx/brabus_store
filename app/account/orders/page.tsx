@@ -2,6 +2,7 @@ import Link from "next/link"
 import { ArrowLeft, Package } from "lucide-react"
 import { auth } from "@/auth"
 import { redirect } from "next/navigation"
+import { getOrderDisplayNumber } from "@/lib/order-number"
 import prisma from "@/lib/prisma"
 
 function formatCurrency(value: number) {
@@ -42,6 +43,7 @@ export default async function AccountOrdersPage() {
     orderBy: { createdAt: "desc" },
     select: {
       id: true,
+      orderNumber: true,
       status: true,
       total: true,
       createdAt: true,
@@ -84,7 +86,7 @@ export default async function AccountOrdersPage() {
               className="flex flex-col gap-5 rounded-sm border border-white/5 bg-zinc-900 px-6 py-5 sm:flex-row sm:items-center sm:justify-between"
             >
               <div>
-                <p className="text-xs font-mono text-gray-500">Pedido #{order.id.split("-")[0].toUpperCase()}</p>
+                <p className="text-xs font-mono text-gray-500">Pedido {getOrderDisplayNumber(order)}</p>
                 <p className="mt-2 text-lg font-heading tracking-wider text-white">
                   {formatCurrency(order.total.toNumber())}
                 </p>

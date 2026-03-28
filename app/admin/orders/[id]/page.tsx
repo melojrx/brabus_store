@@ -4,6 +4,7 @@ import Link from "next/link"
 import { ArrowLeft, Mail, MapPin, Truck, User } from "lucide-react"
 import OrderAdminActions from "@/app/admin/orders/[id]/OrderAdminActions"
 import { getAdminOrderDetail } from "@/lib/admin-orders"
+import { getOrderDisplayNumber } from "@/lib/order-number"
 import { PDV_WALK_IN_CUSTOMER_EMAIL } from "@/lib/pdv"
 import { getOrderStatusMeta } from "@/lib/order-status"
 import { getPaymentMethodLabel, getPaymentStatusMeta } from "@/lib/payment-status"
@@ -56,6 +57,7 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
   const status = getOrderStatusMeta(order.status)
   const paymentStatus = getPaymentStatusMeta(order.paymentStatus)
   const subtotal = order.items.reduce((acc, item) => acc + (item.unitPrice ?? item.price).toNumber() * item.quantity, 0)
+  const displayOrderNumber = getOrderDisplayNumber(order)
   const customerName = order.customerNameSnapshot ?? order.user.name
   const customerEmail =
     order.customerEmailSnapshot ??
@@ -73,7 +75,7 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
 
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-6 pb-8 border-b border-white/10">
         <div>
-          <p className="text-xs text-gray-400 font-mono mb-2">Pedido #{order.id.split("-")[0].toUpperCase()}</p>
+          <p className="text-xs text-gray-400 font-mono mb-2">Pedido {displayOrderNumber}</p>
           <h1 className="text-3xl font-heading tracking-wider uppercase text-white">Detalhes do Pedido</h1>
           <p className="text-sm text-gray-400 mt-2">
             {new Date(order.createdAt).toLocaleDateString("pt-BR", {

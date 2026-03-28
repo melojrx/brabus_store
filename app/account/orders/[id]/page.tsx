@@ -2,6 +2,7 @@ import { auth } from "@/auth"
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import { ArrowLeft, MapPin, Truck } from "lucide-react"
+import { getOrderDisplayNumber } from "@/lib/order-number"
 import prisma from "@/lib/prisma"
 
 const STATUS_LABELS: Record<string, { label: string; cls: string }> = {
@@ -42,6 +43,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 
   const status = STATUS_LABELS[order.status] ?? { label: order.status, cls: "bg-gray-500/20 text-gray-400" }
   const subtotal = order.items.reduce((acc, item) => acc + (item.unitPrice ?? item.price).toNumber() * item.quantity, 0)
+  const displayOrderNumber = getOrderDisplayNumber(order)
 
   return (
     <div className="container mx-auto px-4 py-12 lg:py-20 max-w-3xl">
@@ -55,7 +57,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8 pb-8 border-b border-white/10">
         <div>
-          <p className="text-xs text-gray-400 font-mono mb-1">Pedido #{order.id.split("-")[0].toUpperCase()}</p>
+          <p className="text-xs text-gray-400 font-mono mb-1">Pedido {displayOrderNumber}</p>
           <p className="text-sm text-gray-400">
             {new Date(order.createdAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}
           </p>

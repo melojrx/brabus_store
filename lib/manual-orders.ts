@@ -15,6 +15,7 @@ import {
   findLocalDeliveryZone,
   normalizePostalCode,
 } from "@/lib/shipping"
+import { allocateOrderNumber } from "@/lib/order-number-service"
 
 export type ManualOrderItemInput = {
   productId: string
@@ -52,6 +53,7 @@ export type ManualOrderCreateInput = {
 
 export const checkoutOrderSummarySelect = Prisma.validator<Prisma.OrderSelect>()({
   id: true,
+  orderNumber: true,
   status: true,
   paymentMethod: true,
   paymentStatus: true,
@@ -146,6 +148,7 @@ export function serializeCheckoutOrderSummary(order: CheckoutOrderSummaryRecord)
 
   return {
     id: order.id,
+    orderNumber: order.orderNumber,
     status: order.status,
     paymentMethod: order.paymentMethod,
     paymentStatus: order.paymentStatus,
@@ -344,6 +347,11 @@ export async function createManualOrder(
       productVariantId: item.productVariantId ?? null,
       quantity: item.quantity,
     }))
+    const orderCreatedAt = new Date()
+    const { orderNumber } = await allocateOrderNumber(tx, {
+      channel: input.channel,
+      createdAt: orderCreatedAt,
+    })
 
     if (input.paymentStatus === PaymentStatus.PAID) {
       await decrementOrderItemStock(tx, stockItems, { allowNegativeStock })
@@ -371,6 +379,8 @@ export async function createManualOrder(
         customerNameSnapshot: input.customerNameSnapshot ?? null,
         customerEmailSnapshot: input.customerEmailSnapshot ?? null,
         customerPhoneSnapshot: input.customerPhoneSnapshot ?? null,
+        createdAt: orderCreatedAt,
+        orderNumber,
         total,
         shippingType: input.shippingType,
         shippingCost,

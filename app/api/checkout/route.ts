@@ -4,6 +4,7 @@ import type Stripe from "stripe"
 import { ZodError } from "zod"
 import { auth } from "@/auth"
 import { createManualOrder } from "@/lib/manual-orders"
+import { allocateOrderNumber } from "@/lib/order-number-service"
 import prisma from "@/lib/prisma"
 import {
   buildVariantLabel,
@@ -274,25 +275,35 @@ export async function POST(req: Request) {
         })
       }
 
-      const order = await prisma.order.create({
-        data: {
-          userId,
+      const order = await prisma.$transaction(async (tx) => {
+        const orderCreatedAt = new Date()
+        const { orderNumber } = await allocateOrderNumber(tx, {
           channel: OrderChannel.ONLINE,
-          paymentMethod: inferOrderPaymentMethodFromCheckoutConfig(configuredPaymentMethods),
-          paymentStatus: PaymentStatus.PENDING,
-          total,
-          customerNameSnapshot: sessionAuth.user?.name ?? null,
-          customerEmailSnapshot: sessionAuth.user?.email ?? null,
-          customerPhoneSnapshot: sessionAuth.user?.phone ?? null,
-          shippingType: payload.shippingType,
-          shippingCost: resolvedShippingCost,
-          shippingCarrier: resolvedShippingCarrier,
-          shippingDeadline: resolvedShippingDeadline,
-          ...(payload.shippingType !== ShippingType.PICKUP ? normalizedAddress : {}),
-          items: {
-            create: orderItemsRecord,
+          createdAt: orderCreatedAt,
+        })
+
+        return tx.order.create({
+          data: {
+            userId,
+            channel: OrderChannel.ONLINE,
+            paymentMethod: inferOrderPaymentMethodFromCheckoutConfig(configuredPaymentMethods),
+            paymentStatus: PaymentStatus.PENDING,
+            createdAt: orderCreatedAt,
+            orderNumber,
+            total,
+            customerNameSnapshot: sessionAuth.user?.name ?? null,
+            customerEmailSnapshot: sessionAuth.user?.email ?? null,
+            customerPhoneSnapshot: sessionAuth.user?.phone ?? null,
+            shippingType: payload.shippingType,
+            shippingCost: resolvedShippingCost,
+            shippingCarrier: resolvedShippingCarrier,
+            shippingDeadline: resolvedShippingDeadline,
+            ...(payload.shippingType !== ShippingType.PICKUP ? normalizedAddress : {}),
+            items: {
+              create: orderItemsRecord,
+            },
           },
-        },
+        })
       })
 
       const origin = req.headers.get("origin") || process.env.NEXTAUTH_URL
@@ -311,6 +322,7 @@ export async function POST(req: Request) {
         },
         metadata: {
           orderId: order.id,
+          orderNumber: order.orderNumber ?? "",
           userId,
           shippingType: payload.shippingType,
         },
@@ -348,6 +360,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json({
       orderId: manualOrder.id,
+      orderNumber: manualOrder.orderNumber,
       redirectUrl: `/checkout/success?order_id=${manualOrder.id}`,
     })
   } catch (error) {

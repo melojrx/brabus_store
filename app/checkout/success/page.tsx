@@ -11,12 +11,14 @@ import {
   QrCode,
   TimerReset,
 } from "lucide-react"
+import { getOrderDisplayNumber } from "@/lib/order-number"
 import type { PaymentMethodValue, PaymentStatusValue } from "@/lib/payment-status"
 import { useCartStore } from "@/store/cartStore"
 import { getPaymentMethodLabel, getPaymentStatusMeta } from "@/lib/payment-status"
 
 type CheckoutOrderSummary = {
   id: string
+  orderNumber: string | null
   status: string
   paymentMethod: string
   paymentStatus: string
@@ -135,7 +137,7 @@ function buildWhatsappOrderMessage(summary: CheckoutSummary | null) {
   }
 
   const customerName = order.customerName?.trim() || "cliente"
-  const shortOrderId = `#${order.id.split("-")[0].toUpperCase()}`
+  const displayOrderNumber = getOrderDisplayNumber(order)
   const productLines = order.items.length > 0
     ? order.items
         .map((item) => `- ${item.quantity}x ${item.displayLabel}`)
@@ -149,8 +151,8 @@ function buildWhatsappOrderMessage(summary: CheckoutSummary | null) {
   const baseLines = [
     `Olá, ${customerName}!`,
     paymentApproved
-      ? `Seu pagamento do pedido ${shortOrderId} foi aprovado.`
-      : `Seu pedido ${shortOrderId} foi recebido.`,
+      ? `Seu pagamento do pedido ${displayOrderNumber} foi aprovado.`
+      : `Seu pedido ${displayOrderNumber} foi recebido.`,
     "",
     "Produtos:",
     ...productLines,
@@ -261,7 +263,7 @@ function CheckoutSuccessContent() {
         <div className="mb-10 grid gap-4 sm:grid-cols-3 w-full max-w-4xl">
           <div className="rounded-sm border border-white/10 bg-black/20 p-4">
             <p className="text-[11px] uppercase tracking-widest text-gray-500">Pedido</p>
-            <p className="mt-2 text-sm font-bold text-white">#{order.id.split("-")[0].toUpperCase()}</p>
+            <p className="mt-2 text-sm font-bold text-white">{getOrderDisplayNumber(order)}</p>
           </div>
           <div className="rounded-sm border border-white/10 bg-black/20 p-4">
             <p className="text-[11px] uppercase tracking-widest text-gray-500">Pagamento</p>

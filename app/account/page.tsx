@@ -2,6 +2,7 @@ import Link from "next/link"
 import { LogOut, Package, Settings, UserRound } from "lucide-react"
 import { auth } from "@/auth"
 import { redirect } from "next/navigation"
+import { getOrderDisplayNumber } from "@/lib/order-number"
 import prisma from "@/lib/prisma"
 import AccountProfileClient from "@/app/account/AccountProfileClient"
 import { serializeAccountProfile } from "@/lib/account"
@@ -62,6 +63,7 @@ export default async function AccountPage() {
       take: 5,
       select: {
         id: true,
+        orderNumber: true,
         status: true,
         total: true,
         createdAt: true,
@@ -154,7 +156,7 @@ export default async function AccountPage() {
                     className="flex flex-col gap-4 rounded-sm border border-white/5 bg-black/20 px-4 py-4 sm:flex-row sm:items-center sm:justify-between"
                   >
                     <div>
-                      <p className="text-xs font-mono text-gray-500">Pedido #{order.id.split("-")[0].toUpperCase()}</p>
+                      <p className="text-xs font-mono text-gray-500">Pedido {getOrderDisplayNumber(order)}</p>
                       <p className="mt-1 text-sm text-white">{formatStatus(order.status)}</p>
                       <p className="mt-1 text-xs text-gray-500">
                         {new Date(order.createdAt).toLocaleDateString("pt-BR", {

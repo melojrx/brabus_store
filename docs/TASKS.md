@@ -292,6 +292,29 @@ Este documento e a fonte da verdade operacional do projeto. Aqui ficam:
 - [x] Reduzir necessidade de voltar entre secoes
 - [x] Revisar labels, feedbacks e estados de conclusao
 
+#### TASK-S1-ADMIN-08 — Reorganizacao da navegacao do admin
+
+- [x] Reordenar fluxo principal para `Dashboard`, `PDV` e `Pedidos`
+- [x] Agrupar `Cadastros` com `Produtos`, `Categorias`, `Clientes` e `Usuarios`
+- [x] Agrupar `Configuracoes` com `Geral` e `Entregas`
+- [x] Reposicionar a acao de sair no fluxo principal da sidebar
+
+#### TASK-S1-ADMIN-09 — Acoes operacionais na listagem de pedidos
+
+- [x] Substituir botao textual de visualizar por acao com icone e tooltip
+- [x] Adicionar atalho de cancelamento diretamente na tabela
+- [x] Criar endpoint dedicado para cancelamento administrativo
+- [x] Cancelar pagamento e devolver estoque quando aplicavel
+- [x] Bloquear cancelamento por alteracao manual simples de status
+
+#### TASK-S1-ADMIN-10 — Codigo publico legivel do pedido
+
+- [x] Separar `id` tecnico de `orderNumber` publico
+- [x] Definir formato `PREFIXO-YYMMDD-NNNN`
+- [x] Implementar contador diario por canal
+- [x] Aplicar o codigo publico em admin, checkout e area do cliente
+- [x] Documentar a estrategia em `docs/ORDER_NUMBERING.md`
+
 ### 5.4 Dashboard e KPI
 
 #### TASK-S1-DASH-01 — Filtro global de periodo
@@ -300,6 +323,8 @@ Este documento e a fonte da verdade operacional do projeto. Aqui ficam:
 - [x] Refletir filtro na URL
 - [x] Adaptar agregacoes para respeitar o periodo selecionado
 - [x] Garantir consistencia entre cards, graficos e rankings
+- [x] Adicionar recorte `Hoje`
+- [x] Definir `7 dias` como periodo padrao da dashboard
 
 #### TASK-S1-DASH-02 — Novos cards principais
 
@@ -308,7 +333,7 @@ Este documento e a fonte da verdade operacional do projeto. Aqui ficam:
 - [x] Adicionar `Total em Vendas`
 - [x] Adicionar `Quantidade de Produtos Cadastrados`
 - [x] Adicionar `Total em R$ de Estoque`
-- [ ] Reorganizar indicadores por dominio:
+- [x] Reorganizar indicadores por dominio:
   - [x] visao geral
   - [x] financeiro
   - [x] comercial
@@ -331,16 +356,17 @@ Este documento e a fonte da verdade operacional do projeto. Aqui ficam:
 #### TASK-S1-DASH-04 — Grafico de faturamento vs lucro bruto
 
 - [x] Adicionar pontos por periodo
-- [ ] Exibir valores por ponto
+- [x] Exibir valores por ponto
+- [x] Adicionar hover com tooltip nos pontos
 - [x] Responder ao filtro global de periodo
 - [x] Validar legibilidade em desktop e mobile
 
 #### TASK-S1-DASH-05 — Grafico de vendas por dia, mes e ano
 
-- [ ] Implementar agregacao diaria
-- [ ] Implementar agregacao mensal
-- [ ] Implementar agregacao anual
-- [ ] Exibir o grafico coerente com a granularidade escolhida
+- [x] Implementar agregacao diaria
+- [x] Implementar agregacao mensal
+- [x] Implementar agregacao anual
+- [x] Exibir o grafico coerente com a granularidade escolhida
 
 #### TASK-S1-DASH-06 — Receitas por tipo de pagamento
 
@@ -377,6 +403,12 @@ Este documento e a fonte da verdade operacional do projeto. Aqui ficam:
 - [x] Aba `Estoque` com KPIs de alertas, valor total em estoque e produtos cadastrados
 - [x] Aba `Estoque` com visualizacao de top produtos
 
+#### Proximo bloco recomendado da Sprint 1
+
+- [ ] Priorizar `TASK-S1-DASH-08 — Produtos mais vendidos`
+- [ ] Em seguida puxar `TASK-S1-DASH-09 — Top clientes`
+- [ ] Depois consolidar validacoes pendentes da Sprint 1
+
 ### 5.5 Validacao da Sprint 1
 
 - [ ] Rodar `npm run lint -- .`
@@ -386,7 +418,7 @@ Este documento e a fonte da verdade operacional do projeto. Aqui ficam:
 - [ ] Validar busca, filtros e paginacao no admin de produtos
 - [ ] Validar recolhimento da sidebar
 - [ ] Validar fluxo revisado do PDV
-- [ ] Validar dashboard com filtro de periodo
+- [x] Validar dashboard com filtro de periodo
 
 ---
 
@@ -400,11 +432,12 @@ Este documento e a fonte da verdade operacional do projeto. Aqui ficam:
 
 #### TASK-S2-APP-01 — PWA instalavel
 
-- [ ] Criar `manifest`
-- [ ] Definir icones
-- [ ] Configurar metadados de instalacao
-- [ ] Definir fallback offline minimo
+- [x] Criar `manifest`
+- [x] Definir icones
+- [x] Configurar metadados de instalacao
+- [x] Definir fallback offline minimo
 - [ ] Validar instalacao em navegadores suportados
+- [x] Documentar a implementacao em `docs/PWA.md`
 
 #### TASK-S2-APP-02 — Dark/light mode
 

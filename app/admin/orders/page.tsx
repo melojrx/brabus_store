@@ -8,6 +8,7 @@ import {
   getAdminOrders,
   normalizeOrdersPage,
 } from "@/lib/admin-orders"
+import { getOrderDisplayNumber } from "@/lib/order-number"
 import {
   ADMIN_ORDER_STATUS_OPTIONS,
   getOrderStatusMeta,
@@ -193,7 +194,7 @@ export default async function AdminOrdersPage({
                     return (
                       <tr key={order.id} className="border-b border-white/5 transition-colors hover:bg-white/5">
                         <td className="px-4 py-4 font-mono text-xs text-gray-300">
-                          {order.id.split("-")[0].toUpperCase()}
+                          {getOrderDisplayNumber(order)}
                         </td>
                         <td className="px-4 py-4">
                           <div className="min-w-[220px]">
@@ -237,6 +238,7 @@ export default async function AdminOrdersPage({
                         <td className="px-4 py-4 text-right">
                           <OrderRowActions
                             orderId={order.id}
+                            orderNumber={order.orderNumber}
                             customerName={order.customerName}
                             status={order.status}
                             paymentStatus={order.paymentStatus}

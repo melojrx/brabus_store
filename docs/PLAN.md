@@ -173,6 +173,11 @@ Decisao operacional complementar:
 - pedidos criados no checkout publico devem nascer com canal `ONLINE`;
 - pedidos criados no PDV administrativo devem nascer com canal `PDV`;
 - pedidos antigos sem rastreabilidade formal devem ser tratados como `LEGACY` ate saneamento posterior.
+- `Order.id` deve permanecer identificador tecnico interno;
+- pedidos devem expor `orderNumber` publico e legivel no formato `PREFIXO-YYMMDD-NNNN`, com sequencial diario por canal;
+- cancelamento administrativo de pedido nao deve ocorrer por simples troca manual de status;
+- cancelamento administrativo deve passar por fluxo dedicado para sincronizar status operacional, status financeiro e estoque;
+- pedidos pagos devem devolver estoque quando cancelados ou reembolsados conforme o metodo de pagamento aplicavel.
 
 ### 5.3 Cliente x usuario do sistema
 

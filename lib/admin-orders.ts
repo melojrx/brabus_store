@@ -214,6 +214,7 @@ export function serializeAdminOrderListItem(order: AdminOrderListRecord) {
 
   return {
     id: order.id,
+    orderNumber: order.orderNumber,
     customerName: order.customerNameSnapshot ?? order.user.name,
     customerEmail,
     customerPhone: order.customerPhoneSnapshot ?? order.user.phone,
