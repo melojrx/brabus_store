@@ -23,6 +23,9 @@ const monthLabelFormatter = new Intl.DateTimeFormat("pt-BR", {
 const hourLabelFormatter = new Intl.DateTimeFormat("pt-BR", {
   hour: "2-digit",
 })
+const yearLabelFormatter = new Intl.DateTimeFormat("pt-BR", {
+  year: "numeric",
+})
 
 const ORDER_CHANNEL_LABELS: Record<OrderChannel, string> = {
   ONLINE: "Online",
@@ -31,7 +34,7 @@ const ORDER_CHANNEL_LABELS: Record<OrderChannel, string> = {
 }
 
 type DashboardPrismaClient = PrismaClient
-type BucketUnit = "hour" | "day" | "month"
+type BucketUnit = "hour" | "day" | "month" | "year"
 
 type TimelineBucket = {
   key: string
@@ -90,8 +93,8 @@ const DASHBOARD_PERIOD_OPTIONS_MAP: Record<DashboardPeriod, DashboardPeriodOptio
     value: "all",
     label: "Todo historico",
     shortLabel: "Historico",
-    bucketUnit: "month",
-    bucketLabel: "mes",
+    bucketUnit: "year",
+    bucketLabel: "ano",
   },
 }
 
@@ -115,6 +118,14 @@ function addMonths(date: Date, amount: number) {
   return new Date(date.getFullYear(), date.getMonth() + amount, 1)
 }
 
+function startOfYear(date: Date) {
+  return new Date(date.getFullYear(), 0, 1)
+}
+
+function addYears(date: Date, amount: number) {
+  return new Date(date.getFullYear() + amount, 0, 1)
+}
+
 function startOfHour(date: Date) {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate(), date.getHours())
 }
@@ -133,6 +144,10 @@ function getHourKey(date: Date) {
 
 function getMonthKey(date: Date) {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`
+}
+
+function getYearKey(date: Date) {
+  return String(date.getFullYear())
 }
 
 function decimalToNumber(value: { toNumber(): number } | number | null | undefined) {
@@ -220,6 +235,34 @@ function createTimelineBuckets(period: DashboardPeriod, earliestDate: Date | nul
       buckets.push({
         key,
         label: dayLabelFormatter.format(bucketDate),
+        sales: 0,
+        revenue: 0,
+        cost: 0,
+        profit: 0,
+      })
+    }
+
+    return {
+      buckets,
+      bucketIndexByKey,
+      bucketUnit: periodOption.bucketUnit,
+      bucketLabel: periodOption.bucketLabel,
+    }
+  }
+
+  if (periodOption.bucketUnit === "year") {
+    const fallbackStart = startOfYear(addYears(now, -4))
+    const startDate = earliestDate ? startOfYear(earliestDate) : fallbackStart
+    const endDate = startOfYear(now)
+    const totalYears = endDate.getFullYear() - startDate.getFullYear() + 1
+
+    for (let index = 0; index < totalYears; index += 1) {
+      const bucketDate = addYears(startDate, index)
+      const key = getYearKey(bucketDate)
+      bucketIndexByKey.set(key, index)
+      buckets.push({
+        key,
+        label: yearLabelFormatter.format(bucketDate),
         sales: 0,
         revenue: 0,
         cost: 0,
@@ -323,7 +366,15 @@ function getBucketKey(date: Date, bucketUnit: BucketUnit) {
     return getHourKey(startOfHour(date))
   }
 
-  return bucketUnit === "day" ? getDayKey(startOfDay(date)) : getMonthKey(startOfMonth(date))
+  if (bucketUnit === "day") {
+    return getDayKey(startOfDay(date))
+  }
+
+  if (bucketUnit === "year") {
+    return getYearKey(startOfYear(date))
+  }
+
+  return getMonthKey(startOfMonth(date))
 }
 
 export function parseDashboardPeriod(value: string | null | undefined) {

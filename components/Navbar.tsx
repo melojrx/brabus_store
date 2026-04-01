@@ -14,6 +14,8 @@ export default function Navbar() {
   const accountMenuRef = useRef<HTMLDivElement | null>(null)
   const itemCount = hasHydrated ? getItemCount() : 0
   const isAdmin = (session?.user as { role?: string } | undefined)?.role === "ADMIN"
+  const actionButtonClassName =
+    "flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-gray-300 transition-all duration-200 hover:border-[var(--color-primary)]/40 hover:bg-white/[0.08] hover:text-white"
 
   useEffect(() => {
     if (!accountMenuOpen) {
@@ -32,6 +34,26 @@ export default function Navbar() {
     }
   }, [accountMenuOpen])
 
+  useEffect(() => {
+    if (!accountMenuOpen && !menuOpen) {
+      return
+    }
+
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key !== "Escape") {
+        return
+      }
+
+      setAccountMenuOpen(false)
+      setMenuOpen(false)
+    }
+
+    document.addEventListener("keydown", handleEscape)
+    return () => {
+      document.removeEventListener("keydown", handleEscape)
+    }
+  }, [accountMenuOpen, menuOpen])
+
   return (
     <nav className="sticky top-0 z-50 glass border-b border-white/5 py-4">
       <div className="container mx-auto px-4 flex justify-between items-center">
@@ -43,30 +65,34 @@ export default function Navbar() {
         </Link>
 
         {/* Nav Links - Desktop */}
-        <div className="hidden md:flex gap-6 items-center">
+        <div className="hidden items-center gap-5 md:flex lg:gap-6">
           <Link href="/products" className="text-sm font-medium text-gray-300 hover:text-[var(--color-primary)] transition-colors uppercase tracking-widest">Produtos</Link>
           <Link href="/loja" className="text-sm font-medium text-gray-300 hover:text-[var(--color-primary)] transition-colors uppercase tracking-widest">Loja Física</Link>
           <Link href="/contato" className="text-sm font-medium text-gray-300 hover:text-[var(--color-primary)] transition-colors uppercase tracking-widest">Contato</Link>
         </div>
 
         {/* Actions */}
-        <div className="flex gap-4 items-center">
+        <div className="flex items-center gap-2 md:gap-3">
           {/* Account Link */}
           {session ? (
             <div ref={accountMenuRef} className="relative">
               <button
                 type="button"
-                onClick={() => setAccountMenuOpen((current) => !current)}
-                className="flex items-center justify-center rounded-full text-[var(--color-primary)] transition-colors hover:text-white"
+                onClick={() => {
+                  setMenuOpen(false)
+                  setAccountMenuOpen((current) => !current)
+                }}
+                className={`${actionButtonClassName} text-[var(--color-primary)]`}
                 title={`Olá, ${session.user?.name}`}
                 aria-label="Abrir menu da conta"
                 aria-expanded={accountMenuOpen}
+                aria-haspopup="menu"
               >
                 <User className="w-5 h-5" />
               </button>
 
               {accountMenuOpen ? (
-                <div className="absolute right-0 top-full z-50 mt-3 min-w-[210px] overflow-hidden rounded-xl border border-white/10 bg-zinc-950/95 p-2 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-md">
+                <div className="absolute right-0 top-full z-50 mt-2 min-w-[210px] overflow-hidden rounded-xl border border-white/10 bg-zinc-950/95 p-2 shadow-[0_20px_50px_rgba(0,0,0,0.35)] backdrop-blur-md">
                   <div className="border-b border-white/5 px-3 py-2">
                     <p className="truncate text-sm font-medium text-white">{session.user?.name}</p>
                     <p className="truncate text-xs text-zinc-500">{session.user?.email}</p>
@@ -105,18 +131,19 @@ export default function Navbar() {
           ) : (
             <Link
               href="/auth/login"
-              className="hover:text-[var(--color-primary)] transition-colors"
+              className={actionButtonClassName}
               title="Entrar"
+              aria-label="Entrar"
             >
               <LogIn className="w-5 h-5" />
             </Link>
           )}
 
           {/* Cart */}
-          <Link href="/cart" className="relative hover:text-[var(--color-primary)] transition-colors">
+          <Link href="/cart" className={`${actionButtonClassName} relative`} aria-label="Abrir carrinho">
             <ShoppingCart className="w-5 h-5" />
             {itemCount > 0 && (
-              <span className="absolute -top-2 -right-2 bg-[var(--color-secondary)] text-white text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+              <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--color-secondary)] px-1 text-[10px] font-bold text-white">
                 {itemCount > 9 ? "9+" : itemCount}
               </span>
             )}
@@ -124,8 +151,14 @@ export default function Navbar() {
 
           {/* Mobile Menu Toggle */}
           <button
-            className="md:hidden text-gray-300 hover:text-white transition-colors"
-            onClick={() => setMenuOpen(!menuOpen)}
+            type="button"
+            className={`${actionButtonClassName} md:hidden`}
+            onClick={() => {
+              setAccountMenuOpen(false)
+              setMenuOpen((current) => !current)
+            }}
+            aria-label={menuOpen ? "Fechar menu" : "Abrir menu"}
+            aria-expanded={menuOpen}
           >
             {menuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
@@ -134,7 +167,7 @@ export default function Navbar() {
 
       {/* Mobile Menu */}
       {menuOpen && (
-        <div className="md:hidden border-t border-white/5 mt-4 px-4 py-4 space-y-4 bg-black/90 backdrop-blur-md">
+        <div className="space-y-4 border-t border-white/5 bg-black/90 px-4 pb-4 pt-3 backdrop-blur-md md:hidden">
           <Link href="/products" onClick={() => setMenuOpen(false)} className="block text-sm font-bold text-gray-300 hover:text-[var(--color-primary)] transition-colors uppercase tracking-widest py-2">Produtos</Link>
           <Link href="/loja" onClick={() => setMenuOpen(false)} className="block text-sm font-bold text-gray-300 hover:text-[var(--color-primary)] transition-colors uppercase tracking-widest py-2">Loja Física</Link>
           <Link href="/contato" onClick={() => setMenuOpen(false)} className="block text-sm font-bold text-gray-300 hover:text-[var(--color-primary)] transition-colors uppercase tracking-widest py-2">Contato</Link>
