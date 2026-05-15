@@ -42,7 +42,9 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-#AI
-.agent
-.agent/*
-agents.md
+# AI / Agent config
+.agent/
+AGENTS.md
+GEMINI.md
+CLAUDE.md
+.claude/
