@@ -17,7 +17,9 @@ import {
   Tags,
   Truck,
   User,
+  UserCheck,
   Users,
+  Warehouse,
   X,
   type LucideIcon,
 } from "lucide-react"
@@ -48,6 +50,8 @@ const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
       { href: "/admin/products", label: "Produtos", icon: Package },
       { href: "/admin/categories", label: "Categorias", icon: Tags },
       { href: "/admin/customers", label: "Clientes", icon: Users },
+      { href: "/admin/sellers", label: "Vendedores", icon: UserCheck },
+      { href: "/admin/suppliers", label: "Fornecedores", icon: Warehouse },
       { label: "Usuários", icon: User, disabled: true },
     ],
   },

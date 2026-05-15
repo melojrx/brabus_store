@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server"
-import { Role } from "@prisma/client"
 import { auth } from "@/auth"
 import prisma from "@/lib/prisma"
-import { PDV_WALK_IN_CUSTOMER_EMAIL } from "@/lib/pdv"
 
 async function checkAdmin() {
   const session = await auth()
@@ -17,18 +15,16 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const query = searchParams.get("q")?.trim() ?? ""
 
-  const customers = await prisma.user.findMany({
+  const customers = await prisma.customer.findMany({
     where: {
-      role: Role.CUSTOMER,
-      email: {
-        not: PDV_WALK_IN_CUSTOMER_EMAIL,
-      },
+      active: true,
       ...(query
         ? {
             OR: [
               { name: { contains: query, mode: "insensitive" } },
               { email: { contains: query, mode: "insensitive" } },
               { phone: { contains: query, mode: "insensitive" } },
+              { cpf: { contains: query.replace(/\D/g, "") } },
             ],
           }
         : {}),
@@ -40,6 +36,7 @@ export async function GET(req: Request) {
       name: true,
       email: true,
       phone: true,
+      userId: true,
       addressStreet: true,
       addressNumber: true,
       addressComplement: true,
@@ -50,5 +47,21 @@ export async function GET(req: Request) {
     },
   })
 
-  return NextResponse.json(customers)
+  // PDV needs userId for Order creation — map accordingly
+  const mapped = customers.map((c) => ({
+    id: c.userId ?? c.id, // Use userId if linked, otherwise customer id (walk-in fallback)
+    customerId: c.id,
+    name: c.name,
+    email: c.email,
+    phone: c.phone,
+    addressStreet: c.addressStreet,
+    addressNumber: c.addressNumber,
+    addressComplement: c.addressComplement,
+    addressNeighborhood: c.addressNeighborhood,
+    addressCity: c.addressCity,
+    addressState: c.addressState,
+    addressZip: c.addressZip,
+  }))
+
+  return NextResponse.json(mapped)
 }
