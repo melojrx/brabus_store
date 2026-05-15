@@ -294,3 +294,44 @@ model StoreSettings {
 
   @@map("store_settings")
 }
+
+// ─────────────────────────────────────────
+// INTEGRATION API
+// ─────────────────────────────────────────
+
+model IntegrationApiKey {
+  id         String    @id @default(cuid())
+  name       String
+  actor      String
+  keyHash    String    @unique
+  scopes     String[]
+  active     Boolean   @default(true)
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
+  revokedAt  DateTime?
+
+  @@index([actor])
+  @@index([active])
+  @@map("integration_api_keys")
+}
+
+model IntegrationAuditLog {
+  id           String   @id @default(cuid())
+  apiKeyId     String?
+  actor        String
+  action       String
+  resourceType String?
+  resourceId   String?
+  payload      Json?
+  result       String
+  errorCode    String?
+  errorMessage String?
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime @default(now())
+
+  @@index([actor, createdAt])
+  @@index([resourceType, resourceId])
+  @@index([action, createdAt])
+  @@map("integration_audit_logs")
+}
