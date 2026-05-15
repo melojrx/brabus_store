@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation"
 import {
   ChevronLeft,
   House,
+  KeyRound,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -55,6 +56,12 @@ const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
     items: [
       { href: "/admin/settings", label: "Geral", icon: Settings },
       { href: "/admin/shipping", label: "Entregas", icon: Truck },
+    ],
+  },
+  {
+    label: "Desenvolvedor",
+    items: [
+      { href: "/admin/developer/api-keys", label: "API Keys", icon: KeyRound },
     ],
   },
 ]
