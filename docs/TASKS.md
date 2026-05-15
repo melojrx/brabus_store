@@ -38,6 +38,7 @@ Este documento e a fonte da verdade operacional do projeto. Aqui ficam:
 |---|---|---|---|
 | Historico Consolidado | Fundacao + MVP + estabilizacao entregue | Concluida | Concluida |
 | Sprint 1 | Conversao, dashboard e operacao imediata | Baixa a media | Em andamento |
+| Sprint 1.5 | Cadastros mestres (Customer, Seller, Supplier) | Media-alta | Concluida |
 | Sprint 2 | Maturidade visual e operacional media | Media | Planejada |
 | Sprint 3 | Governanca, cadastros mestres e PDV avancado | Alta | Planejada |
 
@@ -422,6 +423,83 @@ Este documento e a fonte da verdade operacional do projeto. Aqui ficam:
 
 ---
 
+## 5.6 Sprint 1.5 — Cadastros Mestres
+
+**Objetivo:** separar o conceito de cliente comercial do usuario do sistema, criar entidades independentes de vendedores e fornecedores, e preparar a base para governanca futura sem quebrar fluxos existentes.
+
+**Status da sprint:** Concluida
+
+**Estrategia:** Customer como model separado com relacao 1:1 opcional para User. Order.userId nao muda. Seller e Supplier como models independentes.
+
+### TASK-S1.5-01 — Model Customer separado de User
+
+- [x] Criar model `Customer` com CPF, CNPJ, tipo pessoa, inscricao estadual, endereco, notas
+- [x] Criar relacao 1:1 opcional `Customer.userId -> User.id`
+- [x] Criar migration com data migration (Users CUSTOMER -> Customers)
+- [x] Manter `Order.userId` inalterado (zero breaking changes)
+
+### TASK-S1.5-02 — Models Seller e Supplier
+
+- [x] Criar model `Seller` (nome, email, phone, CPF, notas)
+- [x] Criar model `Supplier` (nome, email, phone, CPF, CNPJ, tipo pessoa, inscricao estadual, contato, endereco, notas)
+- [x] Ambos independentes de User
+
+### TASK-S1.5-03 — Helpers de validacao e formatacao
+
+- [x] `validateCpf` / `validateCnpj` com validacao de digitos
+- [x] `formatCpf` / `formatCnpj` para exibicao
+- [x] `cleanDocument` para limpeza de input
+- [x] `serializeCustomer` / `serializeSeller` / `serializeSupplier`
+
+### TASK-S1.5-04 — CRUD Admin de Clientes
+
+- [x] `GET /api/admin/customers` com busca, filtros (personType, active), paginacao
+- [x] `POST /api/admin/customers` com validacao de CPF/CNPJ e unicidade
+- [x] `GET /api/admin/customers/[id]`
+- [x] `PATCH /api/admin/customers/[id]`
+- [x] `DELETE /api/admin/customers/[id]` (soft delete)
+- [x] Pagina admin com formulario completo, tabela, busca, filtros, paginacao
+
+### TASK-S1.5-05 — CRUD Admin de Vendedores
+
+- [x] `GET /api/admin/sellers` com busca e paginacao
+- [x] `POST /api/admin/sellers` com validacao de CPF
+- [x] `PATCH /api/admin/sellers/[id]`
+- [x] `DELETE /api/admin/sellers/[id]` (soft delete)
+- [x] Pagina admin com formulario, tabela, busca
+
+### TASK-S1.5-06 — CRUD Admin de Fornecedores
+
+- [x] `GET /api/admin/suppliers` com busca e paginacao
+- [x] `POST /api/admin/suppliers` com validacao de CPF/CNPJ
+- [x] `PATCH /api/admin/suppliers/[id]`
+- [x] `DELETE /api/admin/suppliers/[id]` (soft delete)
+- [x] Pagina admin com formulario completo, tabela, busca
+
+### TASK-S1.5-07 — Navegacao e integracao
+
+- [x] Adicionar Vendedores e Fornecedores na sidebar do admin (secao Cadastros)
+- [x] Atualizar PDV customer search para buscar em Customer em vez de User
+- [x] Manter compatibilidade: PDV retorna userId para criacao de Order
+
+### TASK-S1.5-08 — Integration API de Clientes
+
+- [x] `GET /api/v1/integrations/customers` com scope `read:customers`
+- [x] `GET /api/v1/integrations/customers/[id]` com scope `read:customers`
+- [x] Adicionar scope `read:customers` na UI de API keys
+
+### Impacto em fluxos existentes
+
+- [x] Checkout publico: nenhuma alteracao
+- [x] Stripe webhook: nenhuma alteracao
+- [x] Account area: nenhuma alteracao
+- [x] PDV orders: busca migrada para Customer, Order.userId preservado
+- [x] Admin orders: nenhuma alteracao
+- [x] Dashboard: nenhuma alteracao
+- [x] Build: zero erros, zero warnings
+
+---
+
 ## 6. Sprint 2 — Maturidade Visual e Operacional Media
 
 **Objetivo:** elevar a maturidade visual e operacional sem entrar ainda nas grandes refatoracoes de cadastros mestres e permissoes.
@@ -498,23 +576,23 @@ Este documento e a fonte da verdade operacional do projeto. Aqui ficam:
 
 #### TASK-S3-GOV-01 — Revisao de modelo entre cliente e usuario
 
-- [ ] Definir modelo alvo entre `Customer` e `User`
-- [ ] Mapear impacto em pedidos, checkout, conta do cliente e PDV
-- [ ] Definir estrategia de migracao sem perda de historico
+- [x] Definir modelo alvo entre `Customer` e `User` (resolvido na Sprint 1.5)
+- [x] Mapear impacto em pedidos, checkout, conta do cliente e PDV
+- [x] Definir estrategia de migracao sem perda de historico
 
 #### TASK-S3-GOV-02 — CRUD de clientes no admin
 
-- [ ] Criar modelagem final de cliente
-- [ ] Criar APIs de listagem, criacao, edicao e exclusao
-- [ ] Criar tela administrativa com busca e filtros
-- [ ] Permitir cliente sem acesso ao sistema
+- [x] Criar modelagem final de cliente (Sprint 1.5)
+- [x] Criar APIs de listagem, criacao, edicao e exclusao
+- [x] Criar tela administrativa com busca e filtros
+- [x] Permitir cliente sem acesso ao sistema
 
 #### TASK-S3-GOV-03 — Documento fiscal do cliente
 
-- [ ] Adicionar `CPF/CNPJ`
-- [ ] Adicionar tipo de pessoa
-- [ ] Exigir `inscricao estadual` para `CNPJ`
-- [ ] Validar mascaras e regras de obrigatoriedade
+- [x] Adicionar `CPF/CNPJ`
+- [x] Adicionar tipo de pessoa
+- [x] Exigir `inscricao estadual` para `CNPJ`
+- [x] Validar mascaras e regras de obrigatoriedade
 
 #### TASK-S3-GOV-04 — CRUD de usuarios no admin
 
@@ -533,14 +611,14 @@ Este documento e a fonte da verdade operacional do projeto. Aqui ficam:
 
 #### TASK-S3-GOV-06 — CRUD de vendedores
 
-- [ ] Definir se vendedor e tipo de usuario, cadastro proprio ou ambos
-- [ ] Criar CRUD de vendedores
+- [x] Definir se vendedor e tipo de usuario, cadastro proprio ou ambos (model independente, Sprint 1.5)
+- [x] Criar CRUD de vendedores
 - [ ] Preparar vinculacao futura com vendas
 
 #### TASK-S3-GOV-07 — CRUD de fornecedores
 
-- [ ] Definir modelagem de fornecedor
-- [ ] Criar CRUD de fornecedores
+- [x] Definir modelagem de fornecedor (Sprint 1.5)
+- [x] Criar CRUD de fornecedores
 - [ ] Preparar vinculacao futura com produtos e compras
 
 ### 7.2 PDV avancado
