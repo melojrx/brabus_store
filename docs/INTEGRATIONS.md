@@ -1,75 +1,199 @@
-# Integrations
+# Integration API
 
-## Stripe
-Obrigatórias:
-- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
-- `STRIPE_SECRET_KEY`
-- `STRIPE_WEBHOOK_SECRET`
-- `STRIPE_CHECKOUT_PAYMENT_METHOD_TYPES` (ex.: `card` ou `card,pix`)
+API pública autenticada por API key para integrações externas (Neo, WhatsApp, webhooks).
 
-Eventos recomendados no webhook:
-- `checkout.session.completed`
-- `checkout.session.async_payment_succeeded`
-- `checkout.session.async_payment_failed`
-- `checkout.session.expired`
-- `payment_intent.payment_failed`
-- `charge.refunded`
+## Base URL
 
-Fluxo local:
-1. Rode `npm run dev`.
-2. Em outro terminal, rode `npm run stripe:listen`.
-3. Copie o `whsec_...` exibido pela Stripe CLI para `STRIPE_WEBHOOK_SECRET`.
-4. Reinicie o app após trocar a variável.
-5. Valide um pedido real de teste e confirme transição `PENDING -> PAID`.
+```
+/api/v1/integrations
+```
 
-Estoque e estados financeiros:
-- O estoque baixa apenas quando o pedido entra em `PAID`.
-- No admin, se o pagamento mudar de `PAID -> CANCELLED` ou `PAID -> REFUNDED`, o estoque da variacao volta automaticamente.
-- Essa reposicao e idempotente: ela so acontece quando o estado anterior era `PAID`.
-- Refunds completos recebidos da Stripe via `charge.refunded` tambem marcam o pedido como `REFUNDED` e devolvem o estoque automaticamente.
-- Alterar apenas o `status` operacional do pedido no admin nao movimenta estoque; a devolucao depende da transicao de `paymentStatus` ou do webhook da Stripe.
+## Autenticação
 
-## Melhor Envio
-Variáveis:
-- `MELHOR_ENVIO_TOKEN`
-- `MELHOR_ENVIO_BASE_URL` opcional; sem ela usamos `sandbox` fora de produção.
+Todas as rotas exigem header:
 
-Situação atual:
-- O cálculo nacional já está implementado.
-- A validação ponta a ponta depende da URL pública de homologação/produção para concluir o onboarding e obter token definitivo.
-- Até lá, trate o Melhor Envio como parcialmente bloqueado para go-live.
+```
+Authorization: Bearer <API_KEY>
+```
 
-## Instagram
-Opção 1, feed real:
-- `INSTAGRAM_ACCESS_TOKEN`
+### Como gerar uma API key
 
-Opção 2, fallback curado:
-- `INSTAGRAM_FALLBACK_POSTS`
+1. Login como admin
+2. Navegar para **Admin → Desenvolvedor → API Keys**
+3. Clicar em "Nova API Key"
+4. Preencher nome, actor e selecionar scopes
+5. Copiar a chave exibida (não será mostrada novamente)
 
-Formato de `INSTAGRAM_FALLBACK_POSTS`:
+### Scopes disponíveis (MVP)
+
+| Scope | Descrição |
+|-------|-----------|
+| `read:dashboard` | Métricas e gráficos do dashboard |
+| `read:orders` | Listagem e detalhes de pedidos |
+| `read:products` | Listagem e detalhes de produtos |
+| `read:stock` | Consulta de estoque baixo |
+| `read:categories` | Árvore de categorias |
+| `read:settings` | Configurações públicas da loja |
+
+## Formato de Resposta
+
+### Sucesso
 
 ```json
-[
-  {
-    "id": "post-1",
-    "media_url": "https://example.com/post-1.jpg",
-    "permalink": "https://instagram.com/p/xxxxx"
-  }
-]
+{
+  "ok": true,
+  "data": { ... },
+  "meta": { ... }
+}
 ```
 
-Sem token e sem fallback, a home mostra apenas o link do perfil.
+### Erro
 
-## Validação Operacional
-Rode:
+```json
+{
+  "ok": false,
+  "code": "UNAUTHORIZED",
+  "error": "Missing or invalid Authorization header."
+}
+```
+
+### Códigos de erro
+
+| Código | HTTP | Descrição |
+|--------|------|-----------|
+| `UNAUTHORIZED` | 401 | Token ausente, inválido ou revogado |
+| `FORBIDDEN` | 403 | Token válido mas sem scope necessário |
+| `NOT_FOUND` | 404 | Recurso não encontrado |
+| `INTERNAL_ERROR` | 500 | Erro interno do servidor |
+
+---
+
+## Endpoints
+
+### Health
 
 ```bash
-npm run integrations:check
+curl -s https://brabustore.com.br/api/v1/integrations/health \
+  -H "Authorization: Bearer $BRABUS_STORE_API_KEY"
 ```
 
-O script valida:
-- Stripe com chamada remota usando a chave secreta atual
-- Melhor Envio quando houver token configurado
-- Instagram real via Graph API ou, na ausência disso, o fallback curado
+Scope: qualquer API key ativa (sem scope específico).
 
-O script só falha com código não zero quando uma integração obrigatória bloqueante, como Stripe, estiver quebrada.
+### Dashboard
+
+```bash
+curl -s "https://brabustore.com.br/api/v1/integrations/dashboard?period=7d" \
+  -H "Authorization: Bearer $BRABUS_STORE_API_KEY"
+```
+
+Scope: `read:dashboard`
+
+Parâmetros: `?period=today|7d|30d|6m|12m|all`
+
+### Orders (lista)
+
+```bash
+curl -s "https://brabustore.com.br/api/v1/integrations/orders?status=PAID&page=1&pageSize=10" \
+  -H "Authorization: Bearer $BRABUS_STORE_API_KEY"
+```
+
+Scope: `read:orders`
+
+Parâmetros:
+- `status` — PENDING, PAID, SHIPPED, DELIVERED, CANCELLED, REFUNDED, FAILED
+- `paymentStatus` — PENDING, PAID, FAILED, CANCELLED, REFUNDED
+- `channel` — ONLINE, PDV, LEGACY
+- `page` — página (default: 1)
+- `pageSize` — itens por página (default: 20, max: 50)
+
+### Orders (detalhe)
+
+```bash
+curl -s "https://brabustore.com.br/api/v1/integrations/orders/ON-260515-0001" \
+  -H "Authorization: Bearer $BRABUS_STORE_API_KEY"
+```
+
+Scope: `read:orders`
+
+Aceita `id` (cuid) ou `orderNumber` (ex: ON-260515-0001).
+
+### Products (lista)
+
+```bash
+curl -s "https://brabustore.com.br/api/v1/integrations/products?search=whey&active=true&page=1" \
+  -H "Authorization: Bearer $BRABUS_STORE_API_KEY"
+```
+
+Scope: `read:products`
+
+Parâmetros:
+- `search` — busca por nome/descrição/slug
+- `active` — true/false
+- `lowStock` — true (filtra produtos com variante ≤10 unidades)
+- `page`, `pageSize` (max: 50)
+
+### Products (detalhe)
+
+```bash
+curl -s "https://brabustore.com.br/api/v1/integrations/products/whey-protein-900g" \
+  -H "Authorization: Bearer $BRABUS_STORE_API_KEY"
+```
+
+Scope: `read:products`
+
+Aceita `id` (cuid) ou `slug`.
+
+### Stock Low
+
+```bash
+curl -s "https://brabustore.com.br/api/v1/integrations/stock/low?threshold=5" \
+  -H "Authorization: Bearer $BRABUS_STORE_API_KEY"
+```
+
+Scope: `read:stock`
+
+Parâmetros: `threshold` (default: 3)
+
+### Categories
+
+```bash
+curl -s "https://brabustore.com.br/api/v1/integrations/categories" \
+  -H "Authorization: Bearer $BRABUS_STORE_API_KEY"
+```
+
+Scope: `read:categories`
+
+Retorna árvore de categorias ativas com subcategorias.
+
+### Settings
+
+```bash
+curl -s "https://brabustore.com.br/api/v1/integrations/settings" \
+  -H "Authorization: Bearer $BRABUS_STORE_API_KEY"
+```
+
+Scope: `read:settings`
+
+Retorna configurações operacionais (endereço, WhatsApp, Instagram, horários). Não retorna segredos.
+
+---
+
+## Variáveis de Ambiente (opcional)
+
+| Variável | Descrição |
+|----------|-----------|
+| `INTEGRATION_API_KEY_PEPPER` | Pepper adicional para hash das API keys. Opcional em dev. |
+
+---
+
+## TODO — v1 (pós-MVP)
+
+- `PATCH /api/v1/integrations/orders/[id]/tracking`
+- `PATCH /api/v1/integrations/orders/[id]/status`
+- `PATCH /api/v1/integrations/products/[id]/toggle`
+- `POST /api/v1/integrations/products`
+- `PATCH /api/v1/integrations/products/[id]`
+- `POST /api/v1/integrations/pdv/orders`
+- Scopes de escrita (`write:orders`, `write:products`, `write:pdv`)
+- Rate limiting
+- Webhook delivery engine
