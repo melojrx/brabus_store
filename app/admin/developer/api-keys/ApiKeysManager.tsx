@@ -21,6 +21,7 @@ const AVAILABLE_SCOPES = [
   { value: "read:products", label: "Produtos" },
   { value: "read:stock", label: "Estoque" },
   { value: "read:categories", label: "Categorias" },
+  { value: "read:customers", label: "Clientes" },
   { value: "read:settings", label: "Configurações" },
 ] as const
 
