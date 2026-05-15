@@ -80,6 +80,7 @@ model User {
 
   orders              Order[]
   passwordResetTokens PasswordResetToken[]
+  customer            Customer?
 
   @@map("users")
 }
@@ -293,6 +294,79 @@ model StoreSettings {
   googleMapsEmbed   String?
 
   @@map("store_settings")
+}
+
+// ─────────────────────────────────────────
+// CADASTROS MESTRES
+// ─────────────────────────────────────────
+
+model Customer {
+  id                  String   @id @default(cuid())
+  name                String
+  email               String?
+  phone               String?
+  cpf                 String?  @unique
+  cnpj                String?  @unique
+  personType          String?  // "PF" | "PJ"
+  stateRegistration   String?  // Inscrição estadual (PJ)
+  addressStreet       String?
+  addressNumber       String?
+  addressComplement   String?
+  addressNeighborhood String?
+  addressCity         String?
+  addressState        String?
+  addressZip          String?
+  notes               String?
+  active              Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  userId String? @unique
+  user   User?   @relation(fields: [userId], references: [id])
+
+  @@index([email])
+  @@index([phone])
+  @@index([personType])
+  @@map("customers")
+}
+
+model Seller {
+  id        String   @id @default(cuid())
+  name      String
+  email     String?
+  phone     String?
+  cpf       String?  @unique
+  active    Boolean  @default(true)
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("sellers")
+}
+
+model Supplier {
+  id                  String   @id @default(cuid())
+  name                String
+  email               String?
+  phone               String?
+  cpf                 String?  @unique
+  cnpj                String?  @unique
+  personType          String?  // "PF" | "PJ"
+  stateRegistration   String?
+  contactName         String?
+  addressStreet       String?
+  addressNumber       String?
+  addressComplement   String?
+  addressNeighborhood String?
+  addressCity         String?
+  addressState        String?
+  addressZip          String?
+  notes               String?
+  active              Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@map("suppliers")
 }
 
 // ─────────────────────────────────────────
