@@ -2,6 +2,7 @@ import { z } from "zod"
 import { NextResponse } from "next/server"
 import { auth } from "@/auth"
 import prisma from "@/lib/prisma"
+import { isStaffRole } from "@/lib/auth-guard"
 
 const toggleProductSchema = z.object({
   active: z.boolean(),
@@ -9,7 +10,7 @@ const toggleProductSchema = z.object({
 
 async function checkAdmin() {
   const session = await auth()
-  return session?.user?.role === "ADMIN"
+  return isStaffRole(session?.user?.role)
 }
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {

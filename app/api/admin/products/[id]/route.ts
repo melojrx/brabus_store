@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/auth"
+import { isStaffRole } from "@/lib/auth-guard"
 import { cleanupOrphanedManagedProductImages } from "@/lib/admin-product-images"
 import {
   normalizeProductPayload,
@@ -10,7 +11,7 @@ import prisma from "@/lib/prisma"
 
 async function checkAdmin() {
   const session = await auth()
-  return session?.user?.role === "ADMIN"
+  return isStaffRole(session?.user?.role)
 }
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {

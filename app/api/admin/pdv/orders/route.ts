@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { OrderChannel, PaymentStatus } from "@prisma/client"
 import { ZodError } from "zod"
 import { auth } from "@/auth"
+import { isStaffRole } from "@/lib/auth-guard"
 import { createManualOrder } from "@/lib/manual-orders"
 import prisma from "@/lib/prisma"
 import {
@@ -9,19 +10,21 @@ import {
   ensurePdvWalkInCustomer,
 } from "@/lib/pdv"
 
-async function checkAdmin() {
-  const session = await auth()
-  return session?.user?.role === "ADMIN"
-}
-
 export async function POST(req: Request) {
-  if (!(await checkAdmin())) {
+  const session = await auth()
+  if (!session || !isStaffRole(session.user?.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
   try {
     const body = await req.json()
     const payload = createPdvOrderSchema.parse(body)
+
+    // Resolve seller from logged-in user
+    const seller = await prisma.seller.findUnique({
+      where: { userId: session.user.id },
+      select: { id: true },
+    })
 
     const [selectedCustomer, walkInCustomer] = await Promise.all([
       payload.customerId
@@ -62,6 +65,7 @@ export async function POST(req: Request) {
     const createdOrder = await createManualOrder(prisma, {
       userId: customerId,
       channel: OrderChannel.PDV,
+      sellerId: seller?.id ?? null,
       customerNameSnapshot,
       customerEmailSnapshot,
       customerPhoneSnapshot,

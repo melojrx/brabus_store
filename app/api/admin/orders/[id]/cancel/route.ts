@@ -6,10 +6,11 @@ import { canAdminCancelOrder } from "@/lib/admin-orders"
 import { incrementOrderItemStock } from "@/lib/order-stock"
 import prisma from "@/lib/prisma"
 import { getStripeServerClient } from "@/lib/stripe"
+import { isStaffRole } from "@/lib/auth-guard"
 
 async function checkAdmin() {
   const session = await auth()
-  return session?.user?.role === "ADMIN"
+  return isStaffRole(session?.user?.role)
 }
 
 function isStripePaymentMethod(paymentMethod: PaymentMethod) {

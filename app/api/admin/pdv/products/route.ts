@@ -2,12 +2,13 @@ import { NextResponse } from "next/server"
 import { auth } from "@/auth"
 import prisma from "@/lib/prisma"
 import { buildVariantDisplayLabel } from "@/lib/pdv"
+import { isStaffRole } from "@/lib/auth-guard"
 
 const PDV_PRODUCTS_PAGE_SIZE = 24
 
 async function checkAdmin() {
   const session = await auth()
-  return session?.user?.role === "ADMIN"
+  return isStaffRole(session?.user?.role)
 }
 
 export async function GET(req: Request) {

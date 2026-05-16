@@ -3,10 +3,11 @@ import { auth } from "@/auth"
 import prisma from "@/lib/prisma"
 import { generateApiKey, hashApiKey } from "@/lib/integrations/auth"
 import { logIntegrationAudit } from "@/lib/integrations/audit"
+import { isStaffRole } from "@/lib/auth-guard"
 
 async function checkAdmin() {
   const session = await auth()
-  if (!session || session.user?.role !== "ADMIN") {
+  if (!session || !isStaffRole(session.user?.role)) {
     return null
   }
   return session

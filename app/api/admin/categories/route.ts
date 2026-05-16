@@ -2,10 +2,11 @@ import { NextResponse } from "next/server"
 import { auth } from "@/auth"
 import { categoryAdminInclude, serializeCategoryTree } from "@/lib/catalog-api"
 import prisma from "@/lib/prisma"
+import { isStaffRole } from "@/lib/auth-guard"
 
 async function checkAdmin() {
   const session = await auth()
-  return session?.user?.role === "ADMIN"
+  return isStaffRole(session?.user?.role)
 }
 
 export async function GET() {

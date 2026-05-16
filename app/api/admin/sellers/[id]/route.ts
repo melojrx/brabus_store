@@ -3,10 +3,11 @@ import { auth } from "@/auth"
 import prisma from "@/lib/prisma"
 import { cleanDocument, validateCpf } from "@/lib/customers"
 import { serializeSeller } from "@/lib/sellers"
+import { isStaffRole } from "@/lib/auth-guard"
 
 async function checkAdmin() {
   const session = await auth()
-  if (!session || session.user?.role !== "ADMIN") return null
+  if (!session || !isStaffRole(session.user?.role)) return null
   return session
 }
 

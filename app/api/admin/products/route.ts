@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/auth"
+import { isStaffRole } from "@/lib/auth-guard"
 import {
   normalizeProductPayload,
   productWithRelationsInclude,
@@ -10,7 +11,7 @@ import prisma from "@/lib/prisma"
 // Middleware manual para checar Admin
 async function checkAdmin() {
   const session = await auth()
-  if (!session || session.user?.role !== "ADMIN") {
+  if (!session || !isStaffRole(session.user?.role)) {
     return false
   }
   return true

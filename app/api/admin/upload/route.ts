@@ -1,6 +1,7 @@
 import { z } from "zod"
 import { NextResponse } from "next/server"
 import { auth } from "@/auth"
+import { isStaffRole } from "@/lib/auth-guard"
 import {
   deleteManagedProductImage,
   isManagedProductImagePath,
@@ -15,7 +16,7 @@ const cleanupUploadSchema = z.object({
 
 async function checkAdmin() {
   const session = await auth()
-  return session?.user?.role === "ADMIN"
+  return isStaffRole(session?.user?.role)
 }
 
 export async function POST(req: Request) {

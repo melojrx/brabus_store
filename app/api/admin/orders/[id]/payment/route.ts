@@ -2,6 +2,7 @@ import { ZodError } from "zod"
 import { NextResponse } from "next/server"
 import { OrderChannel, PaymentMethod, PaymentStatus } from "@prisma/client"
 import { auth } from "@/auth"
+import { isStaffRole } from "@/lib/auth-guard"
 import {
   getNextOperationalStatusForPayment,
   updateOrderPaymentSchema,
@@ -11,7 +12,7 @@ import prisma from "@/lib/prisma"
 
 async function checkAdmin() {
   const session = await auth()
-  return session?.user?.role === "ADMIN"
+  return isStaffRole(session?.user?.role)
 }
 
 export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
