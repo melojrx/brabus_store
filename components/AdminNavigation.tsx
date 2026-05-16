@@ -52,7 +52,7 @@ const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
       { href: "/admin/customers", label: "Clientes", icon: Users },
       { href: "/admin/sellers", label: "Vendedores", icon: UserCheck },
       { href: "/admin/suppliers", label: "Fornecedores", icon: Warehouse },
-      { label: "Usuários", icon: User, disabled: true },
+      { href: "/admin/users", label: "Usuários", icon: User },
     ],
   },
   {
