@@ -49,6 +49,7 @@ export type ManualOrderCreateInput = {
   manualPaymentReference?: string | null
   manualPaymentNotes?: string | null
   cashReceivedAmount?: number | null
+  sellerId?: string | null
 }
 
 export const checkoutOrderSummarySelect = Prisma.validator<Prisma.OrderSelect>()({
@@ -361,6 +362,7 @@ export async function createManualOrder(
       data: {
         userId: input.userId,
         channel: input.channel,
+        sellerId: input.sellerId ?? null,
         status: input.paymentStatus === PaymentStatus.PAID ? OrderStatus.PAID : OrderStatus.PENDING,
         paymentMethod: input.paymentMethod,
         paymentStatus: input.paymentStatus,
