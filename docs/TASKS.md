@@ -39,6 +39,7 @@ Este documento e a fonte da verdade operacional do projeto. Aqui ficam:
 | Historico Consolidado | Fundacao + MVP + estabilizacao entregue | Concluida | Concluida |
 | Sprint 1 | Conversao, dashboard e operacao imediata | Baixa a media | Em andamento |
 | Sprint 1.5 | Cadastros mestres (Customer, Seller, Supplier) | Media-alta | Concluida |
+| Sprint 1.6 | Role SELLER, CRUD usuarios, vendedor no PDV | Media-alta | Concluida |
 | Sprint 2 | Maturidade visual e operacional media | Media | Planejada |
 | Sprint 3 | Governanca, cadastros mestres e PDV avancado | Alta | Planejada |
 
@@ -500,6 +501,60 @@ Este documento e a fonte da verdade operacional do projeto. Aqui ficam:
 
 ---
 
+## 5.7 Sprint 1.6 — Role SELLER e CRUD de Usuarios
+
+**Objetivo:** permitir que vendedores tenham login proprio para operar o PDV com governanca. Registrar automaticamente quem vendeu em cada pedido.
+
+**Status da sprint:** Concluida
+
+### TASK-S1.6-01 — Role SELLER no schema
+
+- [x] Adicionar `SELLER` ao enum Role
+- [x] Adicionar `mustChangePassword` ao User
+- [x] Adicionar `Seller.userId` (1:1 opcional com User)
+- [x] Adicionar `Order.sellerId` (quem vendeu)
+- [x] Migration aplicada
+
+### TASK-S1.6-02 — Auth guard centralizado
+
+- [x] Criar `lib/auth-guard.ts` com `isStaffRole()`
+- [x] Atualizar todos os guards de API admin (~20 arquivos)
+- [x] Atualizar `proxy.ts` para aceitar SELLER no admin
+- [x] Atualizar `app/admin/layout.tsx`
+- [x] Atualizar types `next-auth.d.ts`
+
+### TASK-S1.6-03 — PDV registra vendedor
+
+- [x] PDV busca Seller vinculado ao User logado
+- [x] Passa `sellerId` para `createManualOrder`
+- [x] Order gravado com vendedor automaticamente
+
+### TASK-S1.6-04 — CRUD de Usuarios no admin
+
+- [x] `GET /api/admin/users` com busca, filtro por role, paginacao
+- [x] `POST /api/admin/users` com senha temporaria gerada
+- [x] `PATCH /api/admin/users/[id]` (nome, email, phone, role)
+- [x] `DELETE /api/admin/users/[id]` (desativa: role -> CUSTOMER)
+- [x] `POST /api/admin/users/[id]/reset-password` (nova senha temporaria)
+- [x] Pagina admin com UsersManager
+- [x] Senha exibida uma unica vez (padrao API key)
+- [x] Se role=SELLER, cria Seller vinculado automaticamente
+
+### TASK-S1.6-05 — Troca de senha obrigatoria
+
+- [x] `mustChangePassword` no token JWT e session
+- [x] `proxy.ts` redireciona para `/admin/change-password` se flag ativa
+- [x] Pagina de troca de senha (sem exigir senha atual)
+- [x] `POST /api/admin/change-password` seta flag false
+- [x] Apos trocar, redireciona para login (refresh de session)
+
+### TASK-S1.6-06 — Navegacao
+
+- [x] Ativar item "Usuarios" na sidebar (remover disabled)
+- [x] Account page mostra link admin para SELLER tambem
+
+---
+
 ## 6. Sprint 2 — Maturidade Visual e Operacional Media
 
 **Objetivo:** elevar a maturidade visual e operacional sem entrar ainda nas grandes refatoracoes de cadastros mestres e permissoes.
@@ -596,24 +651,23 @@ Este documento e a fonte da verdade operacional do projeto. Aqui ficam:
 
 #### TASK-S3-GOV-04 — CRUD de usuarios no admin
 
-- [ ] Criar tela e APIs de usuarios
-- [ ] Permitir criacao de `admin`
-- [ ] Permitir criacao de `usuario comum`
-- [ ] Permitir criacao de `vendedor`
-- [ ] Revisar fluxo de senha e ativacao
+- [x] Criar tela e APIs de usuarios (Sprint 1.6)
+- [x] Permitir criacao de `admin`
+- [x] Permitir criacao de `vendedor`
+- [x] Revisar fluxo de senha e ativacao (senha temporaria + mustChangePassword)
 
 #### TASK-S3-GOV-05 — Esquema de permissoes
 
-- [ ] Definir matriz inicial de acessos
-- [ ] Revisar middleware e guards server-side
-- [ ] Revisar exibicao condicional de menus e acoes
-- [ ] Validar restricoes no admin e no PDV
+- [x] Definir matriz inicial de acessos (SELLER = ADMIN, Sprint 1.6)
+- [x] Revisar middleware e guards server-side (isStaffRole centralizado)
+- [x] Revisar exibicao condicional de menus e acoes
+- [ ] Validar restricoes granulares no admin e no PDV (futuro, se necessario)
 
 #### TASK-S3-GOV-06 — CRUD de vendedores
 
 - [x] Definir se vendedor e tipo de usuario, cadastro proprio ou ambos (model independente, Sprint 1.5)
 - [x] Criar CRUD de vendedores
-- [ ] Preparar vinculacao futura com vendas
+- [x] Preparar vinculacao futura com vendas (sellerId no Order, Sprint 1.6)
 
 #### TASK-S3-GOV-07 — CRUD de fornecedores
 
