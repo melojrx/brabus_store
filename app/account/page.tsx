@@ -86,7 +86,7 @@ export default async function AccountPage() {
         </div>
 
         <div className="flex flex-wrap gap-4">
-          {(session.user as { role?: string }).role === "ADMIN" ? (
+          {((session.user as { role?: string }).role === "ADMIN" || (session.user as { role?: string }).role === "SELLER") ? (
             <Link
               href="/admin"
               className="flex items-center gap-2 rounded-sm bg-[var(--color-primary)] px-6 py-3 text-xs font-bold uppercase tracking-widest text-black"

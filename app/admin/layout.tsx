@@ -1,6 +1,7 @@
 import { auth } from "@/auth"
 import AdminNavigation from "@/components/AdminNavigation"
 import { redirect } from "next/navigation"
+import { isStaffRole } from "@/lib/auth-guard"
 
 export default async function AdminLayout({
   children,
@@ -9,7 +10,7 @@ export default async function AdminLayout({
 }) {
   const session = await auth()
 
-  if (!session || session.user?.role !== "ADMIN") {
+  if (!session || !isStaffRole(session.user?.role)) {
     redirect("/")
   }
 

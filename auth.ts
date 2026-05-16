@@ -31,6 +31,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             email: user.email,
             phone: user.phone ?? undefined,
             role: user.role,
+            mustChangePassword: user.mustChangePassword,
           }
         }
         return null
@@ -43,14 +44,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.role = user.role
         token.id = user.id
         token.phone = user.phone
+        token.mustChangePassword = user.mustChangePassword
       }
       return token
     },
     async session({ session, token }) {
       if (token) {
-        session.user.role = token.role as "ADMIN" | "CUSTOMER"
+        session.user.role = token.role as "ADMIN" | "CUSTOMER" | "SELLER"
         session.user.id = token.id as string
         session.user.phone = typeof token.phone === "string" ? token.phone : undefined
+        session.user.mustChangePassword = token.mustChangePassword as boolean ?? false
       }
       return session
     }

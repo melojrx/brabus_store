@@ -1,9 +1,10 @@
 import { auth } from "./auth"
+import { isStaffRole } from "./lib/auth-guard"
 
 export default auth((req) => {
   const isLoggedIn = !!req.auth
   const pathname = req.nextUrl.pathname
-  
+
   const isApiAuthRoute = pathname.startsWith("/api/auth")
   const isPublicRoute = [
     "/",
@@ -32,9 +33,16 @@ export default auth((req) => {
     return Response.redirect(new URL("/auth/login", req.nextUrl))
   }
 
-  // Bloqueia usuários sem role ADMIN de acessar /admin
-  if (isLoggedIn && pathname.startsWith("/admin") && req.auth?.user?.role !== "ADMIN") {
+  // Bloqueia usuários sem role staff de acessar /admin
+  if (isLoggedIn && pathname.startsWith("/admin") && !isStaffRole(req.auth?.user?.role)) {
     return Response.redirect(new URL("/", req.nextUrl))
+  }
+
+  // Força troca de senha para usuários com mustChangePassword
+  if (isLoggedIn && pathname.startsWith("/admin") && req.auth?.user?.mustChangePassword) {
+    if (pathname !== "/admin/change-password" && !pathname.startsWith("/api/admin/change-password")) {
+      return Response.redirect(new URL("/admin/change-password", req.nextUrl))
+    }
   }
 
   // Redireciona usuários autenticados para fora das páginas de auth
