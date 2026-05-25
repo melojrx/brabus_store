@@ -1,8 +1,16 @@
+import { auth } from "@/auth"
+import { redirect } from "next/navigation"
 import { KeyRound } from "lucide-react"
 import ApiKeysManager from "./ApiKeysManager"
 import prisma from "@/lib/prisma"
 
 export default async function AdminApiKeysPage() {
+  const session = await auth()
+
+  if (!session || session.user?.role !== "ADMIN") {
+    redirect(session?.user?.role === "SELLER" ? "/admin/pdv" : "/")
+  }
+
   const keys = await prisma.integrationApiKey.findMany({
     select: {
       id: true,

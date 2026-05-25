@@ -2,10 +2,12 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { signIn, useSession } from "next-auth/react"
 import { KeyRound, Loader2 } from "lucide-react"
 
 export default function ChangePasswordPage() {
   const router = useRouter()
+  const { data: session } = useSession()
   const [newPassword, setNewPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [error, setError] = useState("")
@@ -41,8 +43,19 @@ export default function ChangePasswordPage() {
         return
       }
 
-      // Force re-login to refresh session token
-      router.push("/auth/login?message=password-changed")
+      const result = await signIn("credentials", {
+        email: session?.user?.email ?? "",
+        password: newPassword,
+        redirect: false,
+      })
+
+      if (result?.error) {
+        router.push("/auth/login?message=password-changed")
+        return
+      }
+
+      router.push("/admin")
+      router.refresh()
     } catch {
       setError("Erro de conexão.")
     } finally {

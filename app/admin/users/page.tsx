@@ -1,9 +1,17 @@
+import { auth } from "@/auth"
+import { redirect } from "next/navigation"
 import { User } from "lucide-react"
 import UsersManager from "./UsersManager"
 import prisma from "@/lib/prisma"
 import { Role } from "@prisma/client"
 
 export default async function AdminUsersPage() {
+  const session = await auth()
+
+  if (!session || session.user?.role !== "ADMIN") {
+    redirect(session?.user?.role === "SELLER" ? "/admin/pdv" : "/")
+  }
+
   const [users, totalItems] = await Promise.all([
     prisma.user.findMany({
       where: { role: { in: [Role.ADMIN, Role.SELLER] } },

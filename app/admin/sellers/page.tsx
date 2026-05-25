@@ -1,9 +1,17 @@
+import { auth } from "@/auth"
+import { redirect } from "next/navigation"
 import { UserCheck } from "lucide-react"
 import SellersManager from "./SellersManager"
 import prisma from "@/lib/prisma"
 import { serializeSeller } from "@/lib/sellers"
 
 export default async function AdminSellersPage() {
+  const session = await auth()
+
+  if (!session || session.user?.role !== "ADMIN") {
+    redirect(session?.user?.role === "SELLER" ? "/admin/pdv" : "/")
+  }
+
   const [sellers, totalItems] = await Promise.all([
     prisma.seller.findMany({ orderBy: { createdAt: "desc" }, take: 20 }),
     prisma.seller.count(),

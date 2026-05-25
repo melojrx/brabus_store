@@ -1,5 +1,6 @@
 import { auth } from "@/auth"
 import { redirect } from "next/navigation"
+import { isStaffRole } from "@/lib/auth-guard"
 import Link from "next/link"
 import { ArrowLeft, Mail, MapPin, Truck, User } from "lucide-react"
 import OrderAdminActions from "@/app/admin/orders/[id]/OrderAdminActions"
@@ -32,7 +33,7 @@ function formatDateTime(value: Date | string | null) {
 export default async function AdminOrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
 
-  if (!session || session.user?.role !== "ADMIN") {
+  if (!session || !isStaffRole(session.user?.role)) {
     redirect("/")
   }
 

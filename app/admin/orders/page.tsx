@@ -2,6 +2,7 @@ import Link from "next/link"
 import { redirect } from "next/navigation"
 import { PackageSearch } from "lucide-react"
 import { auth } from "@/auth"
+import { isStaffRole } from "@/lib/auth-guard"
 import OrderRowActions from "@/components/admin/OrderRowActions"
 import {
   ADMIN_ORDERS_PAGE_SIZE,
@@ -108,7 +109,7 @@ export default async function AdminOrdersPage({
 }) {
   const session = await auth()
 
-  if (!session || session.user?.role !== "ADMIN") {
+  if (!session || !isStaffRole(session.user?.role)) {
     redirect("/")
   }
 

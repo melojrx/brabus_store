@@ -1,3 +1,5 @@
+import { auth } from "@/auth"
+import { redirect } from "next/navigation"
 import Link from "next/link"
 import type { ReactNode } from "react"
 import {
@@ -448,6 +450,12 @@ export default async function AdminDashboard({
 }: {
   searchParams?: Promise<Record<string, string | string[] | undefined>>
 }) {
+  const session = await auth()
+
+  if (!session || session.user?.role !== "ADMIN") {
+    redirect(session?.user?.role === "SELLER" ? "/admin/pdv" : "/")
+  }
+
   const resolvedSearchParams = (await searchParams) ?? {}
   const currentTab = parseTab(resolvedSearchParams.tab)
   const currentPeriod = parseDashboardPeriod(readSearchParam(resolvedSearchParams.period))

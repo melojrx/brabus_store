@@ -1,8 +1,9 @@
 "use client"
 
-import { useId, useState } from "react"
+import { useId, useMemo, useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useSession } from "next-auth/react"
 import {
   ChevronLeft,
   House,
@@ -153,10 +154,31 @@ function AdminNavLink({
 
 export default function AdminNavigation() {
   const pathname = usePathname()
+  const { data: session } = useSession()
   const [menuOpen, setMenuOpen] = useState(false)
   const [desktopCollapsed, setDesktopCollapsed] = useState(true)
   const mobileNavId = useId()
-  const currentItem = ADMIN_NAV_ITEMS.find((item) => item.href && isItemActive(pathname, item.href)) ?? ADMIN_NAV_ITEMS[0]
+  const isAdmin = (session?.user as { role?: string } | undefined)?.role === "ADMIN"
+
+  const navSections = useMemo(() => {
+    if (isAdmin) return ADMIN_NAV_SECTIONS
+
+    return ADMIN_NAV_SECTIONS
+      .map((section) => ({
+        ...section,
+        items: section.items.filter(
+          (item) =>
+            item.href !== "/admin" &&
+            item.href !== "/admin/sellers" &&
+            item.href !== "/admin/users" &&
+            item.href !== "/admin/developer/api-keys",
+        ),
+      }))
+      .filter((section) => section.items.length > 0)
+  }, [isAdmin])
+
+  const navItems = useMemo(() => navSections.flatMap((section) => section.items), [navSections])
+  const currentItem = navItems.find((item) => item.href && isItemActive(pathname, item.href)) ?? navItems[0]
   const CurrentItemIcon = currentItem.icon
 
   return (
@@ -203,7 +225,7 @@ export default function AdminNavigation() {
         {menuOpen ? (
           <div id={mobileNavId} className="border-t border-white/5 px-4 py-4">
             <nav aria-label="Admin mobile" className="space-y-4">
-              {ADMIN_NAV_SECTIONS.map((section, sectionIndex) => (
+              {navSections.map((section, sectionIndex) => (
                 <div key={section.label ?? `mobile-section-${sectionIndex}`}>
                   {section.label ? (
                     <p className="mb-2 px-1 text-[10px] font-bold uppercase tracking-[0.22em] text-gray-500">{section.label}</p>
@@ -289,7 +311,7 @@ export default function AdminNavigation() {
 
         <nav aria-label="Admin desktop" className={`flex-1 ${desktopCollapsed ? "px-2 py-4" : "px-3 py-6"}`}>
           <div className="space-y-6">
-            {ADMIN_NAV_SECTIONS.map((section, sectionIndex) => (
+            {navSections.map((section, sectionIndex) => (
               <div key={section.label ?? `desktop-section-${sectionIndex}`}>
                 {!desktopCollapsed && section.label ? (
                   <p className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.22em] text-gray-500">{section.label}</p>

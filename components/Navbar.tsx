@@ -13,7 +13,8 @@ export default function Navbar() {
   const [accountMenuOpen, setAccountMenuOpen] = useState(false)
   const accountMenuRef = useRef<HTMLDivElement | null>(null)
   const itemCount = hasHydrated ? getItemCount() : 0
-  const isAdmin = (session?.user as { role?: string } | undefined)?.role === "ADMIN"
+  const userRole = (session?.user as { role?: string } | undefined)?.role ?? ""
+  const isAdmin = userRole === "ADMIN" || userRole === "SELLER"
   const actionButtonClassName =
     "flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/[0.03] text-gray-300 transition-all duration-200 hover:border-[var(--color-primary)]/40 hover:bg-white/[0.08] hover:text-white"
 
@@ -109,7 +110,7 @@ export default function Navbar() {
 
                     {isAdmin ? (
                       <Link
-                        href="/admin"
+                        href={userRole === "SELLER" ? "/admin/pdv" : "/admin"}
                         onClick={() => setAccountMenuOpen(false)}
                         className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm text-zinc-200 transition-colors hover:bg-white/5 hover:text-white"
                       >
@@ -181,7 +182,7 @@ export default function Navbar() {
                   <User className="h-4 w-4" /> Minha conta
                 </Link>
                 {isAdmin ? (
-                  <Link href="/admin" onClick={() => setMenuOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-zinc-200 transition-colors hover:bg-white/5 hover:text-white">
+                  <Link href={userRole === "SELLER" ? "/admin/pdv" : "/admin"} onClick={() => setMenuOpen(false)} className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-zinc-200 transition-colors hover:bg-white/5 hover:text-white">
                     <Settings className="h-4 w-4" /> Painel Admin
                   </Link>
                 ) : null}
