@@ -5,6 +5,7 @@ import { headers } from "next/headers"
 import prisma from "@/lib/prisma"
 import { decrementOrderItemStock, incrementOrderItemStock } from "@/lib/order-stock"
 import { getStripeServerClient } from "@/lib/stripe"
+import { dispatchOrderPaid } from "@/lib/webhooks/order-paid"
 
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET
 
@@ -154,6 +155,7 @@ export async function POST(req: Request) {
         }
 
         console.log(`Order ${orderId} PAID and stock updated.`)
+        dispatchOrderPaid(orderId).catch(() => {})
         break
       }
 
@@ -173,6 +175,7 @@ export async function POST(req: Request) {
         }
 
         console.log(`Order ${orderId} PAID after async confirmation.`)
+        dispatchOrderPaid(orderId).catch(() => {})
         break
       }
 

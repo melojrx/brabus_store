@@ -9,6 +9,7 @@ import {
 } from "@/lib/admin-orders"
 import { decrementOrderItemStock, incrementOrderItemStock } from "@/lib/order-stock"
 import prisma from "@/lib/prisma"
+import { dispatchOrderPaid } from "@/lib/webhooks/order-paid"
 
 async function checkAdmin() {
   const session = await auth()
@@ -143,6 +144,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
         },
       })
     })
+
+    if (shouldDecrementStock) {
+      dispatchOrderPaid(id).catch(() => {})
+    }
 
     return NextResponse.json({
       ...updatedOrder,

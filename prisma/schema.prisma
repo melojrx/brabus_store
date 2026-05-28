@@ -420,3 +420,41 @@ model IntegrationAuditLog {
   @@index([action, createdAt])
   @@map("integration_audit_logs")
 }
+
+// ─────────────────────────────────────────
+// WEBHOOKS
+// ─────────────────────────────────────────
+
+model WebhookEndpoint {
+  id        String   @id @default(cuid())
+  name      String
+  url       String
+  secret    String
+  events    String[]
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  deliveries WebhookDelivery[]
+
+  @@map("webhook_endpoints")
+}
+
+model WebhookDelivery {
+  id            String    @id @default(cuid())
+  endpointId    String
+  endpoint      WebhookEndpoint @relation(fields: [endpointId], references: [id], onDelete: Cascade)
+  event         String
+  payload       Json
+  httpStatus    Int?
+  responseBody  String?
+  success       Boolean   @default(false)
+  attempts      Int       @default(0)
+  lastAttemptAt DateTime?
+  nextRetryAt   DateTime?
+  createdAt     DateTime  @default(now())
+
+  @@index([endpointId, createdAt])
+  @@index([success, nextRetryAt])
+  @@map("webhook_deliveries")
+}

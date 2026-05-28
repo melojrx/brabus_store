@@ -21,6 +21,7 @@ import {
   UserCheck,
   Users,
   Warehouse,
+  Webhook,
   X,
   type LucideIcon,
 } from "lucide-react"
@@ -67,6 +68,7 @@ const ADMIN_NAV_SECTIONS: AdminNavSection[] = [
     label: "Desenvolvedor",
     items: [
       { href: "/admin/developer/api-keys", label: "API Keys", icon: KeyRound },
+      { href: "/admin/integrations/webhooks", label: "Webhooks", icon: Webhook },
     ],
   },
 ]

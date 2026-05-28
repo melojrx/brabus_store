@@ -9,6 +9,7 @@ import {
 } from "@prisma/client"
 import { decrementOrderItemStock } from "@/lib/order-stock"
 import { buildVariantDisplayLabel } from "@/lib/pdv"
+import { dispatchOrderPaid } from "@/lib/webhooks/order-paid"
 import {
   calculateOrderWeight,
   fetchMelhorEnvioServices,
@@ -396,6 +397,10 @@ export async function createManualOrder(
       select: checkoutOrderSummarySelect,
     })
   })
+
+  if (input.paymentStatus === PaymentStatus.PAID) {
+    dispatchOrderPaid(createdOrder.id).catch(() => {})
+  }
 
   return serializeCheckoutOrderSummary(createdOrder)
 }
