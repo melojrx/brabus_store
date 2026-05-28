@@ -1,3 +1,4 @@
+import { createHmac } from "node:crypto"
 import prisma from "@/lib/prisma"
 
 const TIMEOUT_MS = 10_000
@@ -12,10 +13,17 @@ type SendInput = {
   event: string
 }
 
+function signPayload(secret: string, body: string): string {
+  return createHmac("sha256", secret).update(body).digest("hex")
+}
+
 export async function sendWebhook(input: SendInput): Promise<boolean> {
   const { deliveryId, url, secret, payload, event } = input
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)
+
+  const body = JSON.stringify(payload)
+  const signature = signPayload(secret, body)
 
   let httpStatus: number | null = null
   let responseBody: string | null = null
@@ -26,12 +34,12 @@ export async function sendWebhook(input: SendInput): Promise<boolean> {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "Authorization": `Bearer ${secret}`,
+        "X-Hub-Signature-256": `sha256=${signature}`,
         "X-Webhook-Event": event,
         "X-Webhook-Delivery-Id": deliveryId,
         "User-Agent": "BrabusStore-Webhook/1.0",
       },
-      body: JSON.stringify(payload),
+      body,
       signal: controller.signal,
     })
 
