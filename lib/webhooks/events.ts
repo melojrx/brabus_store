@@ -17,6 +17,7 @@ export type OrderPaidEventData = {
     quantity: number
     unitPrice: number | null
   }>
+  itemsSummary: string
   paidAt: string
   sellerName: string | null
 }
