@@ -16,13 +16,15 @@ type ApiKeyRecord = {
 }
 
 const AVAILABLE_SCOPES = [
-  { value: "read:dashboard", label: "Dashboard" },
-  { value: "read:orders", label: "Pedidos" },
-  { value: "read:products", label: "Produtos" },
-  { value: "read:stock", label: "Estoque" },
-  { value: "read:categories", label: "Categorias" },
-  { value: "read:customers", label: "Clientes" },
-  { value: "read:settings", label: "Configurações" },
+  { value: "read:dashboard", label: "Dashboard (leitura)" },
+  { value: "read:orders", label: "Pedidos (leitura)" },
+  { value: "read:products", label: "Produtos (leitura)" },
+  { value: "write:products", label: "Produtos (escrita)" },
+  { value: "read:stock", label: "Estoque (leitura)" },
+  { value: "write:stock", label: "Estoque (escrita)" },
+  { value: "read:categories", label: "Categorias (leitura)" },
+  { value: "read:customers", label: "Clientes (leitura)" },
+  { value: "read:settings", label: "Configurações (leitura)" },
 ] as const
 
 function formatDate(iso: string | null) {
