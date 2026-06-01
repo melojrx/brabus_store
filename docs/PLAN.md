@@ -419,3 +419,28 @@ Nao pertencem ao escopo deste repositorio, neste momento:
 - `docs/PRD.md` define a visao de produto e os requisitos
 - `docs/PLAN.md` define o que vamos implementar e a ordem recomendada
 - `docs/TASKS.md` e a fonte da verdade operacional para sprints e acompanhamento continuo
+
+---
+
+## 12. Frente de Infraestrutura e Migracao
+
+### 12.1 Contexto
+
+A aplicacao esta hospedada em VPS com Easypanel (Docker Swarm + Traefik). A decisao e migrar para nova VPS com stack propria (Docker + NGINX + Certbot + GitHub Actions), eliminando dependencia do Easypanel.
+
+### 12.2 Escopo
+
+- Backup completo (banco + uploads)
+- Provisionamento de nova VPS com NGINX
+- CI/CD via GitHub Actions (push em main -> deploy automatico)
+- Restauracao de dados na nova VPS
+- Migracao de DNS com downtime minimo
+- Descomissionamento da VPS antiga
+
+### 12.3 Documento de referencia
+
+- `docs/MIGRATION.md` — plano detalhado com etapas, configs de referencia e riscos
+
+### 12.4 Posicao na ordem de implementacao
+
+Esta frente e transversal e pode ser executada em paralelo com qualquer sprint funcional. Prioridade alta — bloqueia go-live formal.
