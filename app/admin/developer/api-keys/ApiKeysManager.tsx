@@ -24,6 +24,8 @@ const AVAILABLE_SCOPES = [
   { value: "write:stock", label: "Estoque (escrita)" },
   { value: "read:categories", label: "Categorias (leitura)" },
   { value: "read:customers", label: "Clientes (leitura)" },
+  { value: "read:suppliers", label: "Fornecedores (leitura)" },
+  { value: "read:sellers", label: "Vendedores (leitura)" },
   { value: "read:settings", label: "Configurações (leitura)" },
 ] as const
 
