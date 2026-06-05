@@ -445,6 +445,110 @@ function StockTopProductsTable({
   )
 }
 
+function MostSoldProductsTable({
+  items,
+}: {
+  items: ReadonlyArray<{
+    productId: string
+    name: string
+    units: number
+    revenue: number
+    averageTicket: number
+  }>
+}) {
+  return (
+    <div className="rounded-sm border border-white/5 bg-zinc-900 p-6">
+      <div className="mb-6">
+        <h3 className="text-lg font-heading tracking-wider uppercase text-white">Produtos Mais Vendidos</h3>
+        <p className="mt-2 text-sm text-gray-500">Ranking de unidades vendidas dentro do recorte atual.</p>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-left text-sm">
+          <thead className="bg-black text-xs uppercase tracking-[0.2em] text-gray-400">
+            <tr>
+              <th className="rounded-tl-sm px-4 py-4">Produto</th>
+              <th className="px-4 py-4">Unidades</th>
+              <th className="px-4 py-4">Faturamento</th>
+              <th className="rounded-tr-sm px-4 py-4">Ticket Médio</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((item) => (
+              <tr key={item.productId} className="border-b border-white/5 hover:bg-white/5">
+                <td className="px-4 py-4 font-medium text-white">{item.name}</td>
+                <td className="px-4 py-4 text-gray-300">{formatNumber(item.units)}</td>
+                <td className="px-4 py-4 text-gray-300">{formatCurrency(item.revenue)}</td>
+                <td className="px-4 py-4 font-semibold text-white">{formatCurrency(item.averageTicket)}</td>
+              </tr>
+            ))}
+
+            {items.length === 0 ? (
+              <tr>
+                <td colSpan={4} className="px-4 py-10 text-center text-gray-500">
+                  Nenhum produto vendido no periodo atual.
+                </td>
+              </tr>
+            ) : null}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
+function TopClientsTable({
+  items,
+}: {
+  items: ReadonlyArray<{
+    userId: string
+    name: string
+    orders: number
+    revenue: number
+    averageTicket: number
+  }>
+}) {
+  return (
+    <div className="rounded-sm border border-white/5 bg-zinc-900 p-6">
+      <div className="mb-6">
+        <h3 className="text-lg font-heading tracking-wider uppercase text-white">Top Clientes</h3>
+        <p className="mt-2 text-sm text-gray-500">Ranking de faturamento por cliente dentro do recorte atual.</p>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-left text-sm">
+          <thead className="bg-black text-xs uppercase tracking-[0.2em] text-gray-400">
+            <tr>
+              <th className="rounded-tl-sm px-4 py-4">Cliente</th>
+              <th className="px-4 py-4">Pedidos</th>
+              <th className="px-4 py-4">Faturamento</th>
+              <th className="rounded-tr-sm px-4 py-4">Ticket Médio</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((item) => (
+              <tr key={item.userId} className="border-b border-white/5 hover:bg-white/5">
+                <td className="px-4 py-4 font-medium text-white">{item.name}</td>
+                <td className="px-4 py-4 text-gray-300">{formatNumber(item.orders)}</td>
+                <td className="px-4 py-4 text-gray-300">{formatCurrency(item.revenue)}</td>
+                <td className="px-4 py-4 font-semibold text-white">{formatCurrency(item.averageTicket)}</td>
+              </tr>
+            ))}
+
+            {items.length === 0 ? (
+              <tr>
+                <td colSpan={4} className="px-4 py-10 text-center text-gray-500">
+                  Nenhum cliente com pedidos validados no periodo atual.
+                </td>
+              </tr>
+            ) : null}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
 export default async function AdminDashboard({
   searchParams,
 }: {
@@ -632,6 +736,9 @@ export default async function AdminDashboard({
               tone="success"
             />
           </div>
+
+          <MostSoldProductsTable items={dashboard.commercial.mostSoldProducts} />
+          <TopClientsTable items={dashboard.commercial.topClients} />
         </div>
       ) : null}
 
