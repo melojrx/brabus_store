@@ -51,7 +51,7 @@ type AddressLookupResult = {
 }
 
 type ShippingTypeValue = "PICKUP" | "LOCAL_DELIVERY" | "NATIONAL"
-type PublicCheckoutPaymentMethod = "STRIPE_CARD" | "MANUAL_PIX" | "CASH"
+type PublicCheckoutPaymentMethod = "MERCADO_PAGO_CARD" | "MERCADO_PAGO_PIX" | "CASH"
 
 const addressInputCls =
   "w-full rounded-sm border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none transition-colors placeholder:text-gray-500 focus:border-[var(--color-primary)]"
@@ -99,15 +99,16 @@ function parseMoneyInput(value: string) {
 }
 
 function getPaymentActionLabel(paymentMethod: PublicCheckoutPaymentMethod) {
-  if (paymentMethod === "MANUAL_PIX") {
-    return "Confirmar pedido via Pix"
+  if (paymentMethod === "MERCADO_PAGO_PIX") {
+    return "Gerar QR Code Pix"
   }
-
+  if (paymentMethod === "MERCADO_PAGO_CARD") {
+    return "Pagar com cartão"
+  }
   if (paymentMethod === "CASH") {
     return "Confirmar pedido em dinheiro"
   }
-
-  return "Pagar on-line"
+  return "Confirmar"
 }
 
 export default function CheckoutPageClient({ pixKey }: { pixKey: string | null }) {
@@ -116,7 +117,7 @@ export default function CheckoutPageClient({ pixKey }: { pixKey: string | null }
   const router = useRouter()
 
   const [shippingType, setShippingType] = useState<ShippingTypeValue>("PICKUP")
-  const [paymentMethod, setPaymentMethod] = useState<PublicCheckoutPaymentMethod>("STRIPE_CARD")
+  const [paymentMethod, setPaymentMethod] = useState<PublicCheckoutPaymentMethod>("MERCADO_PAGO_CARD")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
   const [cashReceivedAmount, setCashReceivedAmount] = useState("")
@@ -218,16 +219,16 @@ export default function CheckoutPageClient({ pixKey }: { pixKey: string | null }
   }, [matchingLocalZone, shippingType])
 
   useEffect(() => {
-    const manualPixAvailable = shippingType !== "NATIONAL" && Boolean(pixKey)
+    const mercadoPagoPixAvailable = Boolean(pixKey)
     const cashAvailable = shippingType !== "NATIONAL"
 
-    if (paymentMethod === "MANUAL_PIX" && !manualPixAvailable) {
-      setPaymentMethod("STRIPE_CARD")
+    if (paymentMethod === "MERCADO_PAGO_PIX" && !mercadoPagoPixAvailable) {
+      setPaymentMethod("MERCADO_PAGO_CARD")
       return
     }
 
     if (paymentMethod === "CASH" && !cashAvailable) {
-      setPaymentMethod("STRIPE_CARD")
+      setPaymentMethod("MERCADO_PAGO_CARD")
     }
   }, [paymentMethod, pixKey, shippingType])
 
@@ -410,12 +411,8 @@ export default function CheckoutPageClient({ pixKey }: { pixKey: string | null }
   }
 
   const validatePaymentSelection = () => {
-    if (shippingType === "NATIONAL" && paymentMethod !== "STRIPE_CARD") {
-      return "Entrega nacional aceita apenas pagamento online."
-    }
-
-    if (paymentMethod === "MANUAL_PIX" && !pixKey) {
-      return "O Pix manual não está disponível no momento."
+    if (shippingType === "NATIONAL" && paymentMethod === "CASH") {
+      return "Entrega nacional não aceita pagamento em dinheiro."
     }
 
     if (paymentMethod === "CASH") {
@@ -484,13 +481,15 @@ export default function CheckoutPageClient({ pixKey }: { pixKey: string | null }
         throw new Error(data.error || "Erro ao processar pagamento")
       }
 
-      if (data.url) {
-        window.location.href = data.url
+      if (data.qrCode && data.qrCodeBase64) {
+        // Mostrar QR code Pix
+        router.push(`/checkout/success?order_id=${data.orderId}&qr_code=${encodeURIComponent(data.qrCode)}&qr_base64=${encodeURIComponent(data.qrCodeBase64)}`)
         return
       }
 
-      if (data.redirectUrl) {
-        router.push(data.redirectUrl)
+      if (data.initPoint) {
+        // Redirecionar para Payment Brick
+        window.location.href = data.initPoint
         return
       }
 
@@ -511,10 +510,8 @@ export default function CheckoutPageClient({ pixKey }: { pixKey: string | null }
       : null
   const availablePaymentMethods: PublicCheckoutPaymentMethod[] =
     shippingType === "NATIONAL"
-      ? ["STRIPE_CARD"]
-      : pixKey
-        ? ["STRIPE_CARD", "MANUAL_PIX", "CASH"]
-        : ["STRIPE_CARD", "CASH"]
+      ? ["MERCADO_PAGO_CARD", "MERCADO_PAGO_PIX"]
+      : ["MERCADO_PAGO_CARD", "MERCADO_PAGO_PIX", "CASH"]
 
   return (
     <div className="container mx-auto px-4 py-12 lg:py-20">
@@ -753,7 +750,7 @@ export default function CheckoutPageClient({ pixKey }: { pixKey: string | null }
             <div className="space-y-3">
               <label
                 className={`block cursor-pointer rounded-sm border p-4 transition-colors ${
-                  paymentMethod === "STRIPE_CARD"
+                  paymentMethod === "MERCADO_PAGO_CARD"
                     ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5"
                     : "border-white/10 hover:border-white/30"
                 }`}
@@ -761,26 +758,26 @@ export default function CheckoutPageClient({ pixKey }: { pixKey: string | null }
                 <input
                   type="radio"
                   name="payment-method"
-                  value="STRIPE_CARD"
-                  checked={paymentMethod === "STRIPE_CARD"}
-                  onChange={() => setPaymentMethod("STRIPE_CARD")}
+                  value="MERCADO_PAGO_CARD"
+                  checked={paymentMethod === "MERCADO_PAGO_CARD"}
+                  onChange={() => setPaymentMethod("MERCADO_PAGO_CARD")}
                   className="hidden"
                 />
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <p className="text-sm font-bold uppercase tracking-widest text-white">Pagamento Online</p>
+                    <p className="text-sm font-bold uppercase tracking-widest text-white">Cartão de Crédito</p>
                     <p className="mt-2 text-xs text-gray-400">
-                      Redireciona para o ambiente seguro do Stripe. Use cartão, Pix ou boleto conforme a configuração ativa da conta.
+                      Pague com cartão de crédito via Mercado Pago. Redireciona para o ambiente seguro do Mercado Pago.
                     </p>
                   </div>
                   <CreditCard className="w-5 h-5 text-[var(--color-primary)] shrink-0" />
                 </div>
               </label>
 
-              {availablePaymentMethods.includes("MANUAL_PIX") && (
+              {availablePaymentMethods.includes("MERCADO_PAGO_PIX") && (
                 <label
                   className={`block cursor-pointer rounded-sm border p-4 transition-colors ${
-                    paymentMethod === "MANUAL_PIX"
+                    paymentMethod === "MERCADO_PAGO_PIX"
                       ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5"
                       : "border-white/10 hover:border-white/30"
                   }`}
@@ -788,23 +785,17 @@ export default function CheckoutPageClient({ pixKey }: { pixKey: string | null }
                   <input
                     type="radio"
                     name="payment-method"
-                    value="MANUAL_PIX"
-                    checked={paymentMethod === "MANUAL_PIX"}
-                    onChange={() => setPaymentMethod("MANUAL_PIX")}
+                    value="MERCADO_PAGO_PIX"
+                    checked={paymentMethod === "MERCADO_PAGO_PIX"}
+                    onChange={() => setPaymentMethod("MERCADO_PAGO_PIX")}
                     className="hidden"
                   />
                   <div className="flex items-start justify-between gap-4">
                     <div>
-                      <p className="text-sm font-bold uppercase tracking-widest text-white">Pix Manual</p>
+                      <p className="text-sm font-bold uppercase tracking-widest text-white">Pix via Mercado Pago</p>
                       <p className="mt-2 text-xs text-gray-400">
-                        Gere o pedido agora e finalize o pagamento via chave Pix da loja. A confirmação acontece manualmente.
+                        Gere um QR Code Pix instantâneo via Mercado Pago. Pagamento confirmado automaticamente.
                       </p>
-                      {paymentMethod === "MANUAL_PIX" && pixKey ? (
-                        <div className="mt-4 rounded-sm border border-white/10 bg-black/20 px-4 py-3">
-                          <p className="text-[11px] uppercase tracking-widest text-gray-500">Chave Pix</p>
-                          <p className="mt-2 break-all text-sm text-white">{pixKey}</p>
-                        </div>
-                      ) : null}
                     </div>
                     <QrCode className="w-5 h-5 text-[var(--color-primary)] shrink-0" />
                   </div>
@@ -897,10 +888,10 @@ export default function CheckoutPageClient({ pixKey }: { pixKey: string | null }
             <div className="flex justify-between text-gray-400">
               <span>Pagamento</span>
               <span className="text-white">
-                {paymentMethod === "STRIPE_CARD"
-                  ? "Stripe"
-                  : paymentMethod === "MANUAL_PIX"
-                    ? "Pix Manual"
+                {paymentMethod === "MERCADO_PAGO_CARD"
+                  ? "Cartão (Mercado Pago)"
+                  : paymentMethod === "MERCADO_PAGO_PIX"
+                    ? "Pix (Mercado Pago)"
                     : "Dinheiro"}
               </span>
             </div>
@@ -931,7 +922,7 @@ export default function CheckoutPageClient({ pixKey }: { pixKey: string | null }
           <button
             onClick={handleCheckout}
             disabled={loading}
-            className="bg-[#635BFF] hover:bg-[#635BFF]/90 text-white font-bold uppercase tracking-widest py-4 px-8 rounded-sm transition-all flex items-center justify-center gap-2 w-full shadow-lg shadow-[#635BFF]/20 disabled:opacity-50"
+            className="bg-[#00B1EA] hover:bg-[#00B1EA]/90 text-white font-bold uppercase tracking-widest py-4 px-8 rounded-sm transition-all flex items-center justify-center gap-2 w-full shadow-lg shadow-[#00B1EA]/20 disabled:opacity-50"
           >
             {loading ? "Processando..." : getPaymentActionLabel(paymentMethod)}
           </button>
