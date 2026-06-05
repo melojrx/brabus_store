@@ -15,6 +15,7 @@ import { getOrderDisplayNumber } from "@/lib/order-number"
 import type { PaymentMethodValue, PaymentStatusValue } from "@/lib/payment-status"
 import { useCartStore } from "@/store/cartStore"
 import { getPaymentMethodLabel, getPaymentStatusMeta } from "@/lib/payment-status"
+import QrCodeDisplay from "@/app/checkout/pix/QrCodeDisplay"
 
 type CheckoutOrderSummary = {
   id: string
@@ -72,7 +73,7 @@ function buildSuccessCopy(summary: CheckoutSummary | null) {
     }
   }
 
-  if (summary.order.paymentMethod === "MANUAL_PIX") {
+  if (summary.order.paymentMethod === "MERCADO_PAGO_PIX") {
     return {
       title: "Pedido Recebido",
       description:
@@ -165,7 +166,7 @@ function buildWhatsappOrderMessage(summary: CheckoutSummary | null) {
     return baseLines.join("\n")
   }
 
-  if (order.paymentMethod === "MANUAL_PIX") {
+  if (order.paymentMethod === "MERCADO_PAGO_PIX") {
     return [...baseLines, "", "Estou enviando o comprovante para confirmação."].join("\n")
   }
 
@@ -180,10 +181,13 @@ function CheckoutSuccessContent() {
   const searchParams = useSearchParams()
   const sessionId = searchParams.get("session_id")
   const orderId = searchParams.get("order_id")
+  const qrCodeBase64 = searchParams.get("qr_base64")
+  const qrCodeText = searchParams.get("qr_code")
   const { clearCart } = useCartStore()
   const [summary, setSummary] = useState<CheckoutSummary | null>(null)
   const [loading, setLoading] = useState(Boolean(sessionId || orderId))
   const [error, setError] = useState("")
+  const [showPix, setShowPix] = useState(Boolean(qrCodeBase64 && qrCodeText))
 
   useEffect(() => {
     clearCart()
@@ -282,7 +286,16 @@ function CheckoutSuccessContent() {
         </span>
       ) : null}
 
-      {summary?.source === "manual" && order?.paymentMethod === "MANUAL_PIX" && summary.pixKey ? (
+      {showPix && qrCodeBase64 && qrCodeText && (
+        <QrCodeDisplay
+          qrCodeBase64={qrCodeBase64}
+          qrCodeText={qrCodeText}
+          amount={order?.total ?? 0}
+          onCopied={() => setShowPix(false)}
+        />
+      )}
+
+      {summary?.source === "manual" && order?.paymentMethod === "MERCADO_PAGO_PIX" && summary.pixKey ? (
         <div className="mb-10 w-full max-w-2xl rounded-sm border border-white/10 bg-black/20 p-6 text-left">
           <div className="flex items-center gap-3 text-[var(--color-primary)]">
             <QrCode className="w-5 h-5" />
