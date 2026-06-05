@@ -426,6 +426,7 @@ export async function getAdminDashboardData(
         createdAt: true,
         paymentMethod: true,
         channel: true,
+        userId: true,
       },
     }),
     prisma.orderItem.findMany({
@@ -506,6 +507,19 @@ export async function getAdminDashboardData(
     }),
   ])
 
+  // buscar users dos pedidos pagos para nomes de clientes
+  const paidUserIds = [...new Set(paidOrders.map((o) => o.userId).filter(Boolean))]
+  const paidUsers =
+    paidUserIds.length > 0
+      ? await prisma.user.findMany({
+          where: { id: { in: paidUserIds } },
+          select: { id: true, name: true, email: true },
+        })
+      : []
+  const userNameMap = new Map(
+    paidUsers.map((u) => [u.id, u.name || u.email?.split("@")[0] || "Cliente sem identificacao"]),
+  )
+
   const timeline = createTimelineBuckets(normalizedPeriod, parseFirstPaidAt(firstPaidOrder), now)
   const paymentMethodSales = new Map<string, number>()
   const channelSales = new Map<string, number>()
@@ -518,6 +532,8 @@ export async function getAdminDashboardData(
   const inventoryValueByCategory = new Map<string, number>()
   const stockProducts = new Map<string, { units: number; value: number; categoryName: string }>()
   const productUnits = new Map<string, { units: number; revenue: number; name: string }>()
+  const clientSales = new Map<string, { orders: number; revenue: number; userId: string }>()
+  const CLIENT_EXCLUDE_EMAIL = "pdv-balcao@brabus.local"
 
   let totalSales = 0
   let grossRevenue = 0
@@ -541,6 +557,18 @@ export async function getAdminDashboardData(
 
     if (bucketIndex != null) {
       timeline.buckets[bucketIndex].sales += orderTotal
+    }
+
+    // top clientes (aggregacao por userId)
+    if (order.userId) {
+      const clientEntry = clientSales.get(order.userId) ?? {
+        orders: 0,
+        revenue: 0,
+        userId: order.userId,
+      }
+      clientEntry.orders += 1
+      clientEntry.revenue += orderTotal
+      clientSales.set(order.userId, clientEntry)
     }
   }
 
@@ -689,6 +717,16 @@ export async function getAdminDashboardData(
           averageTicket: data.units > 0 ? currencyValue(data.revenue / data.units) : 0,
         }))
         .sort((left, right) => right.units - left.units)
+        .slice(0, 10),
+      topClients: Array.from(clientSales.entries())
+        .map(([userId, data]) => ({
+          userId,
+          name: userNameMap.get(userId) || "Cliente sem identificacao",
+          orders: data.orders,
+          revenue: currencyValue(data.revenue),
+          averageTicket: data.orders > 0 ? currencyValue(data.revenue / data.orders) : 0,
+        }))
+        .sort((left, right) => right.revenue - left.revenue)
         .slice(0, 10),
     },
     stock: {
