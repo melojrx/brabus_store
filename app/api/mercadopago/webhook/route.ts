@@ -15,8 +15,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 })
     }
 
-    // Validar assinatura para merchant_order
-    if (topic === "merchant_order" && signature && signatureDate) {
+    // Validar assinatura para merchant_order (obrigatório)
+    if (topic === "merchant_order") {
+      if (!signature || !signatureDate) {
+        return NextResponse.json({ error: "Missing signature headers" }, { status: 401 })
+      }
       const accessToken = process.env.MERCADO_PAGO_ACCESS_TOKEN ?? ""
       const isValid = validateWebhookSignature(topic, apiVersion, id, signature, signatureDate, accessToken)
 
