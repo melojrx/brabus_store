@@ -50,6 +50,7 @@ enum PaymentStatus {
   FAILED
   CANCELLED
   REFUNDED
+  PARTIAL_REFUNDED
 }
 
 enum OrderChannel {
@@ -169,6 +170,7 @@ model Order {
   total           Decimal       @db.Decimal(10, 2)
   stripeSessionId String?       @unique
   stripePaymentId String?
+  mercadoPagoPaymentId String?
   paidAt          DateTime?
   manualPaymentReference String?
   manualPaymentNotes     String?
