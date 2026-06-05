@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
 import { OrderChannel, PaymentMethod, PaymentStatus, Prisma, ShippingType } from "@prisma/client"
-import type Stripe from "stripe"
 import { ZodError } from "zod"
 import { auth } from "@/auth"
 import { createManualOrder } from "@/lib/manual-orders"
@@ -14,12 +13,8 @@ import {
   resolveVariant,
 } from "@/lib/public-checkout"
 import { fetchMelhorEnvioServices, findLocalDeliveryZone } from "@/lib/shipping"
-import {
-  inferOrderPaymentMethodFromCheckoutConfig,
-  getStripeCheckoutPaymentMethodTypes,
-  getStripeServerClient,
-  isStripeTestEnvironmentConfigured,
-} from "@/lib/stripe"
+import { getMercadoPagoClient, isMercadoPagoConfigured } from "@/lib/mercadopago/client"
+import { generateQrCodeBase64 } from "@/lib/mercadopago/pix"
 import { getPublicStoreSettings } from "@/lib/store-settings"
 
 type ProductRecord = Prisma.ProductGetPayload<{
@@ -155,20 +150,18 @@ export async function POST(req: Request) {
     const products = await loadCheckoutProducts(payload.items.map((item) => item.productId))
     const resolvedItems = resolveCheckoutItems(products, payload.items)
 
-    if (payload.paymentMethod === "STRIPE_CARD") {
-      if (!isStripeTestEnvironmentConfigured()) {
+    if (payload.paymentMethod === "MERCADO_PAGO_CARD") {
+      if (!isMercadoPagoConfigured()) {
         return NextResponse.json(
-          { error: "Stripe de teste ainda não configurado neste ambiente." },
+          { error: "Mercado Pago não configurado neste ambiente." },
           { status: 503 },
         )
       }
 
-      const stripe = getStripeServerClient()
-      const configuredPaymentMethods = getStripeCheckoutPaymentMethodTypes()
+      const { preference } = getMercadoPagoClient()
       let total = 0
       let totalWeightKg = 0
       const orderItemsRecord: Prisma.OrderItemUncheckedCreateWithoutOrderInput[] = []
-      const lineItems: Stripe.Checkout.SessionCreateParams.LineItem[] = []
 
       for (const item of resolvedItems) {
         const priceToUse = item.product.price.toNumber()
@@ -194,17 +187,6 @@ export async function POST(req: Request) {
           categoryNameSnapshot: categoryName,
           subcategoryNameSnapshot: subcategoryName,
           variantNameSnapshot: item.variant.name ?? null,
-        })
-
-        lineItems.push({
-          price_data: {
-            currency: "brl",
-            product_data: {
-              name: item.variantLabel ? `${item.product.name} (${item.variantLabel})` : item.product.name,
-            },
-            unit_amount: Math.round(priceToUse * 100),
-          },
-          quantity: item.quantity,
         })
       }
 
@@ -262,19 +244,6 @@ export async function POST(req: Request) {
 
       total += resolvedShippingCost
 
-      if (resolvedShippingCost > 0) {
-        lineItems.push({
-          price_data: {
-            currency: "brl",
-            product_data: {
-              name: `Custo de Envio (${resolvedShippingCarrier ?? "Entrega"})`,
-            },
-            unit_amount: Math.round(resolvedShippingCost * 100),
-          },
-          quantity: 1,
-        })
-      }
-
       const order = await prisma.$transaction(async (tx) => {
         const orderCreatedAt = new Date()
         const { orderNumber } = await allocateOrderNumber(tx, {
@@ -286,7 +255,7 @@ export async function POST(req: Request) {
           data: {
             userId,
             channel: OrderChannel.ONLINE,
-            paymentMethod: inferOrderPaymentMethodFromCheckoutConfig(configuredPaymentMethods),
+            paymentMethod: PaymentMethod.CREDIT_CARD,
             paymentStatus: PaymentStatus.PENDING,
             createdAt: orderCreatedAt,
             orderNumber,
@@ -307,33 +276,238 @@ export async function POST(req: Request) {
       })
 
       const origin = req.headers.get("origin") || process.env.NEXTAUTH_URL
-      const stripeSession = await stripe.checkout.sessions.create({
-        payment_method_types: configuredPaymentMethods,
-        line_items: lineItems,
-        mode: "payment",
-        success_url: `${origin}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-        cancel_url: `${origin}/checkout/cancel`,
-        client_reference_id: order.id,
-        customer_email: sessionAuth.user?.email ?? undefined,
-        locale: "pt-BR",
-        billing_address_collection: "auto",
-        phone_number_collection: {
-          enabled: true,
-        },
-        metadata: {
-          orderId: order.id,
-          orderNumber: order.orderNumber ?? "",
-          userId,
-          shippingType: payload.shippingType,
+
+      const preferenceResponse = await preference.create({
+        body: {
+          items: resolvedItems.map((item) => ({
+            id: item.product.id,
+            title: item.variantLabel
+              ? `${item.product.name} (${item.variantLabel})`
+              : item.product.name,
+            quantity: item.quantity,
+            currency_id: "BRL",
+            unit_price: item.product.price.toNumber(),
+          })),
+          external_reference: order.id,
+          auto_return: "approved",
+          back_urls: {
+            success: `${origin}/checkout/success?order_id=${order.id}`,
+            failure: `${origin}/checkout/cancel`,
+            pending: `${origin}/checkout/success?order_id=${order.id}`,
+          },
+          metadata: {
+            orderId: order.id,
+            orderNumber: order.orderNumber ?? "",
+            userId,
+            shippingType: payload.shippingType,
+          },
         },
       })
 
       await prisma.order.update({
         where: { id: order.id },
-        data: { stripeSessionId: stripeSession.id },
+        data: { mercadoPagoPreferenceId: preferenceResponse.id },
       })
 
-      return NextResponse.json({ sessionId: stripeSession.id, url: stripeSession.url })
+      return NextResponse.json({
+        preferenceId: preferenceResponse.id,
+        initPoint: preferenceResponse.sandbox_init_point ?? preferenceResponse.init_point,
+      })
+    }
+
+    if (payload.paymentMethod === "MERCADO_PAGO_PIX") {
+      if (!isMercadoPagoConfigured()) {
+        return NextResponse.json(
+          { error: "Mercado Pago não configurado neste ambiente." },
+          { status: 503 },
+        )
+      }
+
+      const { preference: mpPreference, payment: mpPayment } = getMercadoPagoClient()
+      let total = 0
+      let totalWeightKg = 0
+      const orderItemsRecord: Prisma.OrderItemUncheckedCreateWithoutOrderInput[] = []
+
+      for (const item of resolvedItems) {
+        const priceToUse = item.product.price.toNumber()
+        const unitCost = item.product.costPrice?.toNumber() ?? null
+        const categoryName = item.product.category.parent?.name ?? item.product.category.name
+        const subcategoryName = item.product.category.parent ? item.product.category.name : null
+
+        total += priceToUse * item.quantity
+        totalWeightKg += (item.product.weightKg ?? 0.5) * item.quantity
+
+        orderItemsRecord.push({
+          productId: item.product.id,
+          productVariantId: item.variant.id,
+          quantity: item.quantity,
+          price: priceToUse,
+          unitPrice: priceToUse,
+          unitCost,
+          selectedSize: item.selectedSize,
+          selectedColor: item.selectedColor,
+          selectedFlavor: item.selectedFlavor,
+          productNameSnapshot: item.product.name,
+          productSlugSnapshot: item.product.slug,
+          categoryNameSnapshot: categoryName,
+          subcategoryNameSnapshot: subcategoryName,
+          variantNameSnapshot: item.variant.name ?? null,
+        })
+      }
+
+      let resolvedShippingCost = 0
+      let resolvedShippingCarrier: string | null = null
+      let resolvedShippingDeadline: string | null = null
+
+      if (payload.shippingType === ShippingType.PICKUP) {
+        resolvedShippingCarrier = "Retirada na Loja"
+        resolvedShippingDeadline = "Retirada imediata"
+      }
+
+      if (payload.shippingType === ShippingType.LOCAL_DELIVERY) {
+        const localZone = await findLocalDeliveryZone(
+          prisma,
+          normalizedAddress.addressCity ?? "",
+          normalizedAddress.addressState,
+        )
+
+        if (!localZone) {
+          return NextResponse.json(
+            { error: "A cidade informada não possui entrega local disponível." },
+            { status: 400 },
+          )
+        }
+
+        resolvedShippingCost = localZone.price
+        resolvedShippingCarrier = "Entrega Local"
+        resolvedShippingDeadline = localZone.deadlineText
+      }
+
+      if (payload.shippingType === ShippingType.NATIONAL) {
+        if (!normalizedAddress.addressZip) {
+          return NextResponse.json({ error: "CEP inválido para frete nacional." }, { status: 400 })
+        }
+
+        const availableServices = await fetchMelhorEnvioServices({
+          toPostalCode: normalizedAddress.addressZip,
+          weightKg: totalWeightKg,
+        })
+
+        const selectedService = availableServices.find((service) => service.id === payload.shippingServiceId)
+
+        if (!selectedService) {
+          return NextResponse.json(
+            { error: "O serviço de frete selecionado não está mais disponível para este CEP." },
+            { status: 400 },
+          )
+        }
+
+        resolvedShippingCost = selectedService.price
+        resolvedShippingCarrier = selectedService.carrier
+        resolvedShippingDeadline = selectedService.deliveryTime
+      }
+
+      total += resolvedShippingCost
+
+      const order = await prisma.$transaction(async (tx) => {
+        const orderCreatedAt = new Date()
+        const { orderNumber } = await allocateOrderNumber(tx, {
+          channel: OrderChannel.ONLINE,
+          createdAt: orderCreatedAt,
+        })
+
+        return tx.order.create({
+          data: {
+            userId,
+            channel: OrderChannel.ONLINE,
+            paymentMethod: PaymentMethod.PIX,
+            paymentStatus: PaymentStatus.PENDING,
+            createdAt: orderCreatedAt,
+            orderNumber,
+            total,
+            customerNameSnapshot: sessionAuth.user?.name ?? null,
+            customerEmailSnapshot: sessionAuth.user?.email ?? null,
+            customerPhoneSnapshot: sessionAuth.user?.phone ?? null,
+            shippingType: payload.shippingType,
+            shippingCost: resolvedShippingCost,
+            shippingCarrier: resolvedShippingCarrier,
+            shippingDeadline: resolvedShippingDeadline,
+            ...(payload.shippingType !== ShippingType.PICKUP ? normalizedAddress : {}),
+            items: {
+              create: orderItemsRecord,
+            },
+          },
+        })
+      })
+
+      const origin = req.headers.get("origin") || process.env.NEXTAUTH_URL
+
+      const preferenceResponse = await mpPreference.create({
+        body: {
+          items: resolvedItems.map((item) => ({
+            id: item.product.id,
+            title: item.variantLabel
+              ? `${item.product.name} (${item.variantLabel})`
+              : item.product.name,
+            quantity: item.quantity,
+            currency_id: "BRL",
+            unit_price: item.product.price.toNumber(),
+          })),
+          external_reference: order.id,
+          payment_methods: {
+            excluded_payment_types: [{ id: "credit_card" }, { id: "debit_card" }],
+          },
+          auto_return: "approved",
+          back_urls: {
+            success: `${origin}/checkout/success?order_id=${order.id}`,
+            failure: `${origin}/checkout/cancel`,
+            pending: `${origin}/checkout/success?order_id=${order.id}`,
+          },
+          metadata: {
+            orderId: order.id,
+            orderNumber: order.orderNumber ?? "",
+            userId,
+            shippingType: payload.shippingType,
+          },
+        },
+      })
+
+      // Gerar QR code Pix
+      const paymentResponse = await mpPayment.create({
+        body: {
+          transaction_amount: total,
+          payment_method_id: "pix",
+          payer: {
+            email: sessionAuth.user?.email ?? "",
+          },
+          external_reference: order.id,
+        },
+      })
+
+      // Obter QR code do pagamento
+      const qrCode = paymentResponse.point_of_interaction?.transaction_data?.qr_code
+
+      let qrCodeBase64: string | null = null
+      if (qrCode) {
+        qrCodeBase64 = await generateQrCodeBase64(qrCode)
+      }
+
+      await prisma.order.update({
+        where: { id: order.id },
+        data: {
+          mercadoPagoPreferenceId: preferenceResponse.id,
+          mercadoPagoPaymentId: String(paymentResponse.id),
+        },
+      })
+
+      return NextResponse.json({
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        paymentId: String(paymentResponse.id),
+        qrCode,
+        qrCodeBase64,
+        redirectUrl: `/checkout/success?order_id=${order.id}&payment_id=${paymentResponse.id}`,
+      })
     }
 
     const manualOrder = await createManualOrder(prisma, {
@@ -369,21 +543,6 @@ export async function POST(req: Request) {
     if (error instanceof ZodError) {
       return NextResponse.json(
         { error: error.issues[0]?.message ?? "Payload inválido." },
-        { status: 400 },
-      )
-    }
-
-    if (
-      typeof error === "object" &&
-      error !== null &&
-      "param" in error &&
-      error.param === "payment_method_types"
-    ) {
-      return NextResponse.json(
-        {
-          error:
-            "Os metodos de pagamento configurados na Stripe nao estao habilitados nesta conta de teste. Verifique STRIPE_CHECKOUT_PAYMENT_METHOD_TYPES e as configuracoes da conta Stripe.",
-        },
         { status: 400 },
       )
     }

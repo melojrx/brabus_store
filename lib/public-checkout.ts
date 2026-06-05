@@ -2,7 +2,8 @@ import { ShippingType } from "@prisma/client"
 import { z } from "zod"
 
 export const PUBLIC_CHECKOUT_PAYMENT_METHOD_VALUES = [
-  "STRIPE_CARD",
+  "MERCADO_PAGO_CARD",
+  "MERCADO_PAGO_PIX",
   "MANUAL_PIX",
   "CASH",
 ] as const
@@ -89,7 +90,8 @@ export const createPublicCheckoutSchema = z
   .superRefine((data, ctx) => {
     if (
       data.shippingType === ShippingType.NATIONAL &&
-      data.paymentMethod !== "STRIPE_CARD"
+      data.paymentMethod !== "MERCADO_PAGO_CARD" &&
+      data.paymentMethod !== "MERCADO_PAGO_PIX"
     ) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
