@@ -36,8 +36,8 @@ enum ShippingType {
 }
 
 enum PaymentMethod {
-  CREDIT_CARD
-  PIX
+  MERCADO_PAGO_CARD
+  MERCADO_PAGO_PIX
   CASH
   MANUAL_PIX
   POS_DEBIT
@@ -164,7 +164,7 @@ model Order {
   orderNumber     String?       @unique
   status          OrderStatus   @default(PENDING)
   channel         OrderChannel  @default(LEGACY)
-  paymentMethod   PaymentMethod @default(CREDIT_CARD)
+  paymentMethod   PaymentMethod @default(MERCADO_PAGO_CARD)
   paymentStatus   PaymentStatus @default(PENDING)
   paymentInstallments Int?
   total           Decimal       @db.Decimal(10, 2)

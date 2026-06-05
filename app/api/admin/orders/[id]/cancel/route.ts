@@ -1,11 +1,9 @@
 import { NextResponse } from "next/server"
 import { OrderStatus, PaymentMethod, PaymentStatus } from "@prisma/client"
-import Stripe from "stripe"
 import { auth } from "@/auth"
 import { canAdminCancelOrder } from "@/lib/admin-orders"
 import { incrementOrderItemStock } from "@/lib/order-stock"
 import prisma from "@/lib/prisma"
-import { getStripeServerClient } from "@/lib/stripe"
 import { isStaffRole } from "@/lib/auth-guard"
 
 async function checkAdmin() {
@@ -13,25 +11,8 @@ async function checkAdmin() {
   return isStaffRole(session?.user?.role)
 }
 
-function isStripePaymentMethod(paymentMethod: PaymentMethod) {
-  return paymentMethod === PaymentMethod.STRIPE_CARD || paymentMethod === PaymentMethod.STRIPE_PIX
-}
-
-async function expireStripeCheckoutSession(sessionId: string) {
-  try {
-    const stripe = getStripeServerClient()
-    await stripe.checkout.sessions.expire(sessionId)
-  } catch (error) {
-    if (
-      error instanceof Stripe.errors.StripeInvalidRequestError &&
-      typeof error.message === "string" &&
-      (error.message.includes("already expired") || error.message.includes("is not in an expireable state"))
-    ) {
-      return
-    }
-
-    throw error
-  }
+function isOnlinePaymentMethod(paymentMethod: PaymentMethod) {
+  return paymentMethod === PaymentMethod.MERCADO_PAGO_CARD || paymentMethod === PaymentMethod.MERCADO_PAGO_PIX
 }
 
 export async function PATCH(_req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -48,8 +29,6 @@ export async function PATCH(_req: Request, { params }: { params: Promise<{ id: s
         status: true,
         paymentMethod: true,
         paymentStatus: true,
-        stripeSessionId: true,
-        stripePaymentId: true,
         paidAt: true,
         items: {
           select: {
@@ -73,20 +52,11 @@ export async function PATCH(_req: Request, { params }: { params: Promise<{ id: s
       )
     }
 
-    const isStripeOrder = isStripePaymentMethod(order.paymentMethod)
+    const isOnlineOrder = isOnlinePaymentMethod(order.paymentMethod)
     const isPaidOrder = order.paymentStatus === PaymentStatus.PAID
 
-    if (isStripeOrder && isPaidOrder && order.stripePaymentId) {
-      const stripe = getStripeServerClient()
-      await stripe.refunds.create({
-        payment_intent: order.stripePaymentId,
-        reason: "requested_by_customer",
-      })
-    }
-
-    if (isStripeOrder && !isPaidOrder && order.stripeSessionId) {
-      await expireStripeCheckoutSession(order.stripeSessionId)
-    }
+    // Note: Online payment refunds are handled via MercadoPago webhooks
+    // Admin cancel flow only handles order status update and stock
 
     const updatedOrder = await prisma.$transaction(async (tx) => {
       const currentOrder = await tx.order.findUnique({
@@ -125,9 +95,9 @@ export async function PATCH(_req: Request, { params }: { params: Promise<{ id: s
       }
 
       const shouldReturnStock = currentOrder.paymentStatus === PaymentStatus.PAID
-      const currentIsStripeOrder = isStripePaymentMethod(currentOrder.paymentMethod)
+      const currentIsOnlineOrder = isOnlinePaymentMethod(currentOrder.paymentMethod)
       const nextPaymentStatus =
-        currentIsStripeOrder && shouldReturnStock ? PaymentStatus.REFUNDED : PaymentStatus.CANCELLED
+        currentIsOnlineOrder && shouldReturnStock ? PaymentStatus.REFUNDED : PaymentStatus.CANCELLED
       const nextStatus =
         nextPaymentStatus === PaymentStatus.REFUNDED ? OrderStatus.REFUNDED : OrderStatus.CANCELLED
 

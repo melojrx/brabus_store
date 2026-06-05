@@ -1,6 +1,6 @@
 export const PAYMENT_METHOD_VALUES = [
-  "STRIPE_CARD",
-  "STRIPE_PIX",
+  "MERCADO_PAGO_CARD",
+  "MERCADO_PAGO_PIX",
   "CASH",
   "MANUAL_PIX",
   "POS_DEBIT",
@@ -13,14 +13,15 @@ export const PAYMENT_STATUS_VALUES = [
   "FAILED",
   "CANCELLED",
   "REFUNDED",
+  "PARTIAL_REFUNDED",
 ] as const
 
 export type PaymentMethodValue = (typeof PAYMENT_METHOD_VALUES)[number]
 export type PaymentStatusValue = (typeof PAYMENT_STATUS_VALUES)[number]
 
 export const PAYMENT_METHOD_LABELS: Record<PaymentMethodValue, string> = {
-  STRIPE_CARD: "Stripe Cartão",
-  STRIPE_PIX: "Stripe Pix",
+  MERCADO_PAGO_CARD: "Mercado Pago Cartão",
+  MERCADO_PAGO_PIX: "Mercado Pago Pix",
   CASH: "Dinheiro",
   MANUAL_PIX: "Pix Manual",
   POS_DEBIT: "Cartão Débito",
@@ -59,6 +60,11 @@ export const PAYMENT_STATUS_META: Record<
     label: "Reembolsado",
     softClassName: "bg-fuchsia-500/20 text-fuchsia-300",
     outlinedClassName: "bg-fuchsia-500/15 text-fuchsia-300 border border-fuchsia-500/30",
+  },
+  PARTIAL_REFUNDED: {
+    label: "Reembolso Parcial",
+    softClassName: "bg-orange-500/20 text-orange-300",
+    outlinedClassName: "bg-orange-500/15 text-orange-300 border border-orange-500/30",
   },
 }
 

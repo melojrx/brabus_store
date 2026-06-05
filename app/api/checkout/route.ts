@@ -255,7 +255,7 @@ export async function POST(req: Request) {
           data: {
             userId,
             channel: OrderChannel.ONLINE,
-            paymentMethod: PaymentMethod.CREDIT_CARD,
+            paymentMethod: PaymentMethod.MERCADO_PAGO_CARD,
             paymentStatus: PaymentStatus.PENDING,
             createdAt: orderCreatedAt,
             orderNumber,
@@ -420,7 +420,7 @@ export async function POST(req: Request) {
           data: {
             userId,
             channel: OrderChannel.ONLINE,
-            paymentMethod: PaymentMethod.PIX,
+            paymentMethod: PaymentMethod.MERCADO_PAGO_PIX,
             paymentStatus: PaymentStatus.PENDING,
             createdAt: orderCreatedAt,
             orderNumber,
