@@ -384,15 +384,15 @@ Este documento e a fonte da verdade operacional do projeto. Aqui ficam:
 
 #### TASK-S1-DASH-08 — Produtos mais vendidos
 
-- [ ] Agregar unidades vendidas por produto
-- [ ] Ordenar por quantidade
-- [ ] Exibir faturamento quando fizer sentido
+- [x] Agregar unidades vendidas por produto
+- [x] Ordenar por quantidade
+- [x] Exibir faturamento quando fizer sentido
 
 #### TASK-S1-DASH-09 — Top clientes
 
-- [ ] Definir criterio inicial de ranking
-- [ ] Agregar clientes do periodo
-- [ ] Tratar corretamente cliente de PDV/balcao quando necessario
+- [x] Definir criterio inicial de ranking
+- [x] Agregar clientes do periodo
+- [x] Tratar corretamente cliente de PDV/balcao quando necessario
 
 #### TASK-S1-DASH-10 — Estrutura final das abas da dashboard
 
@@ -407,8 +407,8 @@ Este documento e a fonte da verdade operacional do projeto. Aqui ficam:
 
 #### Proximo bloco recomendado da Sprint 1
 
-- [ ] Priorizar `TASK-S1-DASH-08 — Produtos mais vendidos`
-- [ ] Em seguida puxar `TASK-S1-DASH-09 — Top clientes`
+- [x] Priorizar `TASK-S1-DASH-08 — Produtos mais vendidos` ✅
+- [x] Em seguida puxar `TASK-S1-DASH-09 — Top clientes` ✅
 - [ ] Depois consolidar validacoes pendentes da Sprint 1
 
 ### 5.5 Validacao da Sprint 1
