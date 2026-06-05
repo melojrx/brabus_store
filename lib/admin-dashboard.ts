@@ -517,6 +517,7 @@ export async function getAdminDashboardData(
   const lowStockByCategory = new Map<string, number>()
   const inventoryValueByCategory = new Map<string, number>()
   const stockProducts = new Map<string, { units: number; value: number; categoryName: string }>()
+  const productUnits = new Map<string, { units: number; revenue: number; name: string }>()
 
   let totalSales = 0
   let grossRevenue = 0
@@ -578,6 +579,17 @@ export async function getAdminDashboardData(
     financialProduct.profit += profit
     financialProduct.units += item.quantity
     financialProducts.set(productName, financialProduct)
+
+    // produtos mais vendidos (por unidades)
+    const productKey = item.product.id
+    const productEntry = productUnits.get(productKey) ?? {
+      units: 0,
+      revenue: 0,
+      name: item.productNameSnapshot || item.product.name,
+    }
+    productEntry.units += item.quantity
+    productEntry.revenue += revenue
+    productUnits.set(productKey, productEntry)
   }
 
   for (const variant of stockVariants) {
@@ -668,6 +680,16 @@ export async function getAdminDashboardData(
       categorySales: aggregateCurrencyMap(categorySales).slice(0, 8),
       subcategorySales: aggregateCurrencyMap(subcategorySales).slice(0, 8),
       channelSales: aggregateCurrencyMap(channelSales),
+      mostSoldProducts: Array.from(productUnits.entries())
+        .map(([productId, data]) => ({
+          productId,
+          name: data.name,
+          units: data.units,
+          revenue: currencyValue(data.revenue),
+          averageTicket: data.units > 0 ? currencyValue(data.revenue / data.units) : 0,
+        }))
+        .sort((left, right) => right.units - left.units)
+        .slice(0, 10),
     },
     stock: {
       cards: {
