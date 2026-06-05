@@ -1,6 +1,7 @@
-import { PaymentStatus, Prisma } from "@prisma/client"
+import { PaymentStatus } from "@prisma/client"
 import prisma from "@/lib/prisma"
 import type { MercadoPagoPaymentStatus } from "./types"
+import crypto from "crypto"
 
 const STATUS_MAP: Record<MercadoPagoPaymentStatus, PaymentStatus> = {
   pending: "PENDING",
@@ -27,16 +28,17 @@ export function validateWebhookSignature(
   }
 
   const message = `${topic}|${apiVersion}|${id}|${sentDate}`
-  const crypto = require("crypto")
   const expectedSignature = crypto
     .createHmac("sha256", accessToken)
     .update(message)
     .digest("hex")
 
-  return crypto.timingSafeEqual(
-    Buffer.from(sentSignature),
-    Buffer.from(expectedSignature),
-  )
+  const sentBuffer = Buffer.from(sentSignature)
+  const expectedBuffer = Buffer.from(expectedSignature)
+  if (sentBuffer.length !== expectedBuffer.length) {
+    return false
+  }
+  return crypto.timingSafeEqual(sentBuffer, expectedBuffer)
 }
 
 export async function processWebhookPayment(
@@ -52,13 +54,7 @@ export async function processWebhookPayment(
       return { success: false, error: "Payment not found" }
     }
 
-    const externalReference = payment.external_reference
-
-    if (!externalReference) {
-      return { success: false, error: "No external reference" }
-    }
-
-    const orderId = externalReference
+    const orderId = payment.external_reference
     const mpStatus = payment.status as MercadoPagoPaymentStatus
     const newPaymentStatus = STATUS_MAP[mpStatus]
 
