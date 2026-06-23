@@ -42,6 +42,7 @@ export async function POST(req: Request) {
       supportsFlavor,
       supportsWeight,
       trackStockByVariant,
+      trackExpiration,
     } = body
 
     if (!name || !slug) {
@@ -76,6 +77,7 @@ export async function POST(req: Request) {
         supportsFlavor: supportsFlavor ?? false,
         supportsWeight: supportsWeight ?? false,
         trackStockByVariant: trackStockByVariant ?? false,
+        trackExpiration: trackExpiration ?? false,
       },
       include: categoryAdminInclude,
     })

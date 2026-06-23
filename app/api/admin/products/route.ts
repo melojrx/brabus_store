@@ -67,6 +67,7 @@ export async function POST(req: Request) {
             color: variant.color,
             flavor: variant.flavor,
             stock: variant.stock,
+            expiresAt: variant.expiresAt,
             active: variant.active,
           })),
         },

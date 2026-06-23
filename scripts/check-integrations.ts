@@ -1,10 +1,11 @@
-import Stripe from "stripe"
+import { MercadoPagoConfig, User } from "mercadopago"
 import {
   getCuratedInstagramFallbackPosts,
   getInstagramIntegrationSummary,
   getMelhorEnvioIntegrationSummary,
-  getStripeIntegrationSummary,
+  getMercadoPagoIntegrationSummary,
 } from "../lib/integration-status"
+import { getMercadoPagoAccessTokenFromEnv } from "../lib/mercadopago/env"
 
 function printSection(title: string) {
   console.log(`\n[${title}]`)
@@ -20,9 +21,9 @@ function printSummary(summary: {
   console.log(`- message: ${summary.message}`)
 }
 
-async function validateStripe() {
-  const summary = getStripeIntegrationSummary()
-  printSection("Stripe")
+async function validateMercadoPago() {
+  const summary = getMercadoPagoIntegrationSummary()
+  printSection("Mercado Pago")
   printSummary(summary)
 
   if (summary.level !== "ok") {
@@ -30,17 +31,25 @@ async function validateStripe() {
   }
 
   try {
-    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
-    const account = await stripe.accounts.retrieve()
-    const paymentMethods = process.env.STRIPE_CHECKOUT_PAYMENT_METHOD_TYPES || "card"
+    const accessToken = getMercadoPagoAccessTokenFromEnv()
+
+    if (!accessToken) {
+      throw new Error("MERCADO_PAGO_ACCESS_TOKEN ou ACCESS_TOKEN não configurado.")
+    }
+
+    const client = new MercadoPagoConfig({
+      accessToken,
+    })
+    const user = new User(client)
+    const account = await user.get()
 
     console.log("- remote-check: ok")
-    console.log(`- account-id: ${account.id}`)
-    console.log(`- checkout-methods: ${paymentMethods}`)
+    console.log(`- account-id: ${account.id ?? "unknown"}`)
+    console.log(`- site-id: ${account.site_id ?? "unknown"}`)
     return { ok: true, blocking: false }
   } catch (error) {
     console.log("- remote-check: failed")
-    console.log(`- error: ${error instanceof Error ? error.message : "Erro desconhecido ao validar Stripe."}`)
+    console.log(`- error: ${error instanceof Error ? error.message : "Erro desconhecido ao validar Mercado Pago."}`)
     return { ok: false, blocking: true }
   }
 }
@@ -141,7 +150,7 @@ async function validateInstagram() {
 
 async function main() {
   const results = []
-  results.push(await validateStripe())
+  results.push(await validateMercadoPago())
   results.push(await validateMelhorEnvio())
   results.push(await validateInstagram())
 

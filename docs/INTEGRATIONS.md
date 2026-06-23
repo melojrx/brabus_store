@@ -154,6 +154,19 @@ Scope: `read:stock`
 
 Parâmetros: `threshold` (default: 3)
 
+### Stock Expiring
+
+```bash
+curl -s "https://brabustore.com.br/api/v1/integrations/stock/expiring?level=critical" \
+  -H "Authorization: Bearer $BRABUS_STORE_API_KEY"
+```
+
+Scope: `read:stock`
+
+Parâmetros: `level` (`warning`, `critical`, `expired`; omitir para todos os níveis)
+
+Retorna variantes com estoque ativo em categorias que rastreiam validade.
+
 ### Categories
 
 ```bash

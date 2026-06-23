@@ -94,6 +94,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
               color: variant.color,
               flavor: variant.flavor,
               stock: variant.stock,
+              expiresAt: variant.expiresAt,
               active: variant.active,
             },
           })
@@ -109,6 +110,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
             color: variant.color,
             flavor: variant.flavor,
             stock: variant.stock,
+            expiresAt: variant.expiresAt,
             active: variant.active,
           },
         })

@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/auth"
 import prisma from "@/lib/prisma"
+import { getExpiryThresholds } from "@/lib/expiry-alerts"
+import { getExpiryBadgeLabel, getDaysUntilExpiry, getExpiryLevel } from "@/lib/expiry-utils"
 import { buildVariantDisplayLabel } from "@/lib/pdv"
 import { isStaffRole } from "@/lib/auth-guard"
 
@@ -38,7 +40,7 @@ export async function GET(req: Request) {
       : {}),
   }
 
-  const [totalItems, products] = await Promise.all([
+  const [totalItems, products, thresholds] = await Promise.all([
     prisma.product.count({ where }),
     prisma.product.findMany({
       where,
@@ -54,6 +56,7 @@ export async function GET(req: Request) {
         category: {
           select: {
             name: true,
+            trackExpiration: true,
             parent: {
               select: {
                 name: true,
@@ -73,10 +76,12 @@ export async function GET(req: Request) {
             color: true,
             flavor: true,
             stock: true,
+            expiresAt: true,
           },
         },
       },
     }),
+    getExpiryThresholds(),
   ])
 
   return NextResponse.json({
@@ -88,14 +93,28 @@ export async function GET(req: Request) {
       image: product.images[0] ?? null,
       categoryName: product.category.parent?.name ?? product.category.name,
       subcategoryName: product.category.parent ? product.category.name : null,
-      variants: product.variants.map((variant) => ({
-        id: variant.id,
-        label: buildVariantDisplayLabel(variant),
-        size: variant.size,
-        color: variant.color,
-        flavor: variant.flavor,
-        stock: variant.stock,
-      })),
+      trackExpiration: product.category.trackExpiration,
+      variants: product.variants.map((variant) => {
+        const expiryLevel = product.category.trackExpiration && variant.stock > 0
+          ? getExpiryLevel(variant.expiresAt, thresholds)
+          : "ok"
+        const daysLeft = variant.expiresAt ? getDaysUntilExpiry(variant.expiresAt) : null
+
+        return {
+          id: variant.id,
+          label: buildVariantDisplayLabel(variant),
+          size: variant.size,
+          color: variant.color,
+          flavor: variant.flavor,
+          stock: variant.stock,
+          expiresAt: variant.expiresAt?.toISOString() ?? null,
+          expiryLevel: expiryLevel === "ok" || expiryLevel === "none" ? null : expiryLevel,
+          expiryLabel:
+            expiryLevel === "ok" || expiryLevel === "none"
+              ? null
+              : getExpiryBadgeLabel(expiryLevel, daysLeft ?? undefined),
+        }
+      }),
     })),
     pagination: {
       page,

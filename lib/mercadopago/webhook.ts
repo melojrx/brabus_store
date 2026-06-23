@@ -43,10 +43,11 @@ export function validateWebhookSignature(
 
 export async function processWebhookPayment(
   paymentId: string,
+  accessToken?: string | null,
 ): Promise<{ success: boolean; error?: string }> {
   try {
     const { getMercadoPagoClient } = await import("./client")
-    const mp = getMercadoPagoClient()
+    const mp = getMercadoPagoClient(accessToken)
 
     const payment = await mp.payment.get({ id: paymentId })
 

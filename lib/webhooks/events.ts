@@ -1,4 +1,4 @@
-export const WEBHOOK_EVENTS = ["order.paid"] as const
+export const WEBHOOK_EVENTS = ["order.paid", "stock.expiring"] as const
 
 export type WebhookEventType = (typeof WEBHOOK_EVENTS)[number]
 
@@ -22,8 +22,27 @@ export type OrderPaidEventData = {
   sellerName: string | null
 }
 
+export type StockExpiringEventData = {
+  alertLevel: "warning" | "critical" | "expired"
+  dateKey: string
+  items: Array<{
+    variantId: string
+    productId: string
+    productName: string
+    productSlug: string
+    variantLabel: string
+    stock: number
+    expiresAt: string
+    daysLeft: number
+    categoryName: string
+    subcategoryName: string | null
+  }>
+  itemsSummary: string
+}
+
 export type WebhookEventDataMap = {
   "order.paid": OrderPaidEventData
+  "stock.expiring": StockExpiringEventData
 }
 
 export type WebhookPayload<T extends WebhookEventType = WebhookEventType> = {

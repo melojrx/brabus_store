@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { validateWebhookSignature, processWebhookPayment } from "@/lib/mercadopago/webhook"
+import { getMercadoPagoSettings } from "@/lib/mercadopago/settings"
 
 export async function POST(req: Request) {
   try {
@@ -15,13 +16,26 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid payload" }, { status: 400 })
     }
 
+    const mercadoPagoSettings = await getMercadoPagoSettings()
+
     // Validar assinatura para merchant_order (obrigatório)
     if (topic === "merchant_order") {
       if (!signature || !signatureDate) {
         return NextResponse.json({ error: "Missing signature headers" }, { status: 401 })
       }
-      const accessToken = process.env.MERCADO_PAGO_ACCESS_TOKEN ?? ""
-      const isValid = validateWebhookSignature(topic, apiVersion, id, signature, signatureDate, accessToken)
+
+      if (!mercadoPagoSettings.accessToken) {
+        return NextResponse.json({ error: "Mercado Pago not configured" }, { status: 503 })
+      }
+
+      const isValid = validateWebhookSignature(
+        topic,
+        apiVersion,
+        id,
+        signature,
+        signatureDate,
+        mercadoPagoSettings.accessToken,
+      )
 
       if (!isValid) {
         return NextResponse.json({ error: "Invalid signature" }, { status: 401 })
@@ -30,7 +44,7 @@ export async function POST(req: Request) {
 
     if (topic === "payment") {
       const paymentId = data?.id ?? id
-      const result = await processWebhookPayment(paymentId)
+      const result = await processWebhookPayment(paymentId, mercadoPagoSettings.accessToken)
 
       if (!result.success) {
         console.error("Webhook payment error:", result.error)

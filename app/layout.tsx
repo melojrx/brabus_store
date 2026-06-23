@@ -56,7 +56,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" className={`${inter.variable} ${bebasNeue.variable} dark`}>
-      <body className="font-body bg-background text-foreground min-h-screen flex flex-col">
+      <body suppressHydrationWarning className="font-body bg-background text-foreground min-h-screen flex flex-col">
         <Providers>
           <PwaRegistration />
           <Navbar />

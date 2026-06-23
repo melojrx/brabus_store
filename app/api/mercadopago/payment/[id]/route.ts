@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/auth"
 import { getMercadoPagoClient } from "@/lib/mercadopago/client"
+import { getMercadoPagoSettings } from "@/lib/mercadopago/settings"
 
 export async function GET(
   req: Request,
@@ -13,14 +14,20 @@ export async function GET(
     }
 
     const { id } = await params
-    const mp = getMercadoPagoClient()
-    const payment = await mp.payment.get(id)
+    const mercadoPagoSettings = await getMercadoPagoSettings()
 
-    if (!payment || !payment.body) {
+    if (!mercadoPagoSettings.accessToken) {
+      return NextResponse.json({ error: "Mercado Pago not configured" }, { status: 503 })
+    }
+
+    const mp = getMercadoPagoClient(mercadoPagoSettings.accessToken)
+    const payment = await mp.payment.get({ id })
+
+    if (!payment) {
       return NextResponse.json({ error: "Payment not found" }, { status: 404 })
     }
 
-    return NextResponse.json(payment.body)
+    return NextResponse.json(payment)
   } catch (error) {
     console.error("Erro consultando payment:", error)
     return NextResponse.json({ error: "Internal error" }, { status: 500 })

@@ -15,6 +15,7 @@ import {
 import { fetchMelhorEnvioServices, findLocalDeliveryZone } from "@/lib/shipping"
 import { getMercadoPagoClient, isMercadoPagoConfigured } from "@/lib/mercadopago/client"
 import { generateQrCodeBase64 } from "@/lib/mercadopago/pix"
+import { getMercadoPagoSettings } from "@/lib/mercadopago/settings"
 import { getPublicStoreSettings } from "@/lib/store-settings"
 
 type ProductRecord = Prisma.ProductGetPayload<{
@@ -44,6 +45,77 @@ type ResolvedCheckoutItem = {
   selectedColor: string | null
   selectedFlavor: string | null
   variantLabel: string | null
+}
+
+function getCheckoutOrigin(req: Request) {
+  const origin = req.headers.get("origin") || process.env.NEXTAUTH_URL
+
+  if (!origin) {
+    throw new Error("Origem do checkout não configurada.")
+  }
+
+  return origin.replace(/\/$/, "")
+}
+
+function shouldEnableMercadoPagoAutoReturn(origin: string) {
+  try {
+    const url = new URL(origin)
+    return url.protocol === "https:"
+  } catch {
+    return false
+  }
+}
+
+function buildMercadoPagoNavigation(origin: string, orderId: string) {
+  const shouldEnableAutoReturn = shouldEnableMercadoPagoAutoReturn(origin)
+
+  if (!shouldEnableAutoReturn) {
+    return {}
+  }
+
+  return {
+    back_urls: {
+      success: `${origin}/checkout/success?order_id=${orderId}`,
+      failure: `${origin}/checkout/cancel`,
+      pending: `${origin}/checkout/success?order_id=${orderId}`,
+    },
+    auto_return: "approved" as const,
+  }
+}
+
+function getMercadoPagoInitPoint(preferenceResponse: {
+  init_point?: string | null
+  sandbox_init_point?: string | null
+}) {
+  return preferenceResponse.init_point ?? preferenceResponse.sandbox_init_point
+}
+
+function getCheckoutErrorMessage(error: unknown) {
+  if (error instanceof Error) {
+    return error.message
+  }
+
+  if (error && typeof error === "object") {
+    const candidate = error as Record<string, unknown>
+
+    if (typeof candidate.message === "string" && candidate.message.trim()) {
+      return candidate.message
+    }
+  }
+
+  return "Erro ao processar checkout"
+}
+
+function getCheckoutErrorStatus(error: unknown) {
+  if (error && typeof error === "object") {
+    const candidate = error as Record<string, unknown>
+
+    if (typeof candidate.status === "number" && candidate.status >= 400 && candidate.status < 600) {
+      return candidate.status
+    }
+  }
+
+  return 400
 }
 
 async function loadCheckoutProducts(productIds: string[]) {
@@ -151,14 +223,16 @@ export async function POST(req: Request) {
     const resolvedItems = resolveCheckoutItems(products, payload.items)
 
     if (payload.paymentMethod === "MERCADO_PAGO_CARD") {
-      if (!isMercadoPagoConfigured()) {
+      const mercadoPagoSettings = await getMercadoPagoSettings()
+
+      if (!isMercadoPagoConfigured(mercadoPagoSettings.accessToken)) {
         return NextResponse.json(
           { error: "Mercado Pago não configurado neste ambiente." },
           { status: 503 },
         )
       }
 
-      const { preference } = getMercadoPagoClient()
+      const { preference } = getMercadoPagoClient(mercadoPagoSettings.accessToken)
       let total = 0
       let totalWeightKg = 0
       const orderItemsRecord: Prisma.OrderItemUncheckedCreateWithoutOrderInput[] = []
@@ -275,7 +349,7 @@ export async function POST(req: Request) {
         })
       })
 
-      const origin = req.headers.get("origin") || process.env.NEXTAUTH_URL
+      const origin = getCheckoutOrigin(req)
 
       const preferenceResponse = await preference.create({
         body: {
@@ -289,12 +363,18 @@ export async function POST(req: Request) {
             unit_price: item.product.price.toNumber(),
           })),
           external_reference: order.id,
-          auto_return: "approved",
-          back_urls: {
-            success: `${origin}/checkout/success?order_id=${order.id}`,
-            failure: `${origin}/checkout/cancel`,
-            pending: `${origin}/checkout/success?order_id=${order.id}`,
+          payer: {
+            email: sessionAuth.user?.email ?? undefined,
           },
+          payment_methods: {
+            excluded_payment_types: [
+              { id: "ticket" },
+              { id: "bank_transfer" },
+              { id: "atm" },
+            ],
+            installments: 12,
+          },
+          ...buildMercadoPagoNavigation(origin, order.id),
           metadata: {
             orderId: order.id,
             orderNumber: order.orderNumber ?? "",
@@ -311,19 +391,23 @@ export async function POST(req: Request) {
 
       return NextResponse.json({
         preferenceId: preferenceResponse.id,
-        initPoint: preferenceResponse.sandbox_init_point ?? preferenceResponse.init_point,
+        initPoint: getMercadoPagoInitPoint(preferenceResponse),
       })
     }
 
     if (payload.paymentMethod === "MERCADO_PAGO_PIX") {
-      if (!isMercadoPagoConfigured()) {
+      const mercadoPagoSettings = await getMercadoPagoSettings()
+
+      if (!isMercadoPagoConfigured(mercadoPagoSettings.accessToken)) {
         return NextResponse.json(
           { error: "Mercado Pago não configurado neste ambiente." },
           { status: 503 },
         )
       }
 
-      const { preference: mpPreference, payment: mpPayment } = getMercadoPagoClient()
+      const { preference: mpPreference, payment: mpPayment } = getMercadoPagoClient(
+        mercadoPagoSettings.accessToken,
+      )
       let total = 0
       let totalWeightKg = 0
       const orderItemsRecord: Prisma.OrderItemUncheckedCreateWithoutOrderInput[] = []
@@ -440,7 +524,7 @@ export async function POST(req: Request) {
         })
       })
 
-      const origin = req.headers.get("origin") || process.env.NEXTAUTH_URL
+      const origin = getCheckoutOrigin(req)
 
       const preferenceResponse = await mpPreference.create({
         body: {
@@ -454,15 +538,13 @@ export async function POST(req: Request) {
             unit_price: item.product.price.toNumber(),
           })),
           external_reference: order.id,
+          payer: {
+            email: sessionAuth.user?.email ?? undefined,
+          },
           payment_methods: {
             excluded_payment_types: [{ id: "credit_card" }, { id: "debit_card" }],
           },
-          auto_return: "approved",
-          back_urls: {
-            success: `${origin}/checkout/success?order_id=${order.id}`,
-            failure: `${origin}/checkout/cancel`,
-            pending: `${origin}/checkout/success?order_id=${order.id}`,
-          },
+          ...buildMercadoPagoNavigation(origin, order.id),
           metadata: {
             orderId: order.id,
             orderNumber: order.orderNumber ?? "",
@@ -547,10 +629,9 @@ export async function POST(req: Request) {
       )
     }
 
-    if (error instanceof Error) {
-      return NextResponse.json({ error: error.message }, { status: 400 })
-    }
-
-    return NextResponse.json({ error: "Erro ao processar checkout" }, { status: 500 })
+    return NextResponse.json(
+      { error: getCheckoutErrorMessage(error) },
+      { status: getCheckoutErrorStatus(error) },
+    )
   }
 }

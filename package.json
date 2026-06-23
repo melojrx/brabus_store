@@ -8,6 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "integrations:check": "node --env-file=.env --import tsx scripts/check-integrations.ts",
+    "expiry:check": "node --env-file=.env --import tsx scripts/check-expiry-alerts.ts",
+    "expiry:seed-demo": "node --env-file=.env --import tsx scripts/seed-expiry-demo.ts",
     "orders:backfill-number": "node --env-file=.env --import tsx scripts/backfill-order-numbers.ts",
     "stripe:listen": "bash scripts/stripe-listen.sh",
     "prisma:generate": "prisma generate",

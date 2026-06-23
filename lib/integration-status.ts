@@ -1,3 +1,5 @@
+import { getMercadoPagoAccessTokenFromEnv } from "@/lib/mercadopago/env"
+
 type IntegrationLevel = "ok" | "warning" | "blocked"
 
 export type IntegrationSummary = {
@@ -60,29 +62,24 @@ function normalizeInstagramFeedItem(item: unknown, index: number): InstagramFeed
   }
 }
 
-export function getStripeIntegrationSummary(): IntegrationSummary {
-  const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
-  const secretKey = process.env.STRIPE_SECRET_KEY
-  const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET
+export function getMercadoPagoIntegrationSummary(): IntegrationSummary {
+  const accessToken = getMercadoPagoAccessTokenFromEnv()
+  const environment = process.env.MERCADO_PAGO_ENVIRONMENT?.trim()
 
-  if (
-    isConfiguredValue(publishableKey) &&
-    isConfiguredValue(secretKey) &&
-    isConfiguredValue(webhookSecret)
-  ) {
+  if (isConfiguredValue(accessToken)) {
     return {
-      name: "Stripe",
+      name: "Mercado Pago",
       level: "ok",
-      mode: secretKey?.startsWith("sk_live_") ? "live" : "test",
-      message: "Chaves públicas, secret e webhook configuradas.",
+      mode: environment || (accessToken?.startsWith("APP_USR-") ? "production" : "sandbox"),
+      message: "Access token configurado para pagamentos online.",
     }
   }
 
   return {
-    name: "Stripe",
+    name: "Mercado Pago",
     level: "blocked",
     mode: "incomplete",
-    message: "Faltam variáveis obrigatórias: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY, STRIPE_SECRET_KEY ou STRIPE_WEBHOOK_SECRET.",
+    message: "Falta MERCADO_PAGO_ACCESS_TOKEN ou ACCESS_TOKEN para validação via ambiente.",
   }
 }
 

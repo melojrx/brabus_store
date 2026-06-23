@@ -27,6 +27,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
       supportsFlavor,
       supportsWeight,
       trackStockByVariant,
+      trackExpiration,
     } = body
 
     const currentCategory = await prisma.category.findUnique({
@@ -71,6 +72,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
         supportsFlavor: supportsFlavor ?? false,
         supportsWeight: supportsWeight ?? false,
         trackStockByVariant: trackStockByVariant ?? false,
+        trackExpiration: trackExpiration ?? false,
       },
       include: categoryAdminInclude,
     })
