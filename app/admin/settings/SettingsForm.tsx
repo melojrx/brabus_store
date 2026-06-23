@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Save, Loader2 } from "lucide-react"
+import { Save, Loader2, ExternalLink, CreditCard, Bell } from "lucide-react"
 import AdminInlineFeedback, { type AdminInlineFeedbackState } from "@/components/admin/AdminInlineFeedback"
 
 type Settings = {
@@ -17,9 +17,22 @@ type Settings = {
   addressZip: string
   googleMapsUrl: string | null
   googleMapsEmbed: string | null
+  mercadoPagoAccessToken: string | null
+  mercadoPagoEnvironment: string
+  expiryWarningDays: number
+  expiryCriticalDays: number
+  expiryAlertsEnabled: boolean
+  telegramBotToken: string | null
+  telegramChatId: string | null
 }
 
-export default function SettingsForm({ settings }: { settings: Settings }) {
+export default function SettingsForm({
+  settings,
+  webhookUrl,
+}: {
+  settings: Settings
+  webhookUrl: string
+}) {
   const [form, setForm] = useState({
     whatsapp: settings.whatsapp,
     instagram: settings.instagram,
@@ -32,6 +45,13 @@ export default function SettingsForm({ settings }: { settings: Settings }) {
     addressZip: settings.addressZip,
     googleMapsUrl: settings.googleMapsUrl ?? "",
     googleMapsEmbed: settings.googleMapsEmbed ?? "",
+    mercadoPagoAccessToken: settings.mercadoPagoAccessToken ?? "",
+    mercadoPagoEnvironment: settings.mercadoPagoEnvironment,
+    expiryWarningDays: String(settings.expiryWarningDays),
+    expiryCriticalDays: String(settings.expiryCriticalDays),
+    expiryAlertsEnabled: settings.expiryAlertsEnabled,
+    telegramBotToken: settings.telegramBotToken ?? "",
+    telegramChatId: settings.telegramChatId ?? "",
   })
   const [saving, setSaving] = useState(false)
   const [feedback, setFeedback] = useState<AdminInlineFeedbackState>(null)
@@ -45,7 +65,7 @@ export default function SettingsForm({ settings }: { settings: Settings }) {
     return () => window.clearTimeout(timeoutId)
   }, [feedback])
 
-  function set(key: keyof typeof form, value: string) {
+  function set(key: keyof typeof form, value: string | boolean) {
     setForm((prev) => ({ ...prev, [key]: value }))
     if (feedback?.type === "success") {
       setFeedback(null)
@@ -59,7 +79,11 @@ export default function SettingsForm({ settings }: { settings: Settings }) {
       const res = await fetch("/api/admin/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          ...form,
+          expiryWarningDays: Number.parseInt(form.expiryWarningDays, 10) || 30,
+          expiryCriticalDays: Number.parseInt(form.expiryCriticalDays, 10) || 7,
+        }),
       })
       if (!res.ok) {
         setFeedback({ type: "error", message: "Erro ao salvar configurações." })
@@ -122,6 +146,146 @@ export default function SettingsForm({ settings }: { settings: Settings }) {
       <div>
         <label className="label-admin">Embed Google Maps (iframe src)</label>
         <input className="input-admin" value={form.googleMapsEmbed} onChange={(e) => set("googleMapsEmbed", e.target.value)} placeholder="https://www.google.com/maps/embed?..." />
+      </div>
+
+      {/* Mercado Pago Section */}
+      <div className="pt-6 border-t border-white/10">
+        <div className="flex items-center gap-2 mb-4">
+          <CreditCard className="w-5 h-5 text-[var(--color-primary)]" />
+          <h2 className="text-xl font-heading tracking-wider uppercase">Mercado Pago</h2>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <label className="label-admin">Access Token</label>
+            <input
+              type="password"
+              className="input-admin"
+              value={form.mercadoPagoAccessToken}
+              onChange={(e) => set("mercadoPagoAccessToken", e.target.value)}
+              placeholder="APP-USR-xxxxxxxx-xxxxxxxx-..."
+              autoComplete="off"
+            />
+          </div>
+
+          <div>
+            <label className="label-admin">Ambiente</label>
+            <div className="flex gap-4 mt-2">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="mercadoPagoEnvironment"
+                  value="sandbox"
+                  checked={form.mercadoPagoEnvironment === "sandbox"}
+                  onChange={(e) => set("mercadoPagoEnvironment", e.target.value)}
+                  className="w-4 h-4 accent-[var(--color-primary)]"
+                />
+                <span className="text-zinc-300">Sandbox (Testes)</span>
+              </label>
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="radio"
+                  name="mercadoPagoEnvironment"
+                  value="production"
+                  checked={form.mercadoPagoEnvironment === "production"}
+                  onChange={(e) => set("mercadoPagoEnvironment", e.target.value)}
+                  className="w-4 h-4 accent-[var(--color-primary)]"
+                />
+                <span className="text-zinc-300">Produção</span>
+              </label>
+            </div>
+          </div>
+
+          <div>
+            <label className="label-admin">Webhook URL</label>
+            <div className="flex gap-2 mt-1">
+              <input
+                type="text"
+                className="input-admin flex-1"
+                value={webhookUrl}
+                readOnly
+                onClick={(e) => (e.target as HTMLInputElement).select()}
+              />
+              <a
+                href={webhookUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center justify-center px-3 bg-zinc-800 hover:bg-zinc-700 border border-white/10 rounded-sm transition-colors"
+                title="Abrir webhook URL"
+              >
+                <ExternalLink className="w-5 h-5 text-zinc-400" />
+              </a>
+            </div>
+            <p className="text-xs text-zinc-500 mt-1">
+              Configure esta URL no painel do Mercado Pago em: Configurações &rarr; Webhooks
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="pt-6 border-t border-white/10">
+        <div className="flex items-center gap-2 mb-4">
+          <Bell className="w-5 h-5 text-[var(--color-primary)]" />
+          <h2 className="text-xl font-heading tracking-wider uppercase">Alertas de Validade</h2>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label className="label-admin">Alerta amarelo (dias)</label>
+            <input
+              className="input-admin"
+              type="number"
+              min={1}
+              value={form.expiryWarningDays}
+              onChange={(e) => set("expiryWarningDays", e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="label-admin">Alerta crítico (dias)</label>
+            <input
+              className="input-admin"
+              type="number"
+              min={1}
+              value={form.expiryCriticalDays}
+              onChange={(e) => set("expiryCriticalDays", e.target.value)}
+            />
+          </div>
+          <div>
+            <label className="label-admin">Telegram Bot Token</label>
+            <input
+              type="password"
+              className="input-admin"
+              value={form.telegramBotToken}
+              onChange={(e) => set("telegramBotToken", e.target.value)}
+              placeholder="123456789:ABC..."
+              autoComplete="off"
+            />
+          </div>
+          <div>
+            <label className="label-admin">Telegram Chat ID</label>
+            <input
+              className="input-admin"
+              value={form.telegramChatId}
+              onChange={(e) => set("telegramChatId", e.target.value)}
+              placeholder="-1001234567890"
+            />
+          </div>
+        </div>
+
+        <label className="mt-4 flex items-center gap-2 text-sm text-zinc-300">
+          <input
+            type="checkbox"
+            checked={form.expiryAlertsEnabled}
+            onChange={(e) => set("expiryAlertsEnabled", e.target.checked)}
+            className="h-4 w-4 accent-[var(--color-primary)]"
+          />
+          Enviar alertas automáticos (Telegram e webhooks)
+        </label>
+
+        <p className="text-xs text-zinc-500 mt-2">
+          Agende um cron diário em <code className="text-zinc-400">POST /api/cron/expiry-alerts</code> com header
+          {" "}<code className="text-zinc-400">Authorization: Bearer CRON_SECRET</code>.
+        </p>
       </div>
 
       <div className="pt-6 border-t border-white/10 flex justify-end">
