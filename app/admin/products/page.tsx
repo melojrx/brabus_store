@@ -2,6 +2,7 @@ import ProductsManager from "./ProductsManager"
 import { Prisma } from "@prisma/client"
 import { productWithRelationsInclude, serializeProduct } from "@/lib/catalog-api"
 import prisma from "@/lib/prisma"
+import { buildProductExpiryFilterWhere, getExpiryThresholds, parseExpiryFilter, type ExpiryFilterValue } from "@/lib/expiry-alerts"
 
 const ADMIN_PRODUCTS_PAGE_SIZE = 20
 
@@ -13,6 +14,7 @@ type AdminProductsFilters = Readonly<{
   parentCategory: string
   subcategory: string
   featured: string
+  expiry: ExpiryFilterValue | ""
 }>
 
 function readSearchParam(value: string | string[] | undefined) {
@@ -38,10 +40,11 @@ function parseAdminProductsFilters(searchParams: Record<string, string | string[
     parentCategory: readSearchParam(searchParams.parentCategory),
     subcategory: readSearchParam(searchParams.subcategory),
     featured: featured === "featured" || featured === "not-featured" ? featured : "",
+    expiry: parseExpiryFilter(readSearchParam(searchParams.expiry)),
   }
 }
 
-function buildAdminProductsWhere(filters: AdminProductsFilters): Prisma.ProductWhereInput {
+async function buildAdminProductsWhere(filters: AdminProductsFilters): Promise<Prisma.ProductWhereInput> {
   const andFilters: Prisma.ProductWhereInput[] = []
 
   if (filters.search) {
@@ -96,6 +99,11 @@ function buildAdminProductsWhere(filters: AdminProductsFilters): Prisma.ProductW
     andFilters.push({ featured: filters.featured === "featured" })
   }
 
+  const expiryFilter = await buildProductExpiryFilterWhere(filters.expiry)
+  if (expiryFilter) {
+    andFilters.push(expiryFilter)
+  }
+
   return andFilters.length > 0 ? { AND: andFilters } : {}
 }
 
@@ -107,7 +115,10 @@ export default async function AdminProducts({
   const resolvedSearchParams = (await searchParams) ?? {}
   const filters = parseAdminProductsFilters(resolvedSearchParams)
   const requestedPage = normalizeProductsPage(resolvedSearchParams.page)
-  const where = buildAdminProductsWhere(filters)
+  const [where, expiryThresholds] = await Promise.all([
+    buildAdminProductsWhere(filters),
+    getExpiryThresholds(),
+  ])
 
   const [totalItems, categories] = await Promise.all([
     prisma.product.count({ where }),
@@ -147,6 +158,7 @@ export default async function AdminProducts({
       initialProducts={products}
       categories={serializedCategories}
       filters={filters}
+      expiryThresholds={expiryThresholds}
       pagination={{
         page: currentPage,
         pageSize: ADMIN_PRODUCTS_PAGE_SIZE,

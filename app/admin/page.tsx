@@ -4,6 +4,7 @@ import Link from "next/link"
 import type { ReactNode } from "react"
 import {
   AlertTriangle,
+  CalendarClock,
   DollarSign,
   Package,
   PackageOpen,
@@ -393,6 +394,64 @@ function FinancialTopProductsTable({
   )
 }
 
+function ExpiringVariantsTable({
+  items,
+}: {
+  items: ReadonlyArray<{
+    variantId: string
+    productName: string
+    variantLabel: string
+    categoryName: string
+    stock: number
+    daysLeft: number
+    level: string
+  }>
+}) {
+  return (
+    <div className="rounded-sm border border-white/5 bg-zinc-900 p-6">
+      <div className="mb-6">
+        <h3 className="text-lg font-heading tracking-wider uppercase text-white">Produtos Próximos do Vencimento</h3>
+        <p className="mt-2 text-sm text-gray-500">Variantes com estoque ativo em categorias que rastreiam validade.</p>
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-left text-sm">
+          <thead className="bg-black text-xs uppercase tracking-[0.2em] text-gray-400">
+            <tr>
+              <th className="rounded-tl-sm px-4 py-4">Produto</th>
+              <th className="px-4 py-4">Variante</th>
+              <th className="px-4 py-4">Categoria</th>
+              <th className="px-4 py-4">Estoque</th>
+              <th className="rounded-tr-sm px-4 py-4">Validade</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.map((item) => (
+              <tr key={item.variantId} className="border-b border-white/5 hover:bg-white/5">
+                <td className="px-4 py-4 font-medium text-white">{item.productName}</td>
+                <td className="px-4 py-4 text-gray-300">{item.variantLabel}</td>
+                <td className="px-4 py-4 text-gray-300">{item.categoryName}</td>
+                <td className="px-4 py-4 text-gray-300">{formatNumber(item.stock)}</td>
+                <td className="px-4 py-4 font-semibold text-white">
+                  {item.level === "expired" ? "Vencido" : `${item.daysLeft} dia(s)`}
+                </td>
+              </tr>
+            ))}
+
+            {items.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="px-4 py-10 text-center text-gray-500">
+                  Nenhum produto em alerta de validade no momento.
+                </td>
+              </tr>
+            ) : null}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
 function StockTopProductsTable({
   items,
 }: {
@@ -744,11 +803,23 @@ export default async function AdminDashboard({
 
       {currentTab === "stock" ? (
         <div className="space-y-10">
-          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
             <MetricCard
               title="Alertas de Estoque"
               value={formatNumber(dashboard.stock.cards.lowStockAlerts)}
               caption={`Variantes ativas abaixo de ${LOW_STOCK_THRESHOLD} unidades.`}
+              icon={<AlertTriangle className="h-5 w-5" />}
+            />
+            <MetricCard
+              title="Próximos do Vencimento"
+              value={formatNumber(dashboard.stock.expiry.expiringSoonCount)}
+              caption="Variantes em alerta amarelo ou crítico."
+              icon={<CalendarClock className="h-5 w-5" />}
+            />
+            <MetricCard
+              title="Produtos Vencidos"
+              value={formatNumber(dashboard.stock.expiry.expiredCount)}
+              caption="Ainda com estoque e exibidos como alerta operacional."
               icon={<AlertTriangle className="h-5 w-5" />}
             />
             <MetricCard
@@ -786,6 +857,7 @@ export default async function AdminDashboard({
           </div>
 
           <StockTopProductsTable items={dashboard.stock.topProducts} />
+          <ExpiringVariantsTable items={dashboard.stock.expiry.topExpiring} />
         </div>
       ) : null}
     </div>

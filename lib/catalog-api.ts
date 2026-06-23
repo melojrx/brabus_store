@@ -55,6 +55,7 @@ type ProductVariantInput = {
   color?: string | null
   flavor?: string | null
   stock?: number | string | null
+  expiresAt?: string | null
   active?: boolean | null
 }
 
@@ -106,6 +107,7 @@ type NormalizedVariant = {
   color: string | null
   flavor: string | null
   stock: number
+  expiresAt: Date | null
   active: boolean
 }
 
@@ -257,6 +259,15 @@ function normalizeImages(images: ProductPayloadInput["images"]) {
   return normalized.length > 0 ? normalized : ["/placeholder.jpg"]
 }
 
+function parseExpiresAt(value: string | null | undefined) {
+  if (!value || !value.trim()) {
+    return null
+  }
+
+  const parsed = new Date(`${value.trim()}T12:00:00.000Z`)
+  return Number.isNaN(parsed.getTime()) ? null : parsed
+}
+
 function normalizeVariants(
   variants: ProductPayloadInput["variants"],
   isActive: boolean,
@@ -271,6 +282,7 @@ function normalizeVariants(
         color: null,
         flavor: null,
         stock: 0,
+        expiresAt: null,
         active: isActive,
       },
     ]
@@ -284,6 +296,7 @@ function normalizeVariants(
     color: variant.color?.trim() || null,
     flavor: variant.flavor?.trim() || null,
     stock: asInteger(variant.stock),
+    expiresAt: parseExpiresAt(variant.expiresAt),
     active: variant.active ?? true,
   }))
 }
@@ -341,6 +354,7 @@ export function serializeCategoryTree(category: CategoryWithRelations) {
 function serializeVariant(variant: ProductWithRelations["variants"][number]) {
   return {
     ...variant,
+    expiresAt: variant.expiresAt?.toISOString() ?? null,
     createdAt: variant.createdAt.toISOString(),
     updatedAt: variant.updatedAt.toISOString(),
   }

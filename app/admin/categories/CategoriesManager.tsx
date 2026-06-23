@@ -16,6 +16,7 @@ type ChildCategoryNode = Readonly<{
   supportsFlavor: boolean
   supportsWeight: boolean
   trackStockByVariant: boolean
+  trackExpiration: boolean
   parentId: string | null
   _count: {
     products: number
@@ -38,6 +39,7 @@ type CategoryForm = {
   supportsFlavor: boolean
   supportsWeight: boolean
   trackStockByVariant: boolean
+  trackExpiration: boolean
 }
 
 type CategoriesManagerProps = Readonly<{
@@ -76,6 +78,7 @@ function createEmptyForm(parentId = ""): CategoryForm {
     supportsFlavor: false,
     supportsWeight: false,
     trackStockByVariant: false,
+    trackExpiration: false,
   }
 }
 
@@ -149,6 +152,7 @@ export default function CategoriesManager({ initialCategories }: CategoriesManag
       supportsFlavor: category.supportsFlavor,
       supportsWeight: category.supportsWeight,
       trackStockByVariant: category.trackStockByVariant,
+      trackExpiration: category.trackExpiration,
     })
     setFormFeedback(null)
     setDrawerOpen(true)
@@ -174,6 +178,7 @@ export default function CategoriesManager({ initialCategories }: CategoriesManag
         next.supportsFlavor = false
         next.supportsWeight = false
         next.trackStockByVariant = false
+        next.trackExpiration = false
       }
 
       return next
@@ -212,6 +217,7 @@ export default function CategoriesManager({ initialCategories }: CategoriesManag
         supportsFlavor: form.parentId ? form.supportsFlavor : false,
         supportsWeight: form.parentId ? form.supportsWeight : false,
         trackStockByVariant: form.parentId ? form.trackStockByVariant : false,
+        trackExpiration: form.parentId ? form.trackExpiration : false,
       }
 
       const url = editing ? `/api/admin/categories/${editing.id}` : "/api/admin/categories"
@@ -382,6 +388,7 @@ export default function CategoriesManager({ initialCategories }: CategoriesManag
                             <FlagBadge active={child.supportsFlavor} label="Sabor" />
                             <FlagBadge active={child.supportsWeight} label="Peso" />
                             <FlagBadge active={child.trackStockByVariant} label="Estoque por Variante" />
+                            <FlagBadge active={child.trackExpiration} label="Validade" />
                           </div>
                         </div>
 
@@ -540,6 +547,16 @@ export default function CategoriesManager({ initialCategories }: CategoriesManag
                       className="h-4 w-4 accent-[var(--color-primary)]"
                     />
                     Controlar estoque por variante
+                  </label>
+
+                  <label className="flex items-center gap-2 text-sm text-white">
+                    <input
+                      type="checkbox"
+                      checked={form.trackExpiration}
+                      onChange={(event) => setField("trackExpiration", event.target.checked)}
+                      className="h-4 w-4 accent-[var(--color-primary)]"
+                    />
+                    Rastrear validade dos produtos
                   </label>
                 </div>
               ) : null}

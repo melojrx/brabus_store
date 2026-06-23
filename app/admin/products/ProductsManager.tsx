@@ -20,6 +20,16 @@ import {
   X,
 } from "lucide-react"
 import AdminInlineFeedback, { type AdminInlineFeedbackState } from "@/components/admin/AdminInlineFeedback"
+import {
+  DEFAULT_EXPIRY_CRITICAL_DAYS,
+  DEFAULT_EXPIRY_WARNING_DAYS,
+  formatExpiresAtInput,
+  getDaysUntilExpiry,
+  getExpiryBadgeClass,
+  getExpiryBadgeLabel,
+  getExpiryLevel,
+  type ExpiryLevel,
+} from "@/lib/expiry-utils"
 
 type ParentCategory = Readonly<{
   id: string
@@ -37,6 +47,7 @@ type Subcategory = Readonly<{
   supportsFlavor: boolean
   supportsWeight: boolean
   trackStockByVariant: boolean
+  trackExpiration: boolean
   parentId: string | null
   parent: ParentCategory | null
 }>
@@ -49,6 +60,7 @@ type ProductVariant = Readonly<{
   color: string | null
   flavor: string | null
   stock: number
+  expiresAt: string | null
   active: boolean
 }>
 
@@ -82,6 +94,7 @@ type VariantForm = {
   color: string
   flavor: string
   stock: string
+  expiresAt: string
   active: boolean
 }
 
@@ -118,6 +131,11 @@ type ProductsManagerProps = Readonly<{
     parentCategory: string
     subcategory: string
     featured: string
+    expiry: string
+  }>
+  expiryThresholds: Readonly<{
+    warningDays: number
+    criticalDays: number
   }>
   pagination: Readonly<{
     page: number
@@ -169,6 +187,82 @@ function getStockBadgeClass(stock: number) {
   return "bg-red-500/20 text-red-500"
 }
 
+function getWorstExpiryLevel(
+  product: Product,
+  thresholds = {
+    warningDays: DEFAULT_EXPIRY_WARNING_DAYS,
+    criticalDays: DEFAULT_EXPIRY_CRITICAL_DAYS,
+  },
+) {
+  if (!product.subcategory.trackExpiration) {
+    return null
+  }
+
+  const priority: Record<ExpiryLevel, number> = {
+    expired: 4,
+    critical: 3,
+    warning: 2,
+    none: 1,
+    ok: 0,
+  }
+
+  let worst: ExpiryLevel | null = null
+
+  for (const variant of product.variants) {
+    if (!variant.active || variant.stock <= 0) {
+      continue
+    }
+
+    const level = getExpiryLevel(variant.expiresAt, thresholds)
+    if (level === "ok") {
+      continue
+    }
+
+    if (!worst || priority[level] > priority[worst]) {
+      worst = level
+    }
+  }
+
+  return worst
+}
+
+function ProductExpiryBadge({ product }: { product: Product }) {
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!product.subcategory.trackExpiration) {
+    return <span className="text-xs text-zinc-600">—</span>
+  }
+
+  if (!mounted) {
+    return <span className="text-xs text-zinc-600">—</span>
+  }
+
+  const worstLevel = getWorstExpiryLevel(product)
+  if (!worstLevel) {
+    return <span className="text-xs text-zinc-600">—</span>
+  }
+
+  const nearestVariant = product.variants
+    .filter((variant) => variant.active && variant.stock > 0 && variant.expiresAt)
+    .sort(
+      (left, right) =>
+        getDaysUntilExpiry(new Date(left.expiresAt!)) - getDaysUntilExpiry(new Date(right.expiresAt!)),
+    )[0]
+
+  return (
+    <span className={`rounded-sm px-2 py-1 text-xs font-bold ${getExpiryBadgeClass(worstLevel)}`}>
+      {getExpiryBadgeLabel(
+        worstLevel,
+        nearestVariant?.expiresAt ? getDaysUntilExpiry(new Date(nearestVariant.expiresAt)) : undefined,
+      )}
+    </span>
+  )
+}
+
 function createEmptyVariant(): VariantForm {
   return {
     sku: "",
@@ -177,6 +271,7 @@ function createEmptyVariant(): VariantForm {
     color: "",
     flavor: "",
     stock: "0",
+    expiresAt: "",
     active: true,
   }
 }
@@ -281,6 +376,10 @@ function buildProductsHrefWithFilters(
     searchParams.set("featured", filters.featured)
   }
 
+  if (filters.expiry) {
+    searchParams.set("expiry", filters.expiry)
+  }
+
   if (page > 1) {
     searchParams.set("page", String(page))
   }
@@ -354,12 +453,20 @@ function hasActiveListingFilters(filters: ProductsManagerProps["filters"]) {
       filters.status ||
       filters.parentCategory ||
       filters.subcategory ||
-      filters.featured,
+      filters.featured ||
+      filters.expiry,
   )
 }
 
 function getActiveListingFiltersCount(filters: ProductsManagerProps["filters"]) {
-  return [filters.search, filters.status, filters.parentCategory, filters.subcategory, filters.featured].filter(Boolean).length
+  return [
+    filters.search,
+    filters.status,
+    filters.parentCategory,
+    filters.subcategory,
+    filters.featured,
+    filters.expiry,
+  ].filter(Boolean).length
 }
 
 function IconActionButton({
@@ -398,7 +505,13 @@ function IconActionButton({
   )
 }
 
-export default function ProductsManager({ initialProducts, categories, filters, pagination }: ProductsManagerProps) {
+export default function ProductsManager({
+  initialProducts,
+  categories,
+  filters,
+  expiryThresholds,
+  pagination,
+}: ProductsManagerProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
   const [drawerOpen, setDrawerOpen] = useState(false)
@@ -457,7 +570,8 @@ export default function ProductsManager({ initialProducts, categories, filters, 
     listingFilters.status !== filters.status ||
     listingFilters.parentCategory !== filters.parentCategory ||
     listingFilters.subcategory !== filters.subcategory ||
-    listingFilters.featured !== filters.featured
+    listingFilters.featured !== filters.featured ||
+    listingFilters.expiry !== filters.expiry
 
   useEffect(() => {
     setListingFilters(filters)
@@ -541,6 +655,7 @@ export default function ProductsManager({ initialProducts, categories, filters, 
               color: variant.color ?? "",
               flavor: variant.flavor ?? "",
               stock: String(variant.stock),
+              expiresAt: formatExpiresAtInput(variant.expiresAt),
               active: variant.active,
             }))
           : [{ ...createEmptyVariant(), stock: String(product.stock) }],
@@ -598,6 +713,7 @@ export default function ProductsManager({ initialProducts, categories, filters, 
         size: nextCategory?.supportsSize ? variant.size : "",
         color: nextCategory?.supportsColor ? variant.color : "",
         flavor: nextCategory?.supportsFlavor ? variant.flavor : "",
+        expiresAt: nextCategory?.trackExpiration ? variant.expiresAt : "",
       }))
 
       if (!nextCategory?.trackStockByVariant) {
@@ -618,6 +734,7 @@ export default function ProductsManager({ initialProducts, categories, filters, 
               color: "",
               flavor: "",
               stock: String(collapsedStock),
+              expiresAt: nextCategory?.trackExpiration ? normalizedVariants[0]?.expiresAt ?? "" : "",
               active: normalizedVariants.some((variant) => variant.active),
             },
           ],
@@ -718,6 +835,7 @@ export default function ProductsManager({ initialProducts, categories, filters, 
       parentCategory: "",
       subcategory: "",
       featured: "",
+      expiry: "",
     }
 
     setListingFilters(resetFilters)
@@ -826,6 +944,7 @@ export default function ProductsManager({ initialProducts, categories, filters, 
         color: selectedCategory?.supportsColor ? variant.color.trim() || null : null,
         flavor: selectedCategory?.supportsFlavor ? variant.flavor.trim() || null : null,
         stock: Number.parseInt(variant.stock || "0", 10) || 0,
+        expiresAt: selectedCategory?.trackExpiration ? variant.expiresAt || null : null,
         active: variant.active,
       }))
 
@@ -999,7 +1118,7 @@ export default function ProductsManager({ initialProducts, categories, filters, 
               <div className="mb-4 flex items-start justify-between gap-4">
                 <div>
                   <h2 className="text-sm font-semibold text-white">Filtros da listagem</h2>
-                  <p className="mt-1 text-sm text-zinc-500">Refine por status, categoria, subcategoria e destaque.</p>
+                  <p className="mt-1 text-sm text-zinc-500">Refine por status, validade, categoria, subcategoria e destaque.</p>
                 </div>
 
                 <button
@@ -1035,6 +1154,21 @@ export default function ProductsManager({ initialProducts, categories, filters, 
                     <option value="">Todos</option>
                     <option value="featured">Em destaque</option>
                     <option value="not-featured">Sem destaque</option>
+                  </select>
+                </Field>
+
+                <Field label="Validade" htmlFor="products-expiry">
+                  <select
+                    id="products-expiry"
+                    value={listingFilters.expiry}
+                    onChange={(event) => setListingFilter("expiry", event.target.value)}
+                    className={inputCls}
+                  >
+                    <option value="">Todas</option>
+                    <option value="expired">Vencido</option>
+                    <option value="critical">Crítico (≤ {expiryThresholds.criticalDays} dias)</option>
+                    <option value="warning">Atenção (≤ {expiryThresholds.warningDays} dias)</option>
+                    <option value="missing">Sem validade</option>
                   </select>
                 </Field>
 
@@ -1127,6 +1261,7 @@ export default function ProductsManager({ initialProducts, categories, filters, 
                 <th className="px-6 py-4 text-right whitespace-nowrap">Custo</th>
                 <th className="px-6 py-4 text-right whitespace-nowrap">Estoque</th>
                 <th className="px-6 py-4 text-right whitespace-nowrap">Variantes</th>
+                <th className="px-6 py-4 whitespace-nowrap">Validade</th>
                 <th className="px-6 py-4 whitespace-nowrap">Status</th>
                 <th className="px-6 py-4 text-right whitespace-nowrap">Ações</th>
               </tr>
@@ -1162,6 +1297,9 @@ export default function ProductsManager({ initialProducts, categories, filters, 
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right text-zinc-400 tabular-nums whitespace-nowrap">{product.variants.length}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <ProductExpiryBadge product={product} />
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
                       className={`inline-flex rounded-full px-2.5 py-1 text-xs font-bold ${
@@ -1613,6 +1751,18 @@ export default function ProductsManager({ initialProducts, categories, filters, 
                               onChange={(event) => setVariantField(index, "stock", event.target.value)}
                             />
                           </Field>
+
+                          {selectedCategory.trackExpiration ? (
+                            <Field label="Validade" htmlFor={`variant-expires-${index}`} hint="mercadoria em prateleira">
+                              <input
+                                id={`variant-expires-${index}`}
+                                className={inputCls}
+                                type="date"
+                                value={variant.expiresAt}
+                                onChange={(event) => setVariantField(index, "expiresAt", event.target.value)}
+                              />
+                            </Field>
+                          ) : null}
                         </div>
 
                         {selectedCategory.supportsSize || selectedCategory.supportsColor || selectedCategory.supportsFlavor ? (

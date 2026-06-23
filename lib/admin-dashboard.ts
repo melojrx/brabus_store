@@ -1,5 +1,6 @@
 import { OrderChannel, OrderStatus, PrismaClient } from "@prisma/client"
 import { PAYMENT_METHOD_LABELS, type PaymentMethodValue } from "@/lib/payment-status"
+import { findExpiringVariants } from "@/lib/expiry-alerts"
 
 export const DASHBOARD_TAB_VALUES = ["overview", "financial", "commercial", "stock"] as const
 export type DashboardTab = (typeof DASHBOARD_TAB_VALUES)[number]
@@ -652,6 +653,7 @@ export async function getAdminDashboardData(
 
   const grossProfit = grossRevenue - grossCost
   const grossMargin = grossRevenue > 0 ? (grossProfit / grossRevenue) * 100 : 0
+  const expiringVariants = await findExpiringVariants()
 
   return {
     period: {
@@ -748,6 +750,20 @@ export async function getAdminDashboardData(
         }))
         .sort((left, right) => right.value - left.value)
         .slice(0, 8),
+      expiry: {
+        expiringSoonCount: expiringVariants.filter((item) => item.level === "warning" || item.level === "critical").length,
+        expiredCount: expiringVariants.filter((item) => item.level === "expired").length,
+        topExpiring: expiringVariants.slice(0, 8).map((item) => ({
+          variantId: item.variantId,
+          productName: item.productName,
+          variantLabel: item.variantLabel,
+          categoryName: item.categoryName,
+          stock: item.stock,
+          daysLeft: item.daysLeft,
+          level: item.level,
+          expiresAt: item.expiresAt.toISOString(),
+        })),
+      },
     },
   }
 }

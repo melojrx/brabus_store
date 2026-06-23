@@ -27,6 +27,7 @@ import {
 } from "@/lib/currency-input"
 import { buildPdvManualPixReference } from "@/lib/pdv"
 import { getPaymentMethodLabel } from "@/lib/payment-status"
+import { getExpiryBadgeClass } from "@/lib/expiry-utils"
 
 type Feedback =
   | {
@@ -50,7 +51,17 @@ type PdvProduct = {
     color: string | null
     flavor: string | null
     stock: number
+    expiresAt: string | null
+    expiryLevel: "warning" | "critical" | "expired" | null
+    expiryLabel: string | null
   }>
+}
+
+type PdvExpirySummary = {
+  total: number
+  criticalCount: number
+  warningCount: number
+  expiredCount: number
 }
 
 type PdvProductsResponse = {
@@ -186,6 +197,7 @@ export default function PdvManager({ pixKey }: { pixKey: string | null }) {
   const [manualPaymentNotes, setManualPaymentNotes] = useState("")
   const [cashReceivedAmount, setCashReceivedAmount] = useState("")
   const [productsFeedback, setProductsFeedback] = useState<Feedback>(null)
+  const [expirySummary, setExpirySummary] = useState<PdvExpirySummary | null>(null)
   const [shippingFeedback, setShippingFeedback] = useState<Feedback>(null)
   const [currentOrderFeedback, setCurrentOrderFeedback] = useState<Feedback>(null)
   const [checkoutFeedback, setCheckoutFeedback] = useState<Feedback>(null)
@@ -250,6 +262,24 @@ export default function PdvManager({ pixKey }: { pixKey: string | null }) {
   useEffect(() => {
     setProductPage(1)
   }, [deferredProductSearch])
+
+  useEffect(() => {
+    async function loadExpirySummary() {
+      try {
+        const response = await fetch("/api/admin/pdv/expiry-summary")
+        if (!response.ok) {
+          return
+        }
+
+        const payload = (await response.json()) as PdvExpirySummary
+        setExpirySummary(payload)
+      } catch {
+        setExpirySummary(null)
+      }
+    }
+
+    void loadExpirySummary()
+  }, [])
 
   useEffect(() => {
     const controller = new AbortController()
@@ -418,6 +448,13 @@ export default function PdvManager({ pixKey }: { pixKey: string | null }) {
 
   function handleAddVariant(product: PdvProduct, variant: PdvProduct["variants"][number]) {
     setProductsFeedback(null)
+
+    if (variant.expiryLevel === "critical" || variant.expiryLevel === "expired") {
+      setProductsFeedback({
+        type: "error",
+        message: `Atenção: ${product.name} (${variant.label}) está com validade ${variant.expiryLevel === "expired" ? "vencida" : "próxima do vencimento"}.`,
+      })
+    }
 
     setItems((currentItems) => {
       const existingItem = currentItems.find((item) => item.variantId === variant.id)
@@ -733,6 +770,14 @@ export default function PdvManager({ pixKey }: { pixKey: string | null }) {
                 </div>
               </div>
 
+              {expirySummary && expirySummary.total > 0 ? (
+                <div className="rounded-sm border border-orange-500/30 bg-orange-500/10 px-4 py-3 text-sm text-orange-200">
+                  {expirySummary.criticalCount + expirySummary.expiredCount > 0
+                    ? `${expirySummary.criticalCount + expirySummary.expiredCount} produto(s) vence(m) em até 7 dias ou já vencido(s).`
+                    : `${expirySummary.warningCount} produto(s) próximo(s) do vencimento.`}
+                </div>
+              ) : null}
+
               {productsFeedback && (
                 <p
                   className={`rounded-sm border px-4 py-3 text-sm ${
@@ -854,6 +899,11 @@ export default function PdvManager({ pixKey }: { pixKey: string | null }) {
                                     <span className="mt-1 block text-[10px] uppercase tracking-[0.2em] text-gray-500">
                                       Estoque: {variant.stock}
                                     </span>
+                                    {variant.expiryLabel && variant.expiryLevel ? (
+                                      <span className={`mt-1 inline-block rounded-sm px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.15em] ${getExpiryBadgeClass(variant.expiryLevel)}`}>
+                                        {variant.expiryLabel}
+                                      </span>
+                                    ) : null}
                                     {selectedQuantity > 0 && (
                                       <span className="mt-1 block text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--color-primary)]">
                                         Selecionado: {selectedQuantity}
@@ -940,6 +990,11 @@ export default function PdvManager({ pixKey }: { pixKey: string | null }) {
                                           <span className="mt-1 block text-[10px] uppercase tracking-[0.2em] text-gray-500">
                                             Estoque: {variant.stock}
                                           </span>
+                                          {variant.expiryLabel && variant.expiryLevel ? (
+                                            <span className={`mt-1 inline-block rounded-sm px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-[0.15em] ${getExpiryBadgeClass(variant.expiryLevel)}`}>
+                                              {variant.expiryLabel}
+                                            </span>
+                                          ) : null}
                                           {selectedQuantity > 0 ? (
                                             <span className="mt-1 block text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--color-primary)]">
                                               Selecionado: {selectedQuantity}
