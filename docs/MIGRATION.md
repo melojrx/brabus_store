@@ -9,12 +9,15 @@
 **Data:** Maio de 2026
 **Origem:** VPS Easypanel (145.223.92.74)
 **Destino:** VPS srvjosemaria (38.52.128.62)
+**Status:** Migracao concluida; documento mantido como historico e referencia operacional.
 
 ---
 
 ## 1. Objetivo
 
-Migrar a aplicacao brabustore da VPS atual (Easypanel + Traefik) para a VPS existente `srvjosemaria` (38.52.128.62), que ja hospeda Hermes e FinanPy. Stack destino: Docker + NGINX + Certbot + GitHub Actions via SSH. Segue exatamente o padrao de deploy ja estabelecido pelo FinanPy na mesma VPS.
+Registrar a migracao da aplicacao brabustore da VPS antiga (Easypanel + Traefik) para a VPS `srvjosemaria` (38.52.128.62), que ja hospeda Hermes e FinanPy. Stack atual: Docker Compose + NGINX + Certbot + GitHub Actions via SSH.
+
+O guia operacional ativo esta em `docs/DEPLOY.md`.
 
 ---
 
@@ -94,7 +97,9 @@ GitHub push main → GitHub Actions → SSH → deploy.sh
                                            ├── git fetch + reset --hard
                                            ├── docker compose build
                                            ├── docker compose up -d
+                                           ├── prisma migrate deploy no startup do app
                                            ├── health check (curl)
+                                           ├── NGINX publica brabustore.com.br
                                            └── docker image prune
 ```
 
@@ -139,6 +144,8 @@ Arquivo `.env.production` fica em `/srv/apps/brabustore/` (nunca versionado).
 ---
 
 ## 8. Etapas de migracao
+
+Checklist historico da migracao. Para operacao atual de deploy, use `docs/DEPLOY.md`.
 
 ### 8.1 Preparar VPS destino
 

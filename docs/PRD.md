@@ -193,9 +193,9 @@ O catálogo é dividido em três grandes linhas:
 |---|---|
 | **Banco local** | PostgreSQL via Docker Compose |
 | **Armazenamento de imagens** | Upload local em `/public/uploads/` (v1.0) |
-| **Deploy** | EasyPanel (VPS com Docker nativo) |
-| **Repositório** | GitHub (auto-deploy via EasyPanel) |
-| **SSL + Proxy** | EasyPanel built-in (Let's Encrypt automático) |
+| **Deploy** | VPS `srvjosemaria` com Docker Compose |
+| **Repositório** | GitHub Actions via SSH em push para `main` |
+| **SSL + Proxy** | NGINX + Certbot |
 
 ### 2.4 Ferramentas de Desenvolvimento
 
@@ -1345,7 +1345,7 @@ Ajustes obrigatórios:
 /deploy
 ```
 **Quando usar:** Após `/status` mostrar 100% e `/test` passar.
-**O que faz:** Guia o processo de deploy, neste projeto via EasyPanel.
+**O que faz:** Guia o processo de deploy, neste projeto via GitHub Actions + SSH + Docker Compose + NGINX.
 
 ### 10.3 Agentes Especialistas — Acionamento Manual
 
@@ -1390,7 +1390,7 @@ As seguintes skills do kit são ativadas automaticamente quando o contexto bate:
 9. /test           → Gerar e rodar testes
 10. /enhance       → Otimizar performance e segurança
 11. /status        → Verificar completude
-12. /deploy        → Deploy no EasyPanel
+12. /deploy        → Deploy na VPS com GitHub Actions + SSH + Docker Compose
 ```
 
 ### 10.6 Regras de Uso da IA
@@ -1429,17 +1429,20 @@ NEXT_PUBLIC_APP_URL="http://localhost:3000"
 NODE_ENV="development"
 ```
 
-### `.env.production` (EasyPanel)
+### `.env.production` (VPS `/srv/apps/brabustore/.env.production`)
 
 ```env
-DATABASE_URL="postgresql://admin:senha_producao@brabus-db:5432/brabus_store"
+DATABASE_URL="postgresql://brabustore:senha_producao@db:5432/brabustore?schema=public"
 NEXTAUTH_SECRET="secret_producao_diferente"
-NEXTAUTH_URL="https://seudominio.com.br"
+NEXTAUTH_URL="https://brabustore.com.br"
+AUTH_TRUST_HOST="true"
 NEXT_PUBLIC_STRIPE_PUBLIC_KEY="pk_live_..."
 STRIPE_SECRET_KEY="sk_live_..."
 STRIPE_WEBHOOK_SECRET="whsec_live_..."
-NEXT_PUBLIC_APP_URL="https://seudominio.com.br"
 NODE_ENV="production"
+POSTGRES_USER="brabustore"
+POSTGRES_PASSWORD="senha_producao"
+POSTGRES_DB="brabustore"
 ```
 
 ---

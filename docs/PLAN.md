@@ -422,25 +422,26 @@ Nao pertencem ao escopo deste repositorio, neste momento:
 
 ---
 
-## 12. Frente de Infraestrutura e Migracao
+## 12. Frente de Infraestrutura e Deploy
 
 ### 12.1 Contexto
 
-A aplicacao esta hospedada em VPS com Easypanel (Docker Swarm + Traefik). A decisao e migrar para nova VPS com stack propria (Docker + NGINX + Certbot + GitHub Actions), eliminando dependencia do Easypanel.
+A aplicacao esta hospedada na VPS `srvjosemaria` (`38.52.128.62`) com stack propria: Docker Compose, PostgreSQL em container, NGINX, Certbot e GitHub Actions via SSH. EasyPanel nao faz parte do fluxo operacional atual.
 
 ### 12.2 Escopo
 
-- Backup completo (banco + uploads)
-- Provisionamento de nova VPS com NGINX
-- CI/CD via GitHub Actions (push em main -> deploy automatico)
-- Restauracao de dados na nova VPS
-- Migracao de DNS com downtime minimo
-- Descomissionamento da VPS antiga
+- Deploy automatico em push para `main`
+- Build local na VPS com `docker compose build --pull app`
+- Recriacao do container `app` com `docker compose up -d --force-recreate --no-deps app`
+- Migrations Prisma aplicadas no startup do container via `npx prisma migrate deploy`
+- NGINX expondo `https://brabustore.com.br`
+- Validacao operacional por health check em `/api/health`
 
 ### 12.3 Documento de referencia
 
-- `docs/MIGRATION.md` — plano detalhado com etapas, configs de referencia e riscos
+- `docs/DEPLOY.md` — fluxo operacional ativo de deploy e validacao
+- `docs/MIGRATION.md` — historico da migracao de EasyPanel para VPS propria
 
 ### 12.4 Posicao na ordem de implementacao
 
-Esta frente e transversal e pode ser executada em paralelo com qualquer sprint funcional. Prioridade alta — bloqueia go-live formal.
+Esta frente esta operacional. Mudancas futuras devem manter o fluxo versionado em `.github/workflows/deploy.yml`, `deploy.sh`, `docker-compose.vps.yml`, `Dockerfile` e `scripts/docker-entrypoint.sh`.

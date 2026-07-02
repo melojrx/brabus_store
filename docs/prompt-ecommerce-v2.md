@@ -234,7 +234,7 @@ Rode as **migrations** e o **seed completo**:
 | Camada | Tecnologia |
 |---|---|
 | Framework | Next.js 15 (App Router) + TypeScript |
-| Banco de Dados | PostgreSQL 16 (Docker local / EasyPanel produção) |
+| Banco de Dados | PostgreSQL 16 (Docker local / Docker Compose produção) |
 | ORM | Prisma 5 |
 | Autenticação | NextAuth.js v5 |
 | Pagamentos | Stripe + Stripe Elements |
@@ -247,7 +247,7 @@ Rode as **migrations** e o **seed completo**:
 | Ícones | Lucide React |
 | Animações | Framer Motion |
 | WhatsApp | wa.me link + botão flutuante |
-| Deploy | EasyPanel (VPS) via GitHub |
+| Deploy | VPS com Docker Compose + NGINX + GitHub Actions via SSH |
 
 ---
 

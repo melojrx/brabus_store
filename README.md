@@ -262,25 +262,33 @@ npm run stripe:listen
 
 ## Deploy
 
-O repositorio esta preparado para deploy em Easypanel com Docker.
+O repositorio esta preparado para deploy em VPS propria com Docker Compose, NGINX e GitHub Actions via SSH.
 
 Arquivos versionados para isso:
 
 - `Dockerfile`
 - `.dockerignore`
 - `.env.example`
-- `docs/EASYPANEL_DEPLOY.md`
+- `.github/workflows/deploy.yml`
+- `docker-compose.vps.yml`
+- `deploy.sh`
+- `scripts/docker-entrypoint.sh`
+- `infra/nginx/brabustore.conf`
+- `docs/DEPLOY.md`
 
 Pontos operacionais importantes:
 
-- a aplicacao sobe na porta `3000`
-- o container executa `npx prisma migrate deploy` no startup
+- push em `main` dispara o workflow de deploy, exceto alteracoes apenas documentais ignoradas pelo workflow
+- o workflow acessa a VPS por SSH e executa `/srv/apps/brabustore/deploy.sh`
+- a aplicacao sobe no container na porta `3000`, publicada localmente na VPS em `127.0.0.1:3001`
+- o NGINX publica `https://brabustore.com.br`
+- o container executa `npx prisma migrate deploy` no startup via `scripts/docker-entrypoint.sh`
 - uploads administrativos exigem volume persistente em `/app/public/uploads`
 - em producao, defina `AUTH_TRUST_HOST=true`
 
 Guia completo:
 
-- [docs/EASYPANEL_DEPLOY.md](./docs/EASYPANEL_DEPLOY.md)
+- [docs/DEPLOY.md](./docs/DEPLOY.md)
 
 ## Integracoes
 
@@ -317,15 +325,6 @@ O projeto ainda nao possui uma suite automatizada versionada. No estado atual, o
 - ampliar cobertura automatizada de testes
 - endurecer documentacao de deploy e operacao
 - evoluir observabilidade e validacoes operacionais
-
-## Deploy
-
-O projeto foi pensado para deploy em VPS com EasyPanel, mantendo:
-
-- Next.js como aplicacao principal
-- PostgreSQL como banco persistente
-- variaveis de ambiente para Stripe, Melhor Envio, NextAuth e Instagram
-- webhook Stripe acessivel publicamente
 
 ## Licenca
 
