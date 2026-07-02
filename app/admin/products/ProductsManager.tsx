@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { type FormEvent, useEffect, useRef, useState, useTransition } from "react"
+import { type FormEvent, useEffect, useRef, useState, useSyncExternalStore, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import {
   ChevronLeft,
@@ -226,12 +226,24 @@ function getWorstExpiryLevel(
   return worst
 }
 
-function ProductExpiryBadge({ product }: { product: Product }) {
-  const [mounted, setMounted] = useState(false)
+function subscribeToClientReady() {
+  return () => {}
+}
 
-  useEffect(() => {
-    setMounted(true)
-  }, [])
+function getClientSnapshot() {
+  return true
+}
+
+function getServerSnapshot() {
+  return false
+}
+
+function ProductExpiryBadge({ product }: { product: Product }) {
+  const mounted = useSyncExternalStore(
+    subscribeToClientReady,
+    getClientSnapshot,
+    getServerSnapshot,
+  )
 
   if (!product.subcategory.trackExpiration) {
     return <span className="text-xs text-zinc-600">—</span>

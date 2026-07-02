@@ -196,6 +196,7 @@ export default function PdvManager({ pixKey }: { pixKey: string | null }) {
   const [manualPaymentReference, setManualPaymentReference] = useState("")
   const [manualPaymentNotes, setManualPaymentNotes] = useState("")
   const [cashReceivedAmount, setCashReceivedAmount] = useState("")
+  const [discountAmount, setDiscountAmount] = useState("")
   const [productsFeedback, setProductsFeedback] = useState<Feedback>(null)
   const [expirySummary, setExpirySummary] = useState<PdvExpirySummary | null>(null)
   const [shippingFeedback, setShippingFeedback] = useState<Feedback>(null)
@@ -407,7 +408,11 @@ export default function PdvManager({ pixKey }: { pixKey: string | null }) {
     () => items.reduce((sum, item) => sum + item.productPrice * item.quantity, 0),
     [items],
   )
-  const total = subtotal + shippingCost
+  const grossTotal = subtotal + shippingCost
+  const parsedDiscountAmount = parseCurrencyInputValue(discountAmount)
+  const appliedDiscountAmount = parsedDiscountAmount ?? 0
+  const discountExceedsTotal = appliedDiscountAmount > grossTotal
+  const total = Number(Math.max(0, grossTotal - appliedDiscountAmount).toFixed(2))
   const parsedCashReceivedAmount = parseCurrencyInputValue(cashReceivedAmount)
   const computedChangeAmount = formatChangeAmount(total, parsedCashReceivedAmount)
   const isCashPayment = paymentMethod === "CASH"
@@ -595,6 +600,7 @@ export default function PdvManager({ pixKey }: { pixKey: string | null }) {
     setManualPaymentReference("")
     setManualPaymentNotes("")
     setCashReceivedAmount("")
+    setDiscountAmount("")
     setCurrentOrderFeedback(null)
     setCheckoutFeedback(null)
     setShippingFeedback(null)
@@ -670,6 +676,14 @@ export default function PdvManager({ pixKey }: { pixKey: string | null }) {
     startSubmitTransition(async () => {
       setCheckoutFeedback(null)
 
+      if (discountExceedsTotal) {
+        setCheckoutFeedback({
+          type: "error",
+          message: "O desconto não pode ser maior que o total do pedido.",
+        })
+        return
+      }
+
       try {
         const response = await fetch("/api/admin/pdv/orders", {
           method: "POST",
@@ -695,6 +709,7 @@ export default function PdvManager({ pixKey }: { pixKey: string | null }) {
             manualPaymentReference: shouldShowReference ? manualPaymentReference.trim() : null,
             manualPaymentNotes: manualPaymentNotes.trim() || null,
             cashReceivedAmount: isCashPayment && parsedCashReceivedAmount != null ? parsedCashReceivedAmount.toFixed(2) : null,
+            discountAmount: appliedDiscountAmount > 0 ? appliedDiscountAmount.toFixed(2) : null,
             changeAmount: null,
           }),
         })
@@ -1316,8 +1331,14 @@ export default function PdvManager({ pixKey }: { pixKey: string | null }) {
                           : "Frete nacional pendente"}
                   </span>
                 </div>
+                {appliedDiscountAmount > 0 ? (
+                  <div className="mt-3 flex items-center justify-between text-sm text-emerald-300">
+                    <span>Desconto</span>
+                    <span>- {formatCurrency(appliedDiscountAmount)}</span>
+                  </div>
+                ) : null}
                 <div className="mt-3 flex items-center justify-between border-t border-white/5 pt-3 text-base font-semibold text-white">
-                  <span>Total</span>
+                  <span>Total líquido</span>
                   <span>{formatCurrency(total)}</span>
                 </div>
               </div>
@@ -1538,6 +1559,22 @@ export default function PdvManager({ pixKey }: { pixKey: string | null }) {
                 </div>
               </div>
 
+              <div>
+                <label className="label-admin">Desconto em R$</label>
+                <input
+                  value={discountAmount}
+                  onChange={(event) => setDiscountAmount(maskCurrencyInput(event.target.value))}
+                  className="input-admin"
+                  placeholder="R$ 0,00"
+                  inputMode="numeric"
+                />
+                <p className={`mt-2 text-xs ${discountExceedsTotal ? "text-red-300" : "text-gray-500"}`}>
+                  {discountExceedsTotal
+                    ? "O desconto não pode ser maior que subtotal + entrega."
+                    : "Aplicado somente a esta venda presencial no PDV."}
+                </p>
+              </div>
+
               {isManualPixPayment ? (
                 <div className="rounded-sm border border-[var(--color-primary)]/20 bg-[var(--color-primary)]/5 px-4 py-4 text-sm text-gray-200">
                   <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--color-primary)]">Chave Pix da Loja</p>
@@ -1677,8 +1714,14 @@ export default function PdvManager({ pixKey }: { pixKey: string | null }) {
                   <span>Entrega</span>
                   <span>{formatCurrency(shippingCost)}</span>
                 </div>
+                {appliedDiscountAmount > 0 ? (
+                  <div className="mt-3 flex items-center justify-between text-sm text-emerald-300">
+                    <span>Desconto</span>
+                    <span>- {formatCurrency(appliedDiscountAmount)}</span>
+                  </div>
+                ) : null}
                 <div className="mt-3 flex items-center justify-between border-t border-white/5 pt-3 text-base font-semibold text-white">
-                  <span>Total Final</span>
+                  <span>Total Líquido</span>
                   <span>{formatCurrency(total)}</span>
                 </div>
               </div>
@@ -1704,7 +1747,7 @@ export default function PdvManager({ pixKey }: { pixKey: string | null }) {
               <button
                 type="button"
                 onClick={handleSubmit}
-                disabled={isSubmitting || !canSubmitOrder}
+                disabled={isSubmitting || !canSubmitOrder || discountExceedsTotal}
                 className="inline-flex w-full items-center justify-center gap-2 rounded-sm bg-[var(--color-primary)] px-6 py-3 text-xs font-bold uppercase tracking-widest text-black transition-colors hover:bg-[var(--color-primary-dark)] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isSubmitting ? (

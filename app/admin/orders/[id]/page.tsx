@@ -58,6 +58,7 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
   const status = getOrderStatusMeta(order.status)
   const paymentStatus = getPaymentStatusMeta(order.paymentStatus)
   const subtotal = order.items.reduce((acc, item) => acc + (item.unitPrice ?? item.price).toNumber() * item.quantity, 0)
+  const discountAmount = order.discountAmount.toNumber()
   const displayOrderNumber = getOrderDisplayNumber(order)
   const customerName = order.customerNameSnapshot ?? order.user.name
   const customerEmail =
@@ -121,8 +122,14 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
               </span>
               <span>{formatCurrency(order.shippingCost.toNumber())}</span>
             </div>
+            {discountAmount > 0 && (
+              <div className="flex justify-between text-emerald-300">
+                <span>Desconto PDV</span>
+                <span>- {formatCurrency(discountAmount)}</span>
+              </div>
+            )}
             <div className="flex justify-between font-bold text-white pt-3 border-t border-white/10 text-base">
-              <span>Total</span>
+              <span>Total líquido</span>
               <span className="font-heading tracking-wider">{formatCurrency(order.total.toNumber())}</span>
             </div>
           </div>
