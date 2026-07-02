@@ -36,6 +36,7 @@ export async function sendWebhook(input: SendInput): Promise<boolean> {
         "Content-Type": "application/json",
         "X-Hub-Signature-256": `sha256=${signature}`,
         "X-Webhook-Event": event,
+        "X-GitHub-Event": event,
         "X-Webhook-Delivery-Id": deliveryId,
         "User-Agent": "BrabusStore-Webhook/1.0",
       },
