@@ -79,6 +79,7 @@ export async function POST(req: Request) {
       manualPaymentReference: payload.manualPaymentReference,
       manualPaymentNotes: payload.manualPaymentNotes,
       cashReceivedAmount: payload.cashReceivedAmount,
+      discountAmount: payload.discountAmount,
     })
 
     return NextResponse.json(createdOrder, { status: 201 })

@@ -137,6 +137,7 @@ export const createPdvOrderSchema = z
     manualPaymentNotes: optionalTrimmedString(1000, "As observações devem ter no máximo 1000 caracteres."),
     cashReceivedAmount: optionalMoneyField,
     changeAmount: optionalMoneyField,
+    discountAmount: optionalMoneyField,
   })
   .superRefine((data, ctx) => {
     if (data.paymentMethod === "POS_CREDIT" && !data.paymentInstallments) {

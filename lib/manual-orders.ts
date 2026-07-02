@@ -9,6 +9,10 @@ import {
 } from "@prisma/client"
 import { decrementOrderItemStock } from "@/lib/order-stock"
 import { buildVariantDisplayLabel } from "@/lib/pdv"
+import {
+  calculateCashChange,
+  calculateDiscountedOrderTotal,
+} from "@/lib/order-discount"
 import { dispatchOrderPaid } from "@/lib/webhooks/order-paid"
 import {
   calculateOrderWeight,
@@ -50,6 +54,7 @@ export type ManualOrderCreateInput = {
   manualPaymentReference?: string | null
   manualPaymentNotes?: string | null
   cashReceivedAmount?: number | null
+  discountAmount?: number | null
   sellerId?: string | null
 }
 
@@ -319,7 +324,12 @@ export async function createManualOrder(
     normalizedAddress.addressZip = destinationPostalCode
   }
 
-  total += shippingCost
+  const discountCalculation = calculateDiscountedOrderTotal({
+    subtotal: total,
+    shippingCost,
+    discountAmount: input.channel === OrderChannel.PDV ? input.discountAmount : null,
+  })
+  total = discountCalculation.total
 
   const cashReceivedAmount =
     input.paymentMethod === PaymentMethod.CASH ? input.cashReceivedAmount ?? null : null
@@ -333,8 +343,8 @@ export async function createManualOrder(
   }
 
   const computedChangeAmount =
-    input.paymentMethod === PaymentMethod.CASH && cashReceivedAmount != null
-      ? Number((cashReceivedAmount - total).toFixed(2))
+    input.paymentMethod === PaymentMethod.CASH
+      ? calculateCashChange({ total, cashReceivedAmount })
       : null
   const changeAmount =
     input.paymentMethod === PaymentMethod.CASH
@@ -379,6 +389,7 @@ export async function createManualOrder(
         manualPaymentNotes: input.manualPaymentNotes ?? null,
         cashReceivedAmount,
         changeAmount,
+        discountAmount: discountCalculation.discountAmount,
         customerNameSnapshot: input.customerNameSnapshot ?? null,
         customerEmailSnapshot: input.customerEmailSnapshot ?? null,
         customerPhoneSnapshot: input.customerPhoneSnapshot ?? null,
