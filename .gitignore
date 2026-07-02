@@ -44,10 +44,12 @@ next-env.d.ts
 
 # AI / Agent config
 .agent/
+.agents/
 AGENTS.md
 GEMINI.md
 CLAUDE.md
 .claude/
+.cursor/skills/
 .env.production
 backups/
 .antigravitycli/
