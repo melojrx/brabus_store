@@ -114,15 +114,24 @@ export function normalizeVariantsForCategory(variants: readonly ProductFormVaria
 }
 
 export function validateProductForm(form: ProductFormState, category?: ProductFormCategory) {
-  if (!form.name || !form.price || !form.costPrice || !form.categoryId) return "Preencha nome, preço de venda, preço de custo e subcategoria."
-  if (!category) return "Selecione uma subcategoria."
-  if (!form.variants.length) return "Cadastre ao menos uma variante."
-  for (const [index, variant] of form.variants.entries()) {
-    if (category.supportsSize && !variant.size.trim()) return `Preencha o tamanho da variante ${index + 1}.`
-    if (category.supportsColor && !variant.color.trim()) return `Preencha a cor da variante ${index + 1}.`
-    if (category.supportsFlavor && !variant.flavor.trim()) return `Preencha o sabor da variante ${index + 1}.`
+  return Object.values(getProductFormErrors(form, category))[0] ?? null
+}
+
+export function getProductFormErrors(form: ProductFormState, category?: ProductFormCategory) {
+  const errors: Record<string, string> = {}
+  if (!form.name.trim()) errors["product-name"] = "Informe o nome do produto."
+  if (!form.categoryId || !category) errors["product-category"] = "Selecione uma subcategoria."
+  if (parseCurrencyInputValue(form.price) == null) errors["product-price"] = "Informe o preço de venda."
+  if (parseCurrencyInputValue(form.costPrice) == null) errors["product-cost-price"] = "Informe o preço de custo."
+  if (!form.variants.length) errors["product-variants"] = "Cadastre ao menos uma variante."
+  if (category) {
+    form.variants.forEach((variant, index) => {
+      if (category.supportsSize && !variant.size.trim()) errors[`variant-size-${index}`] = `Informe o tamanho da variante ${index + 1}.`
+      if (category.supportsColor && !variant.color.trim()) errors[`variant-color-${index}`] = `Informe a cor da variante ${index + 1}.`
+      if (category.supportsFlavor && !variant.flavor.trim()) errors[`variant-flavor-${index}`] = `Informe o sabor da variante ${index + 1}.`
+    })
   }
-  return null
+  return errors
 }
 
 export function buildProductPayload(form: ProductFormState, category: ProductFormCategory) {

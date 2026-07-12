@@ -23,14 +23,26 @@ import AdminInlineFeedback, { type AdminInlineFeedbackState } from "@/components
 import {
   DEFAULT_EXPIRY_CRITICAL_DAYS,
   DEFAULT_EXPIRY_WARNING_DAYS,
-  formatExpiresAtInput,
   getDaysUntilExpiry,
   getExpiryBadgeClass,
   getExpiryBadgeLabel,
   getExpiryLevel,
   type ExpiryLevel,
 } from "@/lib/expiry-utils"
-import { formatCurrencyInputValue, maskCurrencyInput, parseCurrencyInputValue } from "@/lib/currency-input"
+import { maskCurrencyInput } from "@/lib/currency-input"
+import {
+  buildProductPayload,
+  createEmptyProductForm,
+  createEmptyProductVariant,
+  getGrossMargin,
+  getProductFormErrors,
+  getTotalVariantStock,
+  mapProductToForm,
+  normalizeVariantsForCategory,
+  slugifyProductName,
+  type ProductFormState,
+  type ProductFormVariant,
+} from "@/lib/product-form"
 
 type ParentCategory = Readonly<{
   id: string
@@ -87,39 +99,14 @@ type Product = Readonly<{
   variants: readonly ProductVariant[]
 }>
 
-type VariantForm = {
-  id?: string
-  sku: string
-  name: string
-  size: string
-  color: string
-  flavor: string
-  stock: string
-  expiresAt: string
-  active: boolean
-}
-
-type ProductForm = {
-  name: string
-  slug: string
-  description: string
-  price: string
-  costPrice: string
-  images: string[]
-  featured: boolean
-  active: boolean
-  isNew: boolean
-  categoryId: string
-  weightLabel: string
-  weightKg: string
-  gender: string
-  variants: VariantForm[]
-}
+type VariantForm = ProductFormVariant
+type ProductForm = ProductFormState
 
 type FieldProps = Readonly<{
   label: string
   htmlFor: string
   hint?: string
+  error?: string
   children: React.ReactNode
 }>
 
@@ -167,16 +154,6 @@ const GENDER_OPTIONS: ReadonlyArray<Readonly<{ value: string; label: string }>> 
   { value: "masculino", label: "Masculino" },
   { value: "unissex", label: "Unissex" },
 ]
-
-function slugify(text: string) {
-  return text
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9\s-]/g, "")
-    .trim()
-    .replace(/\s+/g, "-")
-}
 
 function getStockBadgeClass(stock: number) {
   if (stock > 10) {
@@ -278,39 +255,7 @@ function ProductExpiryBadge({ product }: { product: Product }) {
   )
 }
 
-function createEmptyVariant(): VariantForm {
-  return {
-    sku: "",
-    name: "Default",
-    size: "",
-    color: "",
-    flavor: "",
-    stock: "0",
-    expiresAt: "",
-    active: true,
-  }
-}
-
-function createEmptyForm(): ProductForm {
-  return {
-    name: "",
-    slug: "",
-    description: "",
-    price: "",
-    costPrice: "",
-    images: [],
-    featured: false,
-    active: true,
-    isNew: true,
-    categoryId: "",
-    weightLabel: "",
-    weightKg: "",
-    gender: "",
-    variants: [createEmptyVariant()],
-  }
-}
-
-function Field({ label, htmlFor, hint, children }: FieldProps) {
+function Field({ label, htmlFor, hint, error, children }: FieldProps) {
   return (
     <div className="flex flex-col gap-1.5">
       <label htmlFor={htmlFor} className="text-xs font-medium text-zinc-400">
@@ -318,6 +263,7 @@ function Field({ label, htmlFor, hint, children }: FieldProps) {
         {hint ? <span className="ml-2 text-[10px] font-normal text-zinc-600">({hint})</span> : null}
       </label>
       {children}
+      {error ? <p className="text-xs text-red-400">{error}</p> : null}
     </div>
   )
 }
@@ -339,6 +285,15 @@ function buildVariantLabel(variant: VariantForm, category: Subcategory | undefin
   ].filter(Boolean)
 
   return parts[0] ?? "Default"
+}
+
+function buildVariantSummary(variant: VariantForm, category: Subcategory | undefined) {
+  const attributes = [
+    category?.supportsFlavor ? variant.flavor : "",
+    category?.supportsSize ? variant.size : "",
+    category?.supportsColor ? variant.color : "",
+  ].filter(Boolean)
+  return [...attributes, `estoque ${Number.parseInt(variant.stock || "0", 10) || 0}`].join(" · ")
 }
 
 function moveListItem<T>(items: readonly T[], fromIndex: number, toIndex: number) {
@@ -535,20 +490,14 @@ export default function ProductsManager({
   const [drawerOpen, setDrawerOpen] = useState(editorMode)
   const [filtersPanelOpen, setFiltersPanelOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(editorProduct ?? null)
-  const [form, setForm] = useState<ProductForm>(() => editorProduct ? {
-    name: editorProduct.name, slug: editorProduct.slug, description: editorProduct.description,
-    price: formatCurrencyInputValue(editorProduct.price), costPrice: formatCurrencyInputValue(editorProduct.costPrice),
-    images: [...editorProduct.images], featured: editorProduct.featured, active: editorProduct.active, isNew: editorProduct.isNew,
-    categoryId: editorProduct.subcategory.id, weightLabel: editorProduct.weightLabel ?? editorProduct.weight ?? "",
-    weightKg: editorProduct.weightKg != null ? String(editorProduct.weightKg) : "", gender: editorProduct.gender ?? "",
-    variants: editorProduct.variants.length ? editorProduct.variants.map((variant) => ({ id: variant.id, sku: variant.sku ?? "", name: variant.name ?? "Default", size: variant.size ?? "", color: variant.color ?? "", flavor: variant.flavor ?? "", stock: String(variant.stock), expiresAt: formatExpiresAtInput(variant.expiresAt), active: variant.active })) : [{ ...createEmptyVariant(), stock: String(editorProduct.stock) }],
-  } : createEmptyForm())
+  const [form, setForm] = useState<ProductForm>(() => editorProduct ? mapProductToForm(editorProduct) : createEmptyProductForm())
   const [saving, setSaving] = useState(false)
   const [uploadingImages, setUploadingImages] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [togglingId, setTogglingId] = useState<string | null>(null)
   const [formError, setFormError] = useState("")
-  const [formFeedback, setFormFeedback] = useState<AdminInlineFeedbackState>(null)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  const [expandedVariantIndex, setExpandedVariantIndex] = useState(0)
   const [listFeedback, setListFeedback] = useState<AdminInlineFeedbackState>(() => successMessage ? { type: "success", message: successMessage } : null)
   const [sessionUploadedImages, setSessionUploadedImages] = useState<string[]>([])
   const initialFormSnapshotRef = useRef(JSON.stringify(form))
@@ -567,14 +516,8 @@ export default function ProductsManager({
   }, {})
 
   const selectedCategory = categories.find((category) => category.id === form.categoryId)
-  const totalVariantStock = form.variants.reduce(
-    (sum, variant) => sum + (Number.parseInt(variant.stock || "0", 10) || 0),
-    0,
-  )
-  const marginPreview =
-    form.price && form.costPrice && (parseCurrencyInputValue(form.price) ?? 0) > 0
-      ? (((parseCurrencyInputValue(form.price) ?? 0) - (parseCurrencyInputValue(form.costPrice) ?? 0)) / (parseCurrencyInputValue(form.price) ?? 1)) * 100
-      : null
+  const totalVariantStock = getTotalVariantStock(form.variants)
+  const marginPreview = getGrossMargin(form.price, form.costPrice)
   const showFashionFields = selectedCategory?.parent?.slug === "roupas-fitness"
   const isDrawerBusy = saving || uploadingImages || isPending
   const visibleRangeStart = pagination.totalItems === 0 ? 0 : (pagination.page - 1) * pagination.pageSize + 1
@@ -641,6 +584,21 @@ export default function ProductsManager({
     return () => window.removeEventListener("beforeunload", handleBeforeUnload)
   }, [hasUnsavedChanges])
 
+  useEffect(() => {
+    if (!hasUnsavedChanges) return
+    function handleDocumentClick(event: MouseEvent) {
+      const anchor = (event.target as HTMLElement).closest("a[href]") as HTMLAnchorElement | null
+      if (!anchor || anchor.target === "_blank" || anchor.origin !== window.location.origin) return
+      event.preventDefault()
+      if (!window.confirm("Você tem alterações não salvas. Deseja sair mesmo assim?")) return
+      savedRef.current = true
+      if (sessionUploadedImages.length > 0) void cleanupUploadedImages(sessionUploadedImages)
+      window.location.assign(anchor.href)
+    }
+    document.addEventListener("click", handleDocumentClick, true)
+    return () => document.removeEventListener("click", handleDocumentClick, true)
+  }, [hasUnsavedChanges, sessionUploadedImages])
+
   async function cleanupUploadedImages(urls: readonly string[]) {
     if (urls.length === 0) {
       return
@@ -686,17 +644,19 @@ export default function ProductsManager({
     setEditingProduct(null)
     setSessionUploadedImages([])
     setFormError("")
-    setFormFeedback(null)
   }
 
   function setField<Key extends keyof ProductForm>(key: Key, value: ProductForm[Key]) {
     setForm((prev) => {
       const next = { ...prev, [key]: value }
       if (key === "name" && !editingProduct && typeof value === "string") {
-        next.slug = slugify(value)
+        next.slug = slugifyProductName(value)
       }
       return next
     })
+    const errorKeyByField: Partial<Record<keyof ProductForm, string>> = { name: "product-name", categoryId: "product-category", price: "product-price", costPrice: "product-cost-price" }
+    const errorKey = errorKeyByField[key]
+    if (errorKey) setFieldErrors((current) => { const next = { ...current }; delete next[errorKey]; return next })
   }
 
   function setVariantField(index: number, key: keyof VariantForm, value: string | boolean) {
@@ -706,51 +666,17 @@ export default function ProductsManager({
         variantIndex === index ? { ...variant, [key]: value } : variant,
       ),
     }))
+    setFieldErrors((current) => { const next = { ...current }; delete next[`variant-${key}-${index}`]; return next })
   }
 
   function handleCategoryChange(nextCategoryId: string) {
     const nextCategory = categories.find((category) => category.id === nextCategoryId)
 
     setForm((prev) => {
-      const currentVariants = prev.variants.length > 0 ? prev.variants : [createEmptyVariant()]
-      const normalizedVariants = currentVariants.map((variant, index) => ({
-        ...variant,
-        name: variant.name || (index === 0 ? "Default" : `Variante ${index + 1}`),
-        size: nextCategory?.supportsSize ? variant.size : "",
-        color: nextCategory?.supportsColor ? variant.color : "",
-        flavor: nextCategory?.supportsFlavor ? variant.flavor : "",
-        expiresAt: nextCategory?.trackExpiration ? variant.expiresAt : "",
-      }))
-
-      if (!nextCategory?.trackStockByVariant) {
-        const collapsedStock = normalizedVariants.reduce(
-          (sum, variant) => sum + (Number.parseInt(variant.stock || "0", 10) || 0),
-          0,
-        )
-
-        return {
-          ...prev,
-          categoryId: nextCategoryId,
-          variants: [
-            {
-              id: normalizedVariants[0]?.id,
-              sku: normalizedVariants[0]?.sku ?? "",
-              name: "Default",
-              size: "",
-              color: "",
-              flavor: "",
-              stock: String(collapsedStock),
-              expiresAt: nextCategory?.trackExpiration ? normalizedVariants[0]?.expiresAt ?? "" : "",
-              active: normalizedVariants.some((variant) => variant.active),
-            },
-          ],
-        }
-      }
-
       return {
         ...prev,
         categoryId: nextCategoryId,
-        variants: normalizedVariants,
+        variants: normalizeVariantsForCategory(prev.variants, nextCategory),
       }
     })
   }
@@ -765,7 +691,7 @@ export default function ProductsManager({
       variants: [
         ...prev.variants,
         {
-          ...createEmptyVariant(),
+          ...createEmptyProductVariant(),
           name: `Variante ${prev.variants.length + 1}`,
         },
       ],
@@ -773,6 +699,9 @@ export default function ProductsManager({
   }
 
   function removeVariant(index: number) {
+    const variant = form.variants[index]
+    const hasMeaningfulData = Boolean(variant?.id || variant?.sku.trim() || variant?.size.trim() || variant?.color.trim() || variant?.flavor.trim() || Number(variant?.stock) > 0)
+    if (hasMeaningfulData && !window.confirm("Remover esta variante e os dados preenchidos?")) return
     setForm((prev) => ({
       ...prev,
       variants:
@@ -780,32 +709,6 @@ export default function ProductsManager({
           ? prev.variants
           : prev.variants.filter((_, variantIndex) => variantIndex !== index),
     }))
-  }
-
-  function validateVariants() {
-    if (!selectedCategory) {
-      return "Selecione uma subcategoria."
-    }
-
-    if (form.variants.length === 0) {
-      return "Cadastre ao menos uma variante."
-    }
-
-    for (const [index, variant] of form.variants.entries()) {
-      if (selectedCategory.supportsSize && !variant.size.trim()) {
-        return `Preencha o tamanho da variante ${index + 1}.`
-      }
-
-      if (selectedCategory.supportsColor && !variant.color.trim()) {
-        return `Preencha a cor da variante ${index + 1}.`
-      }
-
-      if (selectedCategory.supportsFlavor && !variant.flavor.trim()) {
-        return `Preencha o sabor da variante ${index + 1}.`
-      }
-    }
-
-    return null
   }
 
   function setListingFilter<Key extends keyof ProductsManagerProps["filters"]>(
@@ -857,7 +760,6 @@ export default function ProductsManager({
     }
 
     setFormError("")
-    setFormFeedback(null)
     setUploadingImages(true)
 
     try {
@@ -927,53 +829,21 @@ export default function ProductsManager({
 
   async function handleSave() {
     setFormError("")
-    setFormFeedback(null)
-
-    if (!form.name || !form.price || !form.costPrice || !form.categoryId) {
-      setFormError("Preencha nome, preço de venda, preço de custo e subcategoria.")
-      const firstInvalidId = !form.name ? "product-name" : !form.categoryId ? "product-category" : !form.price ? "product-price" : "product-cost-price"
-      window.setTimeout(() => document.getElementById(firstInvalidId)?.focus(), 0)
-      return
-    }
-
-    const variantsError = validateVariants()
-    if (variantsError) {
-      setFormError(variantsError)
-      window.setTimeout(() => document.getElementById("product-variants")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0)
+    const errors = getProductFormErrors(form, selectedCategory)
+    setFieldErrors(errors)
+    const firstErrorId = Object.keys(errors)[0]
+    if (firstErrorId) {
+      const variantIndex = Number.parseInt(firstErrorId.split("-").at(-1) ?? "", 10)
+      if (firstErrorId.startsWith("variant-") && Number.isFinite(variantIndex)) setExpandedVariantIndex(variantIndex)
+      setFormError("Revise os campos indicados antes de salvar.")
+      window.setTimeout(() => document.getElementById(firstErrorId)?.focus(), 0)
       return
     }
 
     setSaving(true)
     try {
-      const normalizedVariants = form.variants.map((variant, index) => ({
-        ...(variant.id ? { id: variant.id } : {}),
-        sku: variant.sku.trim() || null,
-        name: variant.name.trim() || (index === 0 ? "Default" : `Variante ${index + 1}`),
-        size: selectedCategory?.supportsSize ? variant.size.trim() || null : null,
-        color: selectedCategory?.supportsColor ? variant.color.trim() || null : null,
-        flavor: selectedCategory?.supportsFlavor ? variant.flavor.trim() || null : null,
-        stock: Number.parseInt(variant.stock || "0", 10) || 0,
-        expiresAt: selectedCategory?.trackExpiration ? variant.expiresAt || null : null,
-        active: variant.active,
-      }))
-
-      const payload = {
-        name: form.name.trim(),
-        slug: form.slug.trim() || slugify(form.name),
-        description: form.description.trim(),
-        price: parseCurrencyInputValue(form.price),
-        costPrice: parseCurrencyInputValue(form.costPrice),
-        images: form.images,
-        featured: form.featured,
-        active: form.active,
-        isNew: form.isNew,
-        weight: selectedCategory?.supportsWeight ? form.weightLabel.trim() || null : null,
-        weightLabel: selectedCategory?.supportsWeight ? form.weightLabel.trim() || null : null,
-        weightKg: form.weightKg ? Number.parseFloat(form.weightKg) : null,
-        gender: showFashionFields ? form.gender || null : null,
-        categoryId: form.categoryId,
-        variants: normalizedVariants,
-      }
+      if (!selectedCategory) return
+      const payload = buildProductPayload(form, selectedCategory)
 
       const url = editingProduct ? `/api/admin/products/${editingProduct.id}` : "/api/admin/products"
       const response = await fetch(url, {
@@ -996,8 +866,7 @@ export default function ProductsManager({
       }
       setDrawerOpen(false)
       setEditingProduct(null)
-      setForm(createEmptyForm())
-      setFormFeedback(null)
+      setForm(createEmptyProductForm())
       setListFeedback({
         type: "success",
         message: editingProduct ? "Produto atualizado com sucesso." : "Produto criado com sucesso.",
@@ -1451,7 +1320,7 @@ export default function ProductsManager({
                 aria-label="Fechar painel"
                 onClick={() => closeDrawer()}
                 disabled={isDrawerBusy}
-                className="text-zinc-500 transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                className="flex h-11 w-11 items-center justify-center text-zinc-500 transition-colors hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -1466,7 +1335,7 @@ export default function ProductsManager({
                         type: "error",
                         message: formError,
                       }
-                    : formFeedback
+                    : null
                 }
               />
               </div>
@@ -1474,7 +1343,7 @@ export default function ProductsManager({
               <section id="basic-information" className="space-y-4 rounded-sm border border-zinc-800 bg-zinc-950 p-4 sm:p-6">
                 <div><h3 className="text-sm font-bold uppercase tracking-[0.2em] text-white">Informações básicas</h3><p className="mt-1 text-xs text-zinc-500">Identificação e classificação do produto.</p></div>
               <div className="grid gap-4 md:grid-cols-2">
-                <Field label="Nome" htmlFor="product-name">
+                <Field label="Nome *" htmlFor="product-name" error={fieldErrors["product-name"]}>
                   <input
                     id="product-name"
                     className={inputCls}
@@ -1483,7 +1352,7 @@ export default function ProductsManager({
                   />
                 </Field>
 
-                <Field label="Subcategoria *" htmlFor="product-category">
+                <Field label="Subcategoria *" htmlFor="product-category" error={fieldErrors["product-category"]}>
                   <select id="product-category" className={inputCls} value={form.categoryId} onChange={(event) => handleCategoryChange(event.target.value)}>
                     <option value="">Selecione...</option>
                     {Object.entries(groupedSubcategories).map(([groupLabel, items]) => <optgroup key={groupLabel} label={groupLabel}>{items.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</optgroup>)}
@@ -1516,7 +1385,7 @@ export default function ProductsManager({
               <section id="prices-logistics" className="space-y-4 rounded-sm border border-zinc-800 bg-zinc-950 p-4 sm:p-6">
               <div><h3 className="text-sm font-bold uppercase tracking-[0.2em] text-white">Preços e logística</h3></div>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <Field label="Preço de Venda *" htmlFor="product-price">
+                <Field label="Preço de Venda *" htmlFor="product-price" error={fieldErrors["product-price"]}>
                   <input
                     id="product-price"
                     className={inputCls}
@@ -1528,7 +1397,7 @@ export default function ProductsManager({
                   />
                 </Field>
 
-                <Field label="Preço de Custo *" htmlFor="product-cost-price">
+                <Field label="Preço de Custo *" htmlFor="product-cost-price" error={fieldErrors["product-cost-price"]}>
                   <input
                     id="product-cost-price"
                     className={inputCls}
@@ -1540,27 +1409,17 @@ export default function ProductsManager({
                   />
                 </Field>
 
-                <Field label="Estoque Total" htmlFor="product-total-stock" hint="somado das variantes">
-                  <input
-                    id="product-total-stock"
-                    className={`${inputCls} bg-zinc-950 text-zinc-400`}
-                    value={String(totalVariantStock)}
-                    readOnly
-                  />
-                </Field>
+                <div className="rounded-sm border border-zinc-800 bg-black/30 p-3" aria-label="Estoque total">
+                  <p className="text-xs text-zinc-500">Estoque total</p>
+                  <p className="mt-1 text-xl font-semibold tabular-nums text-white">{totalVariantStock}</p>
+                  <p className="text-[10px] text-zinc-600">Soma das variantes</p>
+                </div>
 
-                <Field label="Margem Bruta" htmlFor="product-margin" hint="preview">
-                  <input
-                    id="product-margin"
-                    className={`${inputCls} bg-zinc-950 text-zinc-400`}
-                    value={
-                      marginPreview != null && Number.isFinite(marginPreview)
-                        ? `${marginPreview.toFixed(1)}%`
-                        : "—"
-                    }
-                    readOnly
-                  />
-                </Field>
+                <div className="rounded-sm border border-zinc-800 bg-black/30 p-3" aria-label="Margem bruta">
+                  <p className="text-xs text-zinc-500">Margem bruta</p>
+                  <p className="mt-1 text-xl font-semibold tabular-nums text-white">{marginPreview != null && Number.isFinite(marginPreview) ? `${marginPreview.toFixed(1)}%` : "—"}</p>
+                  <p className="text-[10px] text-zinc-600">Prévia sobre o preço de venda</p>
+                </div>
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
@@ -1619,7 +1478,7 @@ export default function ProductsManager({
                                 type="button"
                                 onClick={() => moveImage(index, "left")}
                                 disabled={index === 0}
-                                className="rounded-sm border border-zinc-700 p-2 text-zinc-300 transition-colors hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-30"
+                                className="flex h-11 w-11 items-center justify-center rounded-sm border border-zinc-700 text-zinc-300 transition-colors hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-30"
                                 aria-label={`Mover imagem ${index + 1} para a esquerda`}
                               >
                                 <ChevronLeft className="h-3.5 w-3.5" />
@@ -1628,7 +1487,7 @@ export default function ProductsManager({
                                 type="button"
                                 onClick={() => moveImage(index, "right")}
                                 disabled={index === form.images.length - 1}
-                                className="rounded-sm border border-zinc-700 p-2 text-zinc-300 transition-colors hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-30"
+                                className="flex h-11 w-11 items-center justify-center rounded-sm border border-zinc-700 text-zinc-300 transition-colors hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-30"
                                 aria-label={`Mover imagem ${index + 1} para a direita`}
                               >
                                 <ChevronRight className="h-3.5 w-3.5" />
@@ -1638,7 +1497,7 @@ export default function ProductsManager({
                             <button
                               type="button"
                               onClick={() => void handleRemoveImage(index)}
-                              className="rounded-sm border border-red-500/30 p-2 text-red-400 transition-colors hover:bg-red-500/10"
+                              className="flex h-11 w-11 items-center justify-center rounded-sm border border-red-500/30 text-red-400 transition-colors hover:bg-red-500/10"
                               aria-label={`Remover imagem ${index + 1}`}
                             >
                               <Trash2 className="h-3.5 w-3.5" />
@@ -1695,8 +1554,12 @@ export default function ProductsManager({
 
                   <div className="mt-4 space-y-4">
                     {form.variants.map((variant, index) => (
-                      <div key={variant.id ?? `variant-${index}`} className="rounded-sm border border-zinc-800 bg-black/30 p-4">
-                        <div className="mb-4 flex items-center justify-between">
+                      <details key={variant.id ?? `variant-${index}`} open={expandedVariantIndex === index} onToggle={(event) => setExpandedVariantIndex(event.currentTarget.open ? index : -1)} className="group rounded-sm border border-zinc-800 bg-black/30 p-4">
+                        <summary className="mb-4 flex min-h-11 cursor-pointer list-none items-center justify-between gap-3">
+                          <span><span className="block text-xs font-bold uppercase tracking-[0.18em] text-zinc-400">Variante {index + 1}</span><span className="mt-1 block text-sm text-white">{buildVariantSummary(variant, selectedCategory)}</span></span>
+                          <ChevronRight className="h-4 w-4 shrink-0 transition-transform group-open:rotate-90" />
+                        </summary>
+                        <div className="mb-4 hidden items-center justify-between md:flex">
                           <div>
                             <p className="text-xs font-bold uppercase tracking-[0.18em] text-zinc-400">Variante {index + 1}</p>
                             <p className="mt-1 text-sm text-white">{buildVariantLabel(variant, selectedCategory)}</p>
@@ -1717,7 +1580,7 @@ export default function ProductsManager({
                               type="button"
                               onClick={() => removeVariant(index)}
                               disabled={form.variants.length === 1}
-                              className="rounded-sm border border-red-500/30 p-1.5 text-red-400 transition-colors hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-30"
+                              className="flex h-11 w-11 items-center justify-center rounded-sm border border-red-500/30 text-red-400 transition-colors hover:bg-red-500/10 disabled:cursor-not-allowed disabled:opacity-30"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
                             </button>
@@ -1770,7 +1633,7 @@ export default function ProductsManager({
                         {selectedCategory.supportsSize || selectedCategory.supportsColor || selectedCategory.supportsFlavor ? (
                           <div className="mt-4 grid gap-4 lg:grid-cols-3">
                             {selectedCategory.supportsSize ? (
-                              <Field label="Tamanho" htmlFor={`variant-size-${index}`}>
+                              <Field label="Tamanho" htmlFor={`variant-size-${index}`} error={fieldErrors[`variant-size-${index}`]}>
                                 <input
                                   id={`variant-size-${index}`}
                                   className={inputCls}
@@ -1782,7 +1645,7 @@ export default function ProductsManager({
                             ) : null}
 
                             {selectedCategory.supportsColor ? (
-                              <Field label="Cor" htmlFor={`variant-color-${index}`}>
+                              <Field label="Cor" htmlFor={`variant-color-${index}`} error={fieldErrors[`variant-color-${index}`]}>
                                 <input
                                   id={`variant-color-${index}`}
                                   className={inputCls}
@@ -1794,7 +1657,7 @@ export default function ProductsManager({
                             ) : null}
 
                             {selectedCategory.supportsFlavor ? (
-                              <Field label="Sabor" htmlFor={`variant-flavor-${index}`}>
+                              <Field label="Sabor" htmlFor={`variant-flavor-${index}`} error={fieldErrors[`variant-flavor-${index}`]}>
                                 <input
                                   id={`variant-flavor-${index}`}
                                   className={inputCls}
@@ -1806,7 +1669,7 @@ export default function ProductsManager({
                             ) : null}
                           </div>
                         ) : null}
-                      </div>
+                      </details>
                     ))}
                   </div>
 
