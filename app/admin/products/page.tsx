@@ -113,6 +113,7 @@ export default async function AdminProducts({
   searchParams?: AdminProductsSearchParams
 }) {
   const resolvedSearchParams = (await searchParams) ?? {}
+  const saved = readSearchParam(resolvedSearchParams.saved)
   const filters = parseAdminProductsFilters(resolvedSearchParams)
   const requestedPage = normalizeProductsPage(resolvedSearchParams.page)
   const [where, expiryThresholds] = await Promise.all([
@@ -165,6 +166,7 @@ export default async function AdminProducts({
         totalItems,
         totalPages,
       }}
+      successMessage={saved === "created" ? "Produto criado com sucesso." : saved === "updated" ? "Produto atualizado com sucesso." : undefined}
     />
   )
 }

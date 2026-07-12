@@ -30,6 +30,7 @@ import {
   getExpiryLevel,
   type ExpiryLevel,
 } from "@/lib/expiry-utils"
+import { formatCurrencyInputValue, maskCurrencyInput, parseCurrencyInputValue } from "@/lib/currency-input"
 
 type ParentCategory = Readonly<{
   id: string
@@ -143,6 +144,8 @@ type ProductsManagerProps = Readonly<{
     totalItems: number
     totalPages: number
   }>
+  editorProduct?: Product | null
+  successMessage?: string
 }>
 
 type IconActionButtonProps = Readonly<{
@@ -154,7 +157,7 @@ type IconActionButtonProps = Readonly<{
 }>
 
 const inputCls =
-  "w-full rounded bg-zinc-900 border border-zinc-800 px-3 py-2 text-sm text-white outline-none transition-colors placeholder:text-zinc-600 focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]"
+  "min-h-11 w-full rounded bg-zinc-900 border border-zinc-800 px-3 py-2 text-base text-white outline-none transition-colors placeholder:text-zinc-600 focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)] sm:text-sm"
 
 const ACCEPTED_IMAGE_TYPES = "image/jpeg,image/png,image/webp,image/avif"
 
@@ -523,21 +526,33 @@ export default function ProductsManager({
   filters,
   expiryThresholds,
   pagination,
+  editorProduct,
+  successMessage,
 }: ProductsManagerProps) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
-  const [drawerOpen, setDrawerOpen] = useState(false)
+  const editorMode = editorProduct !== undefined
+  const [drawerOpen, setDrawerOpen] = useState(editorMode)
   const [filtersPanelOpen, setFiltersPanelOpen] = useState(false)
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null)
-  const [form, setForm] = useState<ProductForm>(createEmptyForm())
+  const [editingProduct, setEditingProduct] = useState<Product | null>(editorProduct ?? null)
+  const [form, setForm] = useState<ProductForm>(() => editorProduct ? {
+    name: editorProduct.name, slug: editorProduct.slug, description: editorProduct.description,
+    price: formatCurrencyInputValue(editorProduct.price), costPrice: formatCurrencyInputValue(editorProduct.costPrice),
+    images: [...editorProduct.images], featured: editorProduct.featured, active: editorProduct.active, isNew: editorProduct.isNew,
+    categoryId: editorProduct.subcategory.id, weightLabel: editorProduct.weightLabel ?? editorProduct.weight ?? "",
+    weightKg: editorProduct.weightKg != null ? String(editorProduct.weightKg) : "", gender: editorProduct.gender ?? "",
+    variants: editorProduct.variants.length ? editorProduct.variants.map((variant) => ({ id: variant.id, sku: variant.sku ?? "", name: variant.name ?? "Default", size: variant.size ?? "", color: variant.color ?? "", flavor: variant.flavor ?? "", stock: String(variant.stock), expiresAt: formatExpiresAtInput(variant.expiresAt), active: variant.active })) : [{ ...createEmptyVariant(), stock: String(editorProduct.stock) }],
+  } : createEmptyForm())
   const [saving, setSaving] = useState(false)
   const [uploadingImages, setUploadingImages] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [togglingId, setTogglingId] = useState<string | null>(null)
   const [formError, setFormError] = useState("")
   const [formFeedback, setFormFeedback] = useState<AdminInlineFeedbackState>(null)
-  const [listFeedback, setListFeedback] = useState<AdminInlineFeedbackState>(null)
+  const [listFeedback, setListFeedback] = useState<AdminInlineFeedbackState>(() => successMessage ? { type: "success", message: successMessage } : null)
   const [sessionUploadedImages, setSessionUploadedImages] = useState<string[]>([])
+  const initialFormSnapshotRef = useRef(JSON.stringify(form))
+  const savedRef = useRef(false)
   const [listingFilters, setListingFilters] = useState(filters)
   const filtersPanelRef = useRef<HTMLFormElement | null>(null)
 
@@ -557,8 +572,8 @@ export default function ProductsManager({
     0,
   )
   const marginPreview =
-    form.price && form.costPrice && Number(form.price) > 0
-      ? ((Number(form.price) - Number(form.costPrice)) / Number(form.price)) * 100
+    form.price && form.costPrice && (parseCurrencyInputValue(form.price) ?? 0) > 0
+      ? (((parseCurrencyInputValue(form.price) ?? 0) - (parseCurrencyInputValue(form.costPrice) ?? 0)) / (parseCurrencyInputValue(form.price) ?? 1)) * 100
       : null
   const showFashionFields = selectedCategory?.parent?.slug === "roupas-fitness"
   const isDrawerBusy = saving || uploadingImages || isPending
@@ -615,6 +630,17 @@ export default function ProductsManager({
     return () => window.clearTimeout(timeoutId)
   }, [listFeedback])
 
+  const hasUnsavedChanges = editorMode && !savedRef.current && JSON.stringify(form) !== initialFormSnapshotRef.current
+
+  useEffect(() => {
+    if (!hasUnsavedChanges) return
+    function handleBeforeUnload(event: BeforeUnloadEvent) {
+      event.preventDefault()
+    }
+    window.addEventListener("beforeunload", handleBeforeUnload)
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload)
+  }, [hasUnsavedChanges])
+
   async function cleanupUploadedImages(urls: readonly string[]) {
     if (urls.length === 0) {
       return
@@ -632,51 +658,11 @@ export default function ProductsManager({
   }
 
   function openCreate() {
-    setEditingProduct(null)
-    setForm(createEmptyForm())
-    setSessionUploadedImages([])
-    setFormError("")
-    setFormFeedback(null)
-    setListFeedback(null)
-    setDrawerOpen(true)
+    router.push("/admin/products/new")
   }
 
   function openEdit(product: Product) {
-    setEditingProduct(product)
-    setForm({
-      name: product.name,
-      slug: product.slug,
-      description: product.description,
-      price: String(product.price),
-      costPrice: product.costPrice != null ? String(product.costPrice) : "",
-      images: [...product.images],
-      featured: product.featured,
-      active: product.active,
-      isNew: product.isNew,
-      categoryId: product.subcategory.id,
-      weightLabel: product.weightLabel ?? product.weight ?? "",
-      weightKg: product.weightKg != null ? String(product.weightKg) : "",
-      gender: product.gender ?? "",
-      variants:
-        product.variants.length > 0
-          ? product.variants.map((variant) => ({
-              id: variant.id,
-              sku: variant.sku ?? "",
-              name: variant.name ?? "Default",
-              size: variant.size ?? "",
-              color: variant.color ?? "",
-              flavor: variant.flavor ?? "",
-              stock: String(variant.stock),
-              expiresAt: formatExpiresAtInput(variant.expiresAt),
-              active: variant.active,
-            }))
-          : [{ ...createEmptyVariant(), stock: String(product.stock) }],
-    })
-    setSessionUploadedImages([])
-    setFormError("")
-    setFormFeedback(null)
-    setListFeedback(null)
-    setDrawerOpen(true)
+    router.push(`/admin/products/${product.id}/edit`)
   }
 
   function closeDrawer(cleanupSessionFiles = true) {
@@ -684,10 +670,18 @@ export default function ProductsManager({
       return
     }
 
+    if (editorMode && hasUnsavedChanges && !window.confirm("Você tem alterações não salvas. Deseja sair mesmo assim?")) {
+      return
+    }
+
     if (cleanupSessionFiles && sessionUploadedImages.length > 0) {
       void cleanupUploadedImages(sessionUploadedImages)
     }
 
+    if (editorMode) {
+      router.push("/admin/products")
+      return
+    }
     setDrawerOpen(false)
     setEditingProduct(null)
     setSessionUploadedImages([])
@@ -937,12 +931,15 @@ export default function ProductsManager({
 
     if (!form.name || !form.price || !form.costPrice || !form.categoryId) {
       setFormError("Preencha nome, preço de venda, preço de custo e subcategoria.")
+      const firstInvalidId = !form.name ? "product-name" : !form.categoryId ? "product-category" : !form.price ? "product-price" : "product-cost-price"
+      window.setTimeout(() => document.getElementById(firstInvalidId)?.focus(), 0)
       return
     }
 
     const variantsError = validateVariants()
     if (variantsError) {
       setFormError(variantsError)
+      window.setTimeout(() => document.getElementById("product-variants")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0)
       return
     }
 
@@ -964,8 +961,8 @@ export default function ProductsManager({
         name: form.name.trim(),
         slug: form.slug.trim() || slugify(form.name),
         description: form.description.trim(),
-        price: Number.parseFloat(form.price),
-        costPrice: Number.parseFloat(form.costPrice),
+        price: parseCurrencyInputValue(form.price),
+        costPrice: parseCurrencyInputValue(form.costPrice),
         images: form.images,
         featured: form.featured,
         active: form.active,
@@ -991,6 +988,12 @@ export default function ProductsManager({
       }
 
       setSessionUploadedImages([])
+      if (editorMode) {
+        savedRef.current = true
+        router.push(`/admin/products?saved=${editingProduct ? "updated" : "created"}`)
+        router.refresh()
+        return
+      }
       setDrawerOpen(false)
       setEditingProduct(null)
       setForm(createEmptyForm())
@@ -1077,6 +1080,8 @@ export default function ProductsManager({
 
   return (
     <>
+      {!editorMode ? (
+      <>
       <div className="mb-8 flex items-center gap-3">
         <div className="flex items-center gap-3">
           <Package className="h-7 w-7 text-[var(--color-primary)]" />
@@ -1251,7 +1256,7 @@ export default function ProductsManager({
         <button
           type="button"
           onClick={openCreate}
-          className="inline-flex h-11 items-center justify-center gap-2 self-start rounded-xl bg-white px-5 text-sm font-semibold text-zinc-900 transition-colors hover:bg-zinc-100 xl:self-auto"
+          className="inline-flex h-11 items-center justify-center gap-2 self-start rounded-sm bg-[var(--color-primary)] px-5 text-sm font-bold uppercase tracking-widest text-black transition-colors hover:bg-[var(--color-primary-dark)] xl:self-auto"
         >
           <Plus className="h-4 w-4" /> Novo Produto
         </button>
@@ -1420,9 +1425,12 @@ export default function ProductsManager({
           ) : null}
         </div>
       </div>
+      </>
+      ) : null}
 
       {drawerOpen ? (
-        <div className="fixed inset-0 z-50 flex">
+        <div className={editorMode ? "w-full" : "fixed inset-0 z-50 flex"}>
+          {!editorMode ? (
           <button
             type="button"
             aria-label="Fechar painel"
@@ -1430,8 +1438,9 @@ export default function ProductsManager({
             disabled={isDrawerBusy}
             className="flex-1 border-0 bg-black/60 p-0 backdrop-blur-sm disabled:cursor-not-allowed"
           />
+          ) : null}
 
-          <div className="relative z-10 ml-auto flex h-full w-full max-w-3xl flex-col border-l border-zinc-800 bg-black shadow-2xl">
+          <div className={editorMode ? "w-full bg-black" : "relative z-10 ml-auto flex h-full w-full max-w-3xl flex-col border-l border-zinc-800 bg-black shadow-2xl"}>
             <div className="flex items-center justify-between border-b border-zinc-800 bg-zinc-950 px-6 py-4">
               <div>
                 <h2 className="text-base font-medium text-white">{editingProduct ? "Editar Produto" : "Novo Produto"}</h2>
@@ -1448,7 +1457,8 @@ export default function ProductsManager({
               </button>
             </div>
 
-            <div className="flex-1 space-y-6 overflow-y-auto px-6 py-6">
+            <div className="space-y-8 px-0 py-6 pb-32 sm:px-2">
+              <div role="status" aria-live="polite">
               <AdminInlineFeedback
                 feedback={
                   formError
@@ -1459,8 +1469,11 @@ export default function ProductsManager({
                     : formFeedback
                 }
               />
+              </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <section id="basic-information" className="space-y-4 rounded-sm border border-zinc-800 bg-zinc-950 p-4 sm:p-6">
+                <div><h3 className="text-sm font-bold uppercase tracking-[0.2em] text-white">Informações básicas</h3><p className="mt-1 text-xs text-zinc-500">Identificação e classificação do produto.</p></div>
+              <div className="grid gap-4 md:grid-cols-2">
                 <Field label="Nome" htmlFor="product-name">
                   <input
                     id="product-name"
@@ -1470,15 +1483,24 @@ export default function ProductsManager({
                   />
                 </Field>
 
-                <Field label="Slug" htmlFor="product-slug" hint="gerado automaticamente">
+                <Field label="Subcategoria *" htmlFor="product-category">
+                  <select id="product-category" className={inputCls} value={form.categoryId} onChange={(event) => handleCategoryChange(event.target.value)}>
+                    <option value="">Selecione...</option>
+                    {Object.entries(groupedSubcategories).map(([groupLabel, items]) => <optgroup key={groupLabel} label={groupLabel}>{items.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}</optgroup>)}
+                  </select>
+                </Field>
+              </div>
+              <details className="rounded-sm border border-zinc-800 p-4">
+                <summary className="cursor-pointer text-sm font-medium text-zinc-300">Configurações avançadas</summary>
+                <div className="mt-4"><Field label="Slug" htmlFor="product-slug" hint="gerado automaticamente">
                   <input
                     id="product-slug"
                     className={`${inputCls} font-mono`}
                     value={form.slug}
                     onChange={(event) => setField("slug", event.target.value)}
                   />
-                </Field>
-              </div>
+                </Field></div>
+              </details>
 
               <Field label="Descrição" htmlFor="product-description">
                 <textarea
@@ -1489,27 +1511,32 @@ export default function ProductsManager({
                   onChange={(event) => setField("description", event.target.value)}
                 />
               </Field>
+              </section>
 
-              <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-                <Field label="Preço de Venda" htmlFor="product-price">
+              <section id="prices-logistics" className="space-y-4 rounded-sm border border-zinc-800 bg-zinc-950 p-4 sm:p-6">
+              <div><h3 className="text-sm font-bold uppercase tracking-[0.2em] text-white">Preços e logística</h3></div>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <Field label="Preço de Venda *" htmlFor="product-price">
                   <input
                     id="product-price"
                     className={inputCls}
-                    type="number"
-                    step="0.01"
+                    type="text"
+                    inputMode="numeric"
                     value={form.price}
-                    onChange={(event) => setField("price", event.target.value)}
+                    onChange={(event) => setField("price", maskCurrencyInput(event.target.value))}
+                    placeholder="R$ 0,00"
                   />
                 </Field>
 
-                <Field label="Preço de Custo" htmlFor="product-cost-price">
+                <Field label="Preço de Custo *" htmlFor="product-cost-price">
                   <input
                     id="product-cost-price"
                     className={inputCls}
-                    type="number"
-                    step="0.01"
+                    type="text"
+                    inputMode="numeric"
                     value={form.costPrice}
-                    onChange={(event) => setField("costPrice", event.target.value)}
+                    onChange={(event) => setField("costPrice", maskCurrencyInput(event.target.value))}
+                    placeholder="R$ 0,00"
                   />
                 </Field>
 
@@ -1536,29 +1563,13 @@ export default function ProductsManager({
                 </Field>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <Field label="Subcategoria" htmlFor="product-category">
-                  <select
-                    id="product-category"
-                    className={inputCls}
-                    value={form.categoryId}
-                    onChange={(event) => handleCategoryChange(event.target.value)}
-                  >
-                    <option value="">Selecione...</option>
-                    {Object.entries(groupedSubcategories).map(([groupLabel, items]) => (
-                      <optgroup key={groupLabel} label={groupLabel}>
-                        {items.map((category) => (
-                          <option key={category.id} value={category.id}>
-                            {category.name}
-                          </option>
-                        ))}
-                      </optgroup>
-                    ))}
-                  </select>
-                </Field>
+              <div className="grid gap-4 md:grid-cols-2">
+                <Field label="Peso/Volume (display)" htmlFor="product-weight-label"><input id="product-weight-label" className={inputCls} value={form.weightLabel} onChange={(event) => setField("weightLabel", event.target.value)} placeholder={selectedCategory?.supportsWeight ? "Ex: 900g ou 250ml" : "Opcional"} /></Field>
+                <Field label="Peso KG (frete)" htmlFor="product-weight-kg"><input id="product-weight-kg" className={inputCls} type="number" step="0.01" inputMode="decimal" value={form.weightKg} onChange={(event) => setField("weightKg", event.target.value)} /></Field>
               </div>
+              </section>
 
-              <div className="rounded-sm border border-zinc-800 bg-zinc-950 p-4">
+              <section id="images" className="rounded-sm border border-zinc-800 bg-zinc-950 p-4 sm:p-6">
                 <div className="flex flex-col gap-4 border-b border-zinc-800 pb-4 md:flex-row md:items-start md:justify-between">
                   <div>
                     <h3 className="text-sm font-bold uppercase tracking-[0.2em] text-white">Imagens do Produto</h3>
@@ -1642,30 +1653,7 @@ export default function ProductsManager({
                     Nenhuma imagem enviada. Se salvar assim, o produto usará o placeholder padrão.
                   </div>
                 )}
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <Field label="Peso/Volume (display)" htmlFor="product-weight-label">
-                  <input
-                    id="product-weight-label"
-                    className={inputCls}
-                    value={form.weightLabel}
-                    onChange={(event) => setField("weightLabel", event.target.value)}
-                    placeholder={selectedCategory?.supportsWeight ? "Ex: 900g ou 250ml" : "Opcional"}
-                  />
-                </Field>
-
-                <Field label="Peso KG (frete)" htmlFor="product-weight-kg">
-                  <input
-                    id="product-weight-kg"
-                    className={inputCls}
-                    type="number"
-                    step="0.01"
-                    value={form.weightKg}
-                    onChange={(event) => setField("weightKg", event.target.value)}
-                  />
-                </Field>
-              </div>
+              </section>
 
               {showFashionFields ? (
                 <Field label="Gênero" htmlFor="product-gender">
@@ -1684,8 +1672,9 @@ export default function ProductsManager({
                 </Field>
               ) : null}
 
+              <section id="product-variants" className="scroll-mt-24">
               {selectedCategory ? (
-                <div className="rounded-sm border border-zinc-800 bg-zinc-950 p-4">
+                <div className="rounded-sm border border-zinc-800 bg-zinc-950 p-4 sm:p-6">
                   <div className="flex flex-col gap-3 border-b border-zinc-800 pb-4 md:flex-row md:items-center md:justify-between">
                     <div>
                       <div className="flex items-center gap-2">
@@ -1759,6 +1748,7 @@ export default function ProductsManager({
                               id={`variant-stock-${index}`}
                               className={inputCls}
                               type="number"
+                              inputMode="numeric"
                               value={variant.stock}
                               onChange={(event) => setVariantField(index, "stock", event.target.value)}
                             />
@@ -1836,44 +1826,48 @@ export default function ProductsManager({
                   Selecione uma subcategoria para configurar variantes e comportamento do produto.
                 </div>
               )}
+              </section>
 
-              <div className="flex flex-wrap gap-5 pt-2">
-                <label className="flex items-center gap-2 text-sm font-medium text-white">
+              <section id="publication" className="space-y-4 rounded-sm border border-zinc-800 bg-zinc-950 p-4 sm:p-6">
+                <div><h3 className="text-sm font-bold uppercase tracking-[0.2em] text-white">Publicação</h3><p className="mt-1 text-xs text-zinc-500">Defina como o produto aparece na loja.</p></div>
+              <div className="grid gap-3 md:grid-cols-3">
+                <label className="flex min-h-20 cursor-pointer items-start gap-3 rounded-sm border border-zinc-800 bg-black/30 p-4 text-sm font-medium text-white">
                   <input
                     type="checkbox"
                     checked={form.active}
                     onChange={(event) => setField("active", event.target.checked)}
                     className="h-4 w-4 accent-[var(--color-primary)]"
                   />
-                  Ativo
+                  <span>Produto ativo<span className="mt-1 block text-xs font-normal text-zinc-500">Disponível para venda nos canais habilitados.</span></span>
                 </label>
-                <label className="flex items-center gap-2 text-sm font-medium text-white">
+                <label className="flex min-h-20 cursor-pointer items-start gap-3 rounded-sm border border-zinc-800 bg-black/30 p-4 text-sm font-medium text-white">
                   <input
                     type="checkbox"
                     checked={form.featured}
                     onChange={(event) => setField("featured", event.target.checked)}
                     className="h-4 w-4 accent-[var(--color-primary)]"
                   />
-                  Destaque
+                  <span>Exibir em destaque<span className="mt-1 block text-xs font-normal text-zinc-500">Pode aparecer nas áreas promocionais da loja.</span></span>
                 </label>
-                <label className="flex items-center gap-2 text-sm font-medium text-white">
+                <label className="flex min-h-20 cursor-pointer items-start gap-3 rounded-sm border border-zinc-800 bg-black/30 p-4 text-sm font-medium text-white">
                   <input
                     type="checkbox"
                     checked={form.isNew}
                     onChange={(event) => setField("isNew", event.target.checked)}
                     className="h-4 w-4 accent-[var(--color-primary)]"
                   />
-                  Novo
+                  <span>Marcar como novidade<span className="mt-1 block text-xs font-normal text-zinc-500">Exibe a identificação de produto novo.</span></span>
                 </label>
               </div>
+              </section>
             </div>
 
-            <div className="flex gap-3 border-t border-zinc-800 bg-zinc-950 px-6 py-4">
+            <div className="sticky bottom-0 z-20 flex gap-3 border-t border-zinc-800 bg-zinc-950/95 px-3 py-4 pb-[max(1rem,env(safe-area-inset-bottom))] backdrop-blur sm:px-6">
               <button
                 type="button"
                 onClick={() => closeDrawer()}
                 disabled={isDrawerBusy}
-                className="flex-1 rounded border border-zinc-700 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
+                className="min-h-11 flex-1 rounded border border-zinc-700 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Cancelar
               </button>
@@ -1881,10 +1875,10 @@ export default function ProductsManager({
                 type="button"
                 onClick={handleSave}
                 disabled={isDrawerBusy}
-                className="flex flex-1 items-center justify-center gap-2 rounded bg-[var(--color-primary)] py-2 text-sm font-medium text-black transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex min-h-11 flex-1 items-center justify-center gap-2 rounded bg-[var(--color-primary)] py-2 text-sm font-bold text-black transition hover:bg-[var(--color-primary-dark)] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isDrawerBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-                Salvar
+                {editingProduct ? "Salvar alterações" : "Criar produto"}
               </button>
             </div>
           </div>
