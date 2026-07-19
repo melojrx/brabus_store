@@ -156,17 +156,18 @@ Este documento e a fonte da verdade operacional do projeto. Aqui ficam:
 
 ### 5.1 Aplicacao Geral
 
-#### TASK-S1-APP-01 — Checklist de go-live do Stripe
+#### TASK-S1-APP-01 — Checklist de homologacao do Mercado Pago em sandbox
 
-- [ ] Mapear variaveis obrigatorias de producao
-- [ ] Revisar fluxo atual de criacao de sessao Stripe
-- [ ] Revisar webhook atual e documentar eventos obrigatorios
+- [ ] Mapear variaveis obrigatorias do Mercado Pago para sandbox e producao
+- [ ] Revisar fluxo atual de criacao de preferencia/pagamento Mercado Pago
+- [ ] Revisar webhook atual e documentar eventos obrigatorios do Mercado Pago
 - [ ] Validar matriz de estados:
   - [ ] `PENDING -> PAID`
   - [ ] `PENDING -> FAILED`
   - [ ] `PAID -> REFUNDED`
   - [ ] `PAID -> CANCELLED`
-- [ ] Atualizar documentacao operacional de producao
+- [ ] Validar ponta a ponta em sandbox antes de planejar go-live de producao
+- [ ] Atualizar documentacao operacional de homologacao e producao
 
 #### TASK-S1-APP-02 — Homologacao ponta a ponta do Melhor Envio
 
