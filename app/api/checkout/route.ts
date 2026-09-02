@@ -14,7 +14,7 @@ import {
 } from "@/lib/public-checkout"
 import { DeliveryPolicyError, resolveDelivery } from "@/lib/delivery-policy"
 import { getMercadoPagoClient, isMercadoPagoConfigured } from "@/lib/mercadopago/client"
-import { generateQrCodeBase64 } from "@/lib/mercadopago/pix"
+import { buildCheckoutProPreference } from "@/lib/mercadopago/checkout-pro"
 import { getMercadoPagoSettings } from "@/lib/mercadopago/settings"
 import { getPublicStoreSettings } from "@/lib/store-settings"
 
@@ -47,40 +47,26 @@ type ResolvedCheckoutItem = {
   variantLabel: string | null
 }
 
-function getCheckoutOrigin(req: Request) {
-  const origin = req.headers.get("origin") || process.env.NEXTAUTH_URL
+function getConfiguredCheckoutOrigin() {
+  const origin = process.env.NEXTAUTH_URL?.trim()
 
   if (!origin) {
-    throw new Error("Origem do checkout não configurada.")
+    throw Object.assign(new Error("NEXTAUTH_URL não configurada para o checkout."), { status: 503 })
   }
 
-  return origin.replace(/\/$/, "")
-}
+  let url: URL
 
-function shouldEnableMercadoPagoAutoReturn(origin: string) {
   try {
-    const url = new URL(origin)
-    return url.protocol === "https:"
+    url = new URL(origin)
   } catch {
-    return false
-  }
-}
-
-function buildMercadoPagoNavigation(origin: string, orderId: string) {
-  const shouldEnableAutoReturn = shouldEnableMercadoPagoAutoReturn(origin)
-
-  if (!shouldEnableAutoReturn) {
-    return {}
+    throw Object.assign(new Error("NEXTAUTH_URL inválida para o checkout."), { status: 503 })
   }
 
-  return {
-    back_urls: {
-      success: `${origin}/checkout/success?order_id=${orderId}`,
-      failure: `${origin}/checkout/cancel`,
-      pending: `${origin}/checkout/success?order_id=${orderId}`,
-    },
-    auto_return: "approved" as const,
+  if (process.env.NODE_ENV !== "development" && url.protocol !== "https:") {
+    throw Object.assign(new Error("NEXTAUTH_URL deve usar HTTPS fora do ambiente de desenvolvimento."), { status: 503 })
   }
+
+  return url.origin
 }
 
 function getMercadoPagoInitPoint(preferenceResponse: {
@@ -226,7 +212,10 @@ export async function POST(req: Request) {
     const products = await loadCheckoutProducts(payload.items.map((item) => item.productId))
     const resolvedItems = resolveCheckoutItems(products, payload.items)
 
-    if (payload.paymentMethod === "MERCADO_PAGO_CARD") {
+    if (
+      payload.paymentMethod === "MERCADO_PAGO_CARD" ||
+      payload.paymentMethod === "MERCADO_PAGO_PIX"
+    ) {
       const mercadoPagoSettings = await getMercadoPagoSettings()
 
       if (!isMercadoPagoConfigured(mercadoPagoSettings.accessToken)) {
@@ -237,7 +226,8 @@ export async function POST(req: Request) {
       }
 
       const { preference } = getMercadoPagoClient(mercadoPagoSettings.accessToken)
-      let total = 0
+      const origin = getConfiguredCheckoutOrigin()
+      let total = delivery.cost
       const orderItemsRecord: Prisma.OrderItemUncheckedCreateWithoutOrderInput[] = []
 
       for (const item of resolvedItems) {
@@ -266,8 +256,6 @@ export async function POST(req: Request) {
         })
       }
 
-      total += delivery.cost
-
       const order = await prisma.$transaction(async (tx) => {
         const orderCreatedAt = new Date()
         const { orderNumber } = await allocateOrderNumber(tx, {
@@ -279,7 +267,7 @@ export async function POST(req: Request) {
           data: {
             userId,
             channel: OrderChannel.ONLINE,
-            paymentMethod: PaymentMethod.MERCADO_PAGO_CARD,
+            paymentMethod: payload.paymentMethod,
             paymentStatus: PaymentStatus.PENDING,
             createdAt: orderCreatedAt,
             orderNumber,
@@ -299,39 +287,23 @@ export async function POST(req: Request) {
         })
       })
 
-      const origin = getCheckoutOrigin(req)
-
       const preferenceResponse = await preference.create({
-        body: {
+        body: buildCheckoutProPreference({
+          orderId: order.id,
+          orderNumber: order.orderNumber ?? "",
+          userId,
+          email: sessionAuth.user?.email,
+          paymentMethod: payload.paymentMethod,
+          origin,
           items: resolvedItems.map((item) => ({
-            id: item.product.id,
+            id: item.variant.id,
             title: item.variantLabel
               ? `${item.product.name} (${item.variantLabel})`
               : item.product.name,
             quantity: item.quantity,
-            currency_id: "BRL",
             unit_price: item.product.price.toNumber(),
           })),
-          external_reference: order.id,
-          payer: {
-            email: sessionAuth.user?.email ?? undefined,
-          },
-          payment_methods: {
-            excluded_payment_types: [
-              { id: "ticket" },
-              { id: "bank_transfer" },
-              { id: "atm" },
-            ],
-            installments: 12,
-          },
-          ...buildMercadoPagoNavigation(origin, order.id),
-          metadata: {
-            orderId: order.id,
-            orderNumber: order.orderNumber ?? "",
-            userId,
-            shippingType: payload.shippingType,
-          },
-        },
+        }),
       })
 
       await prisma.order.update({
@@ -340,151 +312,9 @@ export async function POST(req: Request) {
       })
 
       return NextResponse.json({
-        preferenceId: preferenceResponse.id,
-        initPoint: getMercadoPagoInitPoint(preferenceResponse),
-      })
-    }
-
-    if (payload.paymentMethod === "MERCADO_PAGO_PIX") {
-      const mercadoPagoSettings = await getMercadoPagoSettings()
-
-      if (!isMercadoPagoConfigured(mercadoPagoSettings.accessToken)) {
-        return NextResponse.json(
-          { error: "Mercado Pago não configurado neste ambiente." },
-          { status: 503 },
-        )
-      }
-
-      const { preference: mpPreference, payment: mpPayment } = getMercadoPagoClient(
-        mercadoPagoSettings.accessToken,
-      )
-      let total = 0
-      const orderItemsRecord: Prisma.OrderItemUncheckedCreateWithoutOrderInput[] = []
-
-      for (const item of resolvedItems) {
-        const priceToUse = item.product.price.toNumber()
-        const unitCost = item.product.costPrice?.toNumber() ?? null
-        const categoryName = item.product.category.parent?.name ?? item.product.category.name
-        const subcategoryName = item.product.category.parent ? item.product.category.name : null
-
-        total += priceToUse * item.quantity
-
-        orderItemsRecord.push({
-          productId: item.product.id,
-          productVariantId: item.variant.id,
-          quantity: item.quantity,
-          price: priceToUse,
-          unitPrice: priceToUse,
-          unitCost,
-          selectedSize: item.selectedSize,
-          selectedColor: item.selectedColor,
-          selectedFlavor: item.selectedFlavor,
-          productNameSnapshot: item.product.name,
-          productSlugSnapshot: item.product.slug,
-          categoryNameSnapshot: categoryName,
-          subcategoryNameSnapshot: subcategoryName,
-          variantNameSnapshot: item.variant.name ?? null,
-        })
-      }
-
-      total += delivery.cost
-
-      const order = await prisma.$transaction(async (tx) => {
-        const orderCreatedAt = new Date()
-        const { orderNumber } = await allocateOrderNumber(tx, {
-          channel: OrderChannel.ONLINE,
-          createdAt: orderCreatedAt,
-        })
-
-        return tx.order.create({
-          data: {
-            userId,
-            channel: OrderChannel.ONLINE,
-            paymentMethod: PaymentMethod.MERCADO_PAGO_PIX,
-            paymentStatus: PaymentStatus.PENDING,
-            createdAt: orderCreatedAt,
-            orderNumber,
-            total,
-            customerNameSnapshot: sessionAuth.user?.name ?? null,
-            customerEmailSnapshot: sessionAuth.user?.email ?? null,
-            customerPhoneSnapshot: sessionAuth.user?.phone ?? null,
-            shippingType: payload.shippingType,
-            shippingCost: delivery.cost,
-            shippingCarrier: delivery.carrier,
-            shippingDeadline: delivery.deadline,
-            ...(payload.shippingType !== "PICKUP" ? normalizedAddress : {}),
-            items: {
-              create: orderItemsRecord,
-            },
-          },
-        })
-      })
-
-      const origin = getCheckoutOrigin(req)
-
-      const preferenceResponse = await mpPreference.create({
-        body: {
-          items: resolvedItems.map((item) => ({
-            id: item.product.id,
-            title: item.variantLabel
-              ? `${item.product.name} (${item.variantLabel})`
-              : item.product.name,
-            quantity: item.quantity,
-            currency_id: "BRL",
-            unit_price: item.product.price.toNumber(),
-          })),
-          external_reference: order.id,
-          payer: {
-            email: sessionAuth.user?.email ?? undefined,
-          },
-          payment_methods: {
-            excluded_payment_types: [{ id: "credit_card" }, { id: "debit_card" }],
-          },
-          ...buildMercadoPagoNavigation(origin, order.id),
-          metadata: {
-            orderId: order.id,
-            orderNumber: order.orderNumber ?? "",
-            userId,
-            shippingType: payload.shippingType,
-          },
-        },
-      })
-
-      // Gerar QR code Pix
-      const paymentResponse = await mpPayment.create({
-        body: {
-          transaction_amount: total,
-          payment_method_id: "pix",
-          payer: {
-            email: sessionAuth.user?.email ?? "",
-          },
-          external_reference: order.id,
-        },
-      })
-
-      // Obter QR code do pagamento
-      const qrCode = paymentResponse.point_of_interaction?.transaction_data?.qr_code
-
-      let qrCodeBase64: string | null = null
-      if (qrCode) {
-        qrCodeBase64 = await generateQrCodeBase64(qrCode)
-      }
-
-      await prisma.order.update({
-        where: { id: order.id },
-        data: {
-          mercadoPagoPreferenceId: preferenceResponse.id,
-          mercadoPagoPaymentId: String(paymentResponse.id),
-        },
-      })
-
-      return NextResponse.json({
         orderId: order.id,
         orderNumber: order.orderNumber,
-        paymentId: String(paymentResponse.id),
-        qrCode,
-        qrCodeBase64,
-        redirectUrl: `/checkout/success?order_id=${order.id}&payment_id=${paymentResponse.id}`,
+        initPoint: getMercadoPagoInitPoint(preferenceResponse),
       })
     }
 

@@ -10,3 +10,7 @@ export function getMercadoPagoPublicKeyFromEnv() {
     null
   )
 }
+
+export function getMercadoPagoWebhookSecret() {
+  return process.env.MERCADO_PAGO_WEBHOOK_SECRET?.trim() || null
+}

@@ -26,6 +26,8 @@ export interface MercadoPagoPayment {
   date_last_updated: string
   external_reference: string | null
   transaction_amount: number
+  currency_id: string
+  payment_method_id: string
   transaction_amount_refunded: number
   description: string | null
   collector_id: number
@@ -75,6 +77,9 @@ export interface MercadoPagoCreatePreferenceRequest {
     unit_price: number
   }>
   external_reference?: string
+  payer?: {
+    email?: string
+  }
   metadata?: Record<string, unknown>
   payment_methods?: {
     excluded_payment_types?: Array<{ id: string }>

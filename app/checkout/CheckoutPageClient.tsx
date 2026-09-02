@@ -10,7 +10,6 @@ import {
   CreditCard,
   LoaderCircle,
   MapPin,
-  QrCode,
 } from "lucide-react"
 import { useCartStore } from "@/store/cartStore"
 
@@ -82,11 +81,8 @@ function parseMoneyInput(value: string) {
 }
 
 function getPaymentActionLabel(paymentMethod: PublicCheckoutPaymentMethod) {
-  if (paymentMethod === "MERCADO_PAGO_PIX") {
-    return "Gerar QR Code Pix"
-  }
-  if (paymentMethod === "MERCADO_PAGO_CARD") {
-    return "Pagar com cartão"
+  if (paymentMethod === "MERCADO_PAGO_PIX" || paymentMethod === "MERCADO_PAGO_CARD") {
+    return "Continuar para pagamento seguro"
   }
   if (paymentMethod === "CASH") {
     return "Confirmar pedido em dinheiro"
@@ -129,11 +125,9 @@ export function isLocalDeliveryAvailable({
 }
 
 export default function CheckoutPageClient({
-  pixKey,
   addressCity,
   addressState,
 }: {
-  pixKey: string | null
   addressCity: string
   addressState: string
 }) {
@@ -194,14 +188,6 @@ export default function CheckoutPageClient({
       setShippingType("PICKUP")
     }
   }, [localDeliveryAvailable, shippingType])
-
-  useEffect(() => {
-    const mercadoPagoPixAvailable = Boolean(pixKey)
-
-    if (paymentMethod === "MERCADO_PAGO_PIX" && !mercadoPagoPixAvailable) {
-      setPaymentMethod("MERCADO_PAGO_CARD")
-    }
-  }, [paymentMethod, pixKey])
 
   useEffect(() => {
     if (paymentMethod !== "CASH" && cashReceivedAmount) {
@@ -388,15 +374,13 @@ export default function CheckoutPageClient({
         throw new Error(data.error || "Erro ao processar pagamento")
       }
 
-      if (data.qrCode && data.qrCodeBase64) {
-        // Mostrar QR code Pix
-        router.push(`/checkout/success?order_id=${data.orderId}&qr_code=${encodeURIComponent(data.qrCode)}&qr_base64=${encodeURIComponent(data.qrCodeBase64)}`)
+      if (data.initPoint) {
+        window.location.href = data.initPoint
         return
       }
 
-      if (data.initPoint) {
-        // Redirecionar para Payment Brick
-        window.location.href = data.initPoint
+      if (data.redirectUrl) {
+        router.push(data.redirectUrl)
         return
       }
 
@@ -415,10 +399,6 @@ export default function CheckoutPageClient({
     parsedCashReceivedAmount >= estimatedTotal
       ? Number((parsedCashReceivedAmount - estimatedTotal).toFixed(2))
       : null
-  const availablePaymentMethods: PublicCheckoutPaymentMethod[] = pixKey
-    ? ["MERCADO_PAGO_CARD", "MERCADO_PAGO_PIX", "CASH"]
-    : ["MERCADO_PAGO_CARD", "CASH"]
-
   return (
     <div className="container mx-auto px-4 py-12 lg:py-20">
       <h1 className="text-4xl md:text-5xl font-heading tracking-wider uppercase mb-12 border-b border-white/10 pb-8">
@@ -608,84 +588,80 @@ export default function CheckoutPageClient({
                 </div>
               </label>
 
-              {availablePaymentMethods.includes("MERCADO_PAGO_PIX") && (
-                <label
-                  className={`block cursor-pointer rounded-sm border p-4 transition-colors ${
-                    paymentMethod === "MERCADO_PAGO_PIX"
-                      ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5"
-                      : "border-white/10 hover:border-white/30"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="payment-method"
-                    value="MERCADO_PAGO_PIX"
-                    checked={paymentMethod === "MERCADO_PAGO_PIX"}
-                    onChange={() => setPaymentMethod("MERCADO_PAGO_PIX")}
-                    className="hidden"
-                  />
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-sm font-bold uppercase tracking-widest text-white">Pix via Mercado Pago</p>
-                      <p className="mt-2 text-xs text-gray-400">
-                        Gere um QR Code Pix instantâneo via Mercado Pago. Pagamento confirmado automaticamente.
-                      </p>
-                    </div>
-                    <QrCode className="w-5 h-5 text-[var(--color-primary)] shrink-0" />
+              <label
+                className={`block cursor-pointer rounded-sm border p-4 transition-colors ${
+                  paymentMethod === "MERCADO_PAGO_PIX"
+                    ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5"
+                    : "border-white/10 hover:border-white/30"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="payment-method"
+                  value="MERCADO_PAGO_PIX"
+                  checked={paymentMethod === "MERCADO_PAGO_PIX"}
+                  onChange={() => setPaymentMethod("MERCADO_PAGO_PIX")}
+                  className="hidden"
+                />
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-bold uppercase tracking-widest text-white">Pix via Mercado Pago</p>
+                    <p className="mt-2 text-xs text-gray-400">
+                      Continue para o ambiente seguro do Mercado Pago e conclua o Pix por lá.
+                    </p>
                   </div>
-                </label>
-              )}
+                  <CreditCard className="w-5 h-5 text-[var(--color-primary)] shrink-0" />
+                </div>
+              </label>
 
-              {availablePaymentMethods.includes("CASH") && (
-                <label
-                  className={`block cursor-pointer rounded-sm border p-4 transition-colors ${
-                    paymentMethod === "CASH"
-                      ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5"
-                      : "border-white/10 hover:border-white/30"
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="payment-method"
-                    value="CASH"
-                    checked={paymentMethod === "CASH"}
-                    onChange={() => setPaymentMethod("CASH")}
-                    className="hidden"
-                  />
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="w-full">
-                      <p className="text-sm font-bold uppercase tracking-widest text-white">Dinheiro</p>
-                      <p className="mt-2 text-xs text-gray-400">
-                        Registre o pedido agora e pague em dinheiro na retirada ou na entrega local.
-                      </p>
+              <label
+                className={`block cursor-pointer rounded-sm border p-4 transition-colors ${
+                  paymentMethod === "CASH"
+                    ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5"
+                    : "border-white/10 hover:border-white/30"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="payment-method"
+                  value="CASH"
+                  checked={paymentMethod === "CASH"}
+                  onChange={() => setPaymentMethod("CASH")}
+                  className="hidden"
+                />
+                <div className="flex items-start justify-between gap-4">
+                  <div className="w-full">
+                    <p className="text-sm font-bold uppercase tracking-widest text-white">Dinheiro</p>
+                    <p className="mt-2 text-xs text-gray-400">
+                      Registre o pedido agora e pague em dinheiro na retirada ou na entrega local.
+                    </p>
 
-                      {paymentMethod === "CASH" ? (
-                        <div className="mt-4 grid gap-4 md:grid-cols-2">
-                          <div>
-                            <label className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-gray-500">
-                              Valor em mãos
-                            </label>
-                            <input
-                              value={cashReceivedAmount}
-                              onChange={(event) => setCashReceivedAmount(event.target.value)}
-                              className={addressInputCls}
-                              inputMode="decimal"
-                              placeholder="Ex.: 100,00"
-                            />
-                          </div>
-                          <div className="rounded-sm border border-white/10 bg-black/20 px-4 py-3">
-                            <p className="text-[11px] uppercase tracking-widest text-gray-500">Troco estimado</p>
-                            <p className="mt-2 text-lg font-heading tracking-wider text-white">
-                              {estimatedChange != null ? formatCurrency(estimatedChange) : "Informe o valor em mãos"}
-                            </p>
-                          </div>
+                    {paymentMethod === "CASH" ? (
+                      <div className="mt-4 grid gap-4 md:grid-cols-2">
+                        <div>
+                          <label className="mb-2 block text-[11px] font-bold uppercase tracking-widest text-gray-500">
+                            Valor em mãos
+                          </label>
+                          <input
+                            value={cashReceivedAmount}
+                            onChange={(event) => setCashReceivedAmount(event.target.value)}
+                            className={addressInputCls}
+                            inputMode="decimal"
+                            placeholder="Ex.: 100,00"
+                          />
                         </div>
-                      ) : null}
-                    </div>
-                    <Banknote className="w-5 h-5 text-[var(--color-primary)] shrink-0" />
+                        <div className="rounded-sm border border-white/10 bg-black/20 px-4 py-3">
+                          <p className="text-[11px] uppercase tracking-widest text-gray-500">Troco estimado</p>
+                          <p className="mt-2 text-lg font-heading tracking-wider text-white">
+                            {estimatedChange != null ? formatCurrency(estimatedChange) : "Informe o valor em mãos"}
+                          </p>
+                        </div>
+                      </div>
+                    ) : null}
                   </div>
-                </label>
-              )}
+                  <Banknote className="w-5 h-5 text-[var(--color-primary)] shrink-0" />
+                </div>
+              </label>
             </div>
           </div>
         </div>
