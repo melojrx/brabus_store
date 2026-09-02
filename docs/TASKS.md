@@ -76,7 +76,7 @@ Este documento e a fonte da verdade operacional do projeto. Aqui ficam:
 - [x] Implementar auth com credenciais
 - [x] Implementar APIs publicas de produtos e categorias
 - [x] Implementar CRUD admin de produtos e categorias
-- [x] Implementar checkout e webhook Stripe
+- [x] Implementar checkout e webhook Mercado Pago
 - [x] Implementar calculo de frete e zonas locais
 - [x] Implementar APIs de dashboard, configuracoes e Instagram
 
@@ -126,14 +126,14 @@ Este documento e a fonte da verdade operacional do projeto. Aqui ficam:
 - [x] Adicionar `CASH` e `MANUAL_PIX`
 - [x] Adicionar campos complementares de pagamento manual
 - [x] Separar status financeiro de status operacional
-- [x] Adaptar Stripe para preencher metodo e status de pagamento
+- [x] Adaptar Mercado Pago para preencher metodo e status de pagamento
 - [x] Permitir confirmacao manual de pagamento no admin
 - [x] Permitir dinheiro, troco, referencia Pix e observacoes
 - [x] Expandir para `POS_DEBIT` e `POS_CREDIT`
 - [x] Criar PDV administrativo dedicado
 - [x] Permitir busca e adicao manual de produtos no PDV
 - [x] Permitir selecionar cliente existente ou venda rapida
-- [x] Permitir concluir pedido manual sem depender do checkout Stripe
+- [x] Permitir concluir pedido manual sem depender do checkout online
 - [x] Garantir baixa de estoque coerente no PDV
 - [x] Garantir que pedidos do PDV aparecam no admin
 
@@ -169,13 +169,18 @@ Este documento e a fonte da verdade operacional do projeto. Aqui ficam:
 - [ ] Validar ponta a ponta em sandbox antes de planejar go-live de producao
 - [ ] Atualizar documentacao operacional de homologacao e producao
 
-#### TASK-S1-APP-02 — Homologacao ponta a ponta do Melhor Envio
+#### TASK-S1-APP-02 — Homologacao sandbox Mercado Pago
 
-- [ ] Validar token e base URL por ambiente
-- [ ] Validar calculo de frete com CEPs reais de teste
-- [ ] Validar comportamento sem servicos disponiveis
-- [ ] Revisar mensagens de erro do checkout
-- [ ] Atualizar documentacao de homologacao
+- [ ] Pix/retirada
+- [ ] Pix/Entrega Braba
+- [ ] Cartão/retirada
+- [ ] Cartão/Entrega Braba
+- [ ] Pagamento rejeitado
+- [ ] Pagamento cancelado
+- [ ] Reembolso integral
+- [ ] Webhook de aprovação duplicado
+- [ ] Assinatura de webhook inválida
+- [ ] Payload direto com `NATIONAL` rejeitado
 
 ### 5.2 Site e Vendas Online
 
@@ -223,13 +228,13 @@ Este documento e a fonte da verdade operacional do projeto. Aqui ficam:
 #### TASK-S1-STORE-07 — Checkout publico local com pagamentos manuais
 
 - [x] Expor selecao de forma de pagamento no checkout publico
-- [x] Manter `NATIONAL` restrito ao fluxo Stripe
+- [x] Restringir `NATIONAL` a pedidos históricos
 - [x] Permitir `STRIPE_CARD`, `MANUAL_PIX` e `CASH` para `PICKUP`
 - [x] Permitir `STRIPE_CARD`, `MANUAL_PIX` e `CASH` para `LOCAL_DELIVERY`
 - [x] Exibir chave Pix da loja quando `MANUAL_PIX` for selecionado
 - [x] Permitir informar valor em maos para `CASH`
 - [x] Evoluir `POST /api/checkout` para aceitar `paymentMethod`
-- [x] Bifurcar fluxo entre sessao Stripe e criacao de pedido manual
+- [x] Criar preferência Mercado Pago ou pedido manual conforme pagamento
 - [x] Extrair servico compartilhado de criacao de pedido manual
 - [x] Criar pedidos manuais publicos com `paymentStatus = PENDING`
 - [x] Garantir que pedidos `MANUAL_PIX` e `CASH` nao baixem estoque na criacao
@@ -241,7 +246,7 @@ Este documento e a fonte da verdade operacional do projeto. Aqui ficam:
 - [ ] Validar ponta a ponta `PICKUP` com `CASH`
 - [ ] Validar ponta a ponta `LOCAL_DELIVERY` com `MANUAL_PIX`
 - [ ] Validar ponta a ponta `LOCAL_DELIVERY` com `CASH`
-- [ ] Validar que o fluxo Stripe permanece intacto
+- [ ] Registrar evidência sandbox para o fluxo Mercado Pago
 
 ### 5.3 Admin e Operacao
 
@@ -493,7 +498,7 @@ Este documento e a fonte da verdade operacional do projeto. Aqui ficam:
 ### Impacto em fluxos existentes
 
 - [x] Checkout publico: nenhuma alteracao
-- [x] Stripe webhook: nenhuma alteracao
+- [x] Webhook Mercado Pago: assinatura e transições idempotentes implementadas
 - [x] Account area: nenhuma alteracao
 - [x] PDV orders: busca migrada para Customer, Order.userId preservado
 - [x] Admin orders: nenhuma alteracao

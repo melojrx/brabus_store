@@ -1,4 +1,6 @@
 # Plano de Implementacao
+
+> **Atualização operacional (setembro de 2026):** Mercado Pago Checkout Pro, retirada e Entrega Braba substituem os fluxos de pagamento e entrega legados citados em seções históricas deste plano.
 ## Brabu's Performance Store
 
 ---
@@ -34,7 +36,7 @@ A Brabu's Performance Store opera como um e-commerce omnichannel com:
 - area autenticada do cliente;
 - painel administrativo;
 - PDV para operacao presencial;
-- integracoes com Stripe, Melhor Envio e Instagram.
+- integracoes com Mercado Pago e Instagram.
 
 O repositorio ja superou o estagio inicial de MVP tecnico. A fase atual e de evolucao operacional, consolidacao de regras de negocio e ampliacao de capacidades administrativas.
 
@@ -49,8 +51,8 @@ Hoje a plataforma ja entrega:
 - area do cliente com pedidos, perfil e senha;
 - admin com produtos, categorias, pedidos, dashboard, clientes, entrega e configuracoes;
 - PDV de balcao com pagamentos manuais e cartao presencial;
-- checkout publico com Stripe, retirada, entrega local e calculo nacional;
-- webhook Stripe com sincronizacao financeira e regra de estoque;
+- checkout público com Mercado Pago Checkout Pro, retirada e Entrega Braba;
+- webhook Mercado Pago com sincronização financeira e regra de estoque;
 - dashboard inicial de KPIs comerciais e financeiros.
 
 Capacidades ja estabilizadas:
@@ -64,8 +66,7 @@ Capacidades ja estabilizadas:
 
 Pontos ainda dependentes de consolidacao operacional:
 
-- homologacao final do Melhor Envio;
-- go-live formal do Stripe em producao;
+- homologação sandbox e go-live controlado do Mercado Pago;
 - refinamento da jornada de compra;
 - governanca de cadastros mestres e perfis de acesso;
 - amadurecimento do PDV e da camada fiscal.
@@ -88,11 +89,11 @@ Foco:
 Escopo desta frente:
 
 - PWA instalavel;
-- Stripe 100% funcional em producao;
+- Mercado Pago Checkout Pro homologado em produção;
 - dark/light mode;
 - identidade visual final da marca;
 - favicon, logo e slogan reais;
-- homologacao final do Melhor Envio.
+- homologação operacional do Mercado Pago.
 
 ### 4.2 Site e Vendas Online
 

@@ -90,6 +90,13 @@ function getPaymentActionLabel(paymentMethod: PublicCheckoutPaymentMethod) {
   return "Confirmar"
 }
 
+export function getCheckoutProNavigation(initPoint: string, orderId: string) {
+  return {
+    paymentUrl: initPoint,
+    trackingUrl: `/checkout/success?order_id=${orderId}`,
+  }
+}
+
 export function getLocalDeliveryHelperText({
   hasMatchingStoreLocation,
   isLocalDeliveryAvailable,
@@ -349,6 +356,10 @@ export default function CheckoutPageClient({
       return
     }
 
+    const isMercadoPagoCheckout =
+      paymentMethod === "MERCADO_PAGO_PIX" || paymentMethod === "MERCADO_PAGO_CARD"
+    const paymentWindow = isMercadoPagoCheckout ? window.open("", "_blank") : null
+
     try {
       const response = await fetch("/api/checkout", {
         method: "POST",
@@ -375,7 +386,14 @@ export default function CheckoutPageClient({
       }
 
       if (data.initPoint) {
-        window.location.href = data.initPoint
+        const navigation = getCheckoutProNavigation(data.initPoint, data.orderId)
+        if (paymentWindow) {
+          paymentWindow.opener = null
+          paymentWindow.location.href = navigation.paymentUrl
+        } else {
+          sessionStorage.setItem(`checkout-payment:${data.orderId}`, navigation.paymentUrl)
+        }
+        router.push(navigation.trackingUrl)
         return
       }
 
@@ -386,6 +404,7 @@ export default function CheckoutPageClient({
 
       throw new Error("A resposta do checkout não trouxe o próximo passo esperado.")
     } catch (checkoutError: unknown) {
+      paymentWindow?.close()
       setError(checkoutError instanceof Error ? checkoutError.message : "Erro ao processar pagamento")
       setLoading(false)
     }
@@ -728,6 +747,7 @@ export default function CheckoutPageClient({
               <p className="text-sm">{error}</p>
             </div>
           ) : null}
+
 
           <button
             onClick={handleCheckout}

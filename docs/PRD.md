@@ -1,4 +1,6 @@
 # PRD — Brabu's Performance Store
+
+> **Atualização operacional (setembro de 2026):** Mercado Pago Checkout Pro é o único checkout online, com Pix e cartão. As únicas modalidades de entrega criadas pelo checkout são retirada e Entrega Braba gratuita. Trechos abaixo que citam integrações e entrega nacionais antigas são histórico de decisões anteriores e não instruções operacionais.
 ### Product Requirements Document · v2.1
 > **"Para quem treina de verdade"**
 > Documento de referência para a IA. Leia este arquivo integralmente antes de escrever qualquer linha de código.
@@ -48,13 +50,12 @@ Instagram: @brabus.performancestore
 
 ### 1.3 Área de Atuação e Entrega
 
-A loja opera com **entrega para todo o Brasil**, mas com **foco estratégico no estado do Ceará** — especialmente nas cidades da região do **Maciço de Baturité**:
+A loja opera online com retirada e Entrega Braba para a cidade configurada da loja:
 
 | Prioridade | Abrangência |
 |---|---|
-| 🥇 **Local / Entrega rápida** | Aracoiaba, Baturité, Capistrano, Aratuba, Mulungu, Pacoti, Guaramiranga, Caridade, Canindé, Itapiúna |
-| 🥈 **Regional** | Fortaleza e Região Metropolitana do Ceará |
-| 🥉 **Nacional** | Todo o Brasil via **Melhor Envio** (Correios, Jadlog, Total Express...) |
+| 🥇 **Entrega Braba** | Cidade e UF configuradas nas configurações da loja |
+| 🥈 **Retirada** | Loja física em Aracoiaba-CE |
 
 > **Diferencial competitivo:** Entregas locais no Maciço de Baturité com prazo reduzido e possibilidade de retirada na loja física em Aracoiaba-CE.
 
@@ -105,9 +106,8 @@ O catálogo é dividido em três grandes linhas:
 ```
 
 #### Canal 1 — E-commerce (foco deste PRD)
-- Portal completo com catálogo, carrinho e checkout via Stripe
-- Entrega nacional com foco regional no Ceará
-- Cálculo de frete por CEP via **Melhor Envio** (multi-transportadora)
+- Portal completo com catálogo, carrinho e Mercado Pago Checkout Pro
+- Retirada e Entrega Braba gratuita
 
 #### Canal 2 — WhatsApp Business `(85) 99783-9040`
 - **Botão flutuante fixo** em todas as páginas (canto inferior direito)
@@ -139,7 +139,7 @@ O catálogo é dividido em três grandes linhas:
 - Vender suplementação e moda fitness para clientes de toda a região com entrega rápida
 - Fortalecer o atendimento via WhatsApp Business para vendas conversacionais
 - Exibir conteúdo do Instagram para engajamento e prova social
-- Oferecer checkout seguro com Stripe e, para retirada na loja e entrega local, também permitir pagamentos em dinheiro e Pix manual
+- Oferecer checkout seguro com Mercado Pago Checkout Pro para Pix e cartão
 - Garantir experiência mobile-first, já que a maioria dos clientes acessa via smartphone
 
 ### 1.8 Escopo da v1.0 (MVP)

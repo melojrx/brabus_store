@@ -15,6 +15,14 @@ const STATUS_LABELS: Record<string, { label: string; cls: string }> = {
   FAILED:    { label: "Falhou",               cls: "bg-red-500/20 text-red-400" },
 }
 
+const PAYMENT_STATUS_LABELS: Record<string, { label: string; cls: string }> = {
+  PENDING: { label: "Pagamento pendente", cls: "bg-yellow-500/20 text-yellow-400" },
+  PAID: { label: "Pagamento aprovado", cls: "bg-green-500/20 text-green-400" },
+  FAILED: { label: "Pagamento falhou", cls: "bg-red-500/20 text-red-400" },
+  CANCELLED: { label: "Pagamento cancelado", cls: "bg-red-500/20 text-red-400" },
+  REFUNDED: { label: "Pagamento reembolsado", cls: "bg-purple-500/20 text-purple-400" },
+}
+
 export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth()
   if (!session?.user) redirect("/auth/login")
@@ -42,6 +50,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
   }
 
   const status = STATUS_LABELS[order.status] ?? { label: order.status, cls: "bg-gray-500/20 text-gray-400" }
+  const paymentStatus = PAYMENT_STATUS_LABELS[order.paymentStatus] ?? { label: order.paymentStatus, cls: "bg-gray-500/20 text-gray-400" }
   const subtotal = order.items.reduce((acc, item) => acc + (item.unitPrice ?? item.price).toNumber() * item.quantity, 0)
   const displayOrderNumber = getOrderDisplayNumber(order)
 
@@ -62,9 +71,10 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
             {new Date(order.createdAt).toLocaleDateString("pt-BR", { day: "2-digit", month: "long", year: "numeric" })}
           </p>
         </div>
-        <span className={`text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-sm self-start ${status.cls}`}>
-          {status.label}
-        </span>
+        <div className="flex flex-wrap gap-2">
+          <span className={`text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-sm self-start ${status.cls}`}>{status.label}</span>
+          <span className={`text-xs font-bold uppercase tracking-widest px-3 py-1.5 rounded-sm self-start ${paymentStatus.cls}`}>{paymentStatus.label}</span>
+        </div>
       </div>
 
       {/* Itens */}

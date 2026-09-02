@@ -24,7 +24,7 @@ Impactos diretos:
 
 O pedido passa a ter dois identificadores:
 
-- `id`: identificador tecnico interno, mantido para relacoes, APIs internas e integracoes como Stripe;
+- `id`: identificador tecnico interno, mantido para relacoes, APIs internas e integrações como Mercado Pago;
 - `orderNumber`: codigo publico legivel exibido para cliente e operacao.
 
 Formato aprovado:
@@ -81,7 +81,7 @@ O `upsert` acontece dentro da mesma transacao da criacao do pedido. Assim:
 
 O `orderNumber` precisa ser gerado em todo fluxo que cria pedido:
 
-- checkout online com Stripe;
+- checkout online com Mercado Pago Checkout Pro;
 - checkout online com pagamento manual;
 - PDV administrativo;
 - backfill dos pedidos antigos.
@@ -118,8 +118,8 @@ Fallback visual:
 
 ## 5. Decisoes complementares
 
-- `client_reference_id` do Stripe continua usando `Order.id` tecnico para nao quebrar o webhook atual.
-- `metadata.orderNumber` pode ser enviada ao Stripe apenas como apoio operacional.
+- `external_reference` do Mercado Pago usa `Order.id` técnico para vincular o pagamento ao pedido.
+- `metadata.orderNumber` é enviada ao Mercado Pago como apoio operacional.
 - o codigo publico nao deve depender de categoria do produto, porque um pedido pode conter itens de varias categorias.
 - o codigo publico nao substitui a chave tecnica do banco.
 

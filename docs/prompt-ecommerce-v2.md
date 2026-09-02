@@ -88,16 +88,12 @@ Rode as **migrations** e o **seed completo**:
 - `PATCH /api/admin/orders/[id]/tracking` — código de rastreio
 
 **Checkout e Pagamentos:**
-- `POST /api/checkout` — criar Stripe Checkout Session
-- `POST /api/stripe/webhook` — atualizar `Order.status` via eventos Stripe
+- `POST /api/checkout` — criar preferência Mercado Pago Checkout Pro
+- `POST /api/mercadopago/webhook` — atualizar pagamento e estoque via eventos assinados
 
-**Frete — 3 modalidades obrigatórias:**
-- `POST /api/shipping/calculate`:
-  - `NATIONAL` → consultar API do **Melhor Envio** com CEP origem `62765000`
-  - `LOCAL_DELIVERY` → consultar tabela `LocalDeliveryZone` pelo nome da cidade
-  - `PICKUP` → retornar frete `R$ 0,00` com endereço da loja
-- `GET /api/shipping/local-zones` — lista de cidades com entrega local
-- CRUD admin: `/api/admin/shipping/zones`
+**Entrega — 2 modalidades aprovadas:**
+- `PICKUP` → retirada gratuita na loja
+- `LOCAL_DELIVERY` → Entrega Braba gratuita para cidade/UF configuradas
 
 **Loja e Social:**
 - `GET /api/store/settings` — dados da loja física
@@ -119,11 +115,8 @@ Rode as **migrations** e o **seed completo**:
 - `/cart` — Carrinho com Zustand + localStorage
 - `/checkout` — **3 steps obrigatórios:**
   - Step 1: dados pessoais (pré-preenchidos se logado)
-  - Step 2: seleção de entrega com as **3 modalidades:**
-    - 🚚 Envio nacional via Melhor Envio (calculado pelo CEP)
-    - 🏍️ Entrega local (detectar automaticamente cidades do Maciço de Baturité)
-    - 🏪 Retirar na loja — grátis (Aracoiaba-CE)
-  - Step 3: pagamento via Stripe Elements
+  - Step 2: seleção entre Entrega Braba e retirada na loja
+  - Step 3: redirecionamento seguro para Mercado Pago Checkout Pro
 - `/checkout/success` e `/checkout/cancel`
 - `/account` — dados pessoais do cliente logado
 - `/account/orders` e `/account/orders/[id]` — histórico e detalhe de pedidos
@@ -156,9 +149,9 @@ Rode as **migrations** e o **seed completo**:
 
 ---
 
-### 8. Integre o Stripe para pagamentos
+### 8. Integre o Mercado Pago Checkout Pro para pagamentos
 
-- Stripe Elements no step 3 do checkout
+- Pix e cartão no ambiente hospedado do Mercado Pago
 - Webhook `/api/stripe/webhook` com a seguinte lógica **obrigatória**:
 
   **`checkout.session.completed`:**
@@ -225,7 +218,7 @@ Rode as **migrations** e o **seed completo**:
 > 3. **Mobile-first** em todos os componentes.
 > 4. **Nunca expor dados sensíveis** em respostas de API pública.
 > 5. **Sempre referenciar o `@PRD.md`** antes de criar qualquer arquivo.
-> 6. **Controle de estoque é obrigatório:** decrementar `Product.stock` automaticamente no webhook do Stripe. Nunca permitir compra de produto com `stock = 0`.
+> 6. **Controle de estoque é obrigatório:** decrementar `Product.stock` automaticamente no webhook Mercado Pago. Nunca permitir compra de produto com `stock = 0`.
 
 ---
 
@@ -237,8 +230,8 @@ Rode as **migrations** e o **seed completo**:
 | Banco de Dados | PostgreSQL 16 (Docker local / Docker Compose produção) |
 | ORM | Prisma 5 |
 | Autenticação | NextAuth.js v5 |
-| Pagamentos | Stripe + Stripe Elements |
-| Frete Nacional | Melhor Envio API |
+| Pagamentos | Mercado Pago Checkout Pro |
+| Entrega | Retirada ou Entrega Braba |
 | Estado Global | Zustand |
 | Validação | Zod + react-hook-form |
 | Hash de Senhas | bcryptjs |

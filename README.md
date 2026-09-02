@@ -2,7 +2,7 @@
 
 E-commerce full stack da Brabus Performance Store, focado em suplementacao, moda fitness e operacao omnichannel entre loja fisica, WhatsApp, Instagram e venda online.
 
-O projeto foi construido com Next.js App Router, TypeScript, Prisma, PostgreSQL, NextAuth e Stripe, com uma camada administrativa para catalogo, pedidos, frete, configuracoes e PDV de balcao.
+O projeto foi construido com Next.js App Router, TypeScript, Prisma, PostgreSQL, NextAuth e Mercado Pago Checkout Pro, com uma camada administrativa para catalogo, pedidos, configuracoes e PDV de balcao.
 
 ## Visao Geral
 
@@ -19,7 +19,7 @@ Documentos de referencia do projeto:
 - Catalogo publico com categorias, subcategorias, busca, ordenacao e filtros por variante.
 - Pagina de produto com selecao real de variantes, controle de estoque e adicao ao carrinho.
 - Carrinho persistido no cliente com Zustand.
-- Checkout autenticado com Stripe, retirada em loja, entrega local e calculo de frete nacional.
+- Checkout autenticado com Mercado Pago Checkout Pro, retirada em loja e Entrega Braba gratuita.
 - Autenticacao com credenciais usando NextAuth.
 - Area do cliente com perfil, historico de pedidos, detalhe do pedido, alteracao de senha e reset de senha por token.
 - Painel administrativo com dashboard comercial e financeiro.
@@ -27,7 +27,7 @@ Documentos de referencia do projeto:
 - Gestao administrativa de pedidos com filtros, atualizacao de status, rastreio e controle de pagamento.
 - PDV interno para vendas presenciais com `CASH`, `MANUAL_PIX`, `POS_DEBIT` e `POS_CREDIT`.
 - Integracao com feed do Instagram via token real ou fallback curado.
-- Estrutura preparada para operacao com Melhor Envio e validacao de integracoes via script.
+- Validacao operacional de Mercado Pago e Instagram via script.
 
 ## Estado Atual do Projeto
 
@@ -35,15 +35,13 @@ O repositorio esta em estado funcional para desenvolvimento local e cobre o esco
 
 - Loja publica, checkout e area autenticada do cliente.
 - Painel admin com KPIs, operacao de pedidos, catalogo e PDV.
-- Stripe em ambiente de teste com webhook.
-- Frete local por zonas cadastradas.
-- Frete nacional via Melhor Envio com integracao no codigo e validacao remota ainda pendente de homologacao ponta a ponta.
+- Mercado Pago Checkout Pro para Pix e cartao, com webhook assinado.
+- Retirada na loja e Entrega Braba gratuita para a cidade configurada da loja.
 - Feed do Instagram por Graph API ou fallback configuravel.
 
 Pontos que ainda exigem confirmacao operacional:
 
-- homologacao final do Melhor Envio em ambiente de desenvolvimento/homologacao
-- validacao ponta a ponta com credenciais reais do ambiente desejado
+- homologacao sandbox do Mercado Pago com URL HTTPS publica
 
 ## Stack Tecnologica
 
@@ -67,8 +65,7 @@ Pontos que ainda exigem confirmacao operacional:
 
 ### Pagamentos e Integracoes
 
-- Stripe
-- Melhor Envio
+- Mercado Pago Checkout Pro
 - Instagram Graph API
 
 ## Arquitetura do Projeto
@@ -184,14 +181,9 @@ NEXTAUTH_URL="http://localhost:3000"
 NEXTAUTH_SECRET="change-me"
 AUTH_TRUST_HOST="true"
 
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY="pk_test_xxxxx"
-STRIPE_SECRET_KEY="sk_test_xxxxx"
-STRIPE_WEBHOOK_SECRET="whsec_xxxxx"
-STRIPE_CHECKOUT_PAYMENT_METHOD_TYPES="card"
-STRIPE_FORWARD_URL="http://localhost:3000/api/stripe/webhook"
-
-MELHOR_ENVIO_TOKEN="me_xxxxx"
-MELHOR_ENVIO_BASE_URL="https://sandbox.melhorenvio.com.br/api/v2"
+MERCADO_PAGO_ACCESS_TOKEN="TEST-..."
+MERCADO_PAGO_ENVIRONMENT="sandbox"
+MERCADO_PAGO_WEBHOOK_SECRET="secret-signature-do-painel-mercado-pago"
 
 INSTAGRAM_ACCESS_TOKEN=""
 INSTAGRAM_FALLBACK_POSTS='[]'
@@ -206,18 +198,14 @@ PORT="3000"
 - `NEXTAUTH_SECRET`
 - `AUTH_TRUST_HOST`
 
-### Obrigatorias para checkout Stripe
+### Obrigatorias para checkout Mercado Pago
 
-- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
-- `STRIPE_SECRET_KEY`
-- `STRIPE_WEBHOOK_SECRET`
+- `MERCADO_PAGO_ACCESS_TOKEN`
+- `MERCADO_PAGO_ENVIRONMENT`
+- `MERCADO_PAGO_WEBHOOK_SECRET`
 
 ### Opcionais por integracao
 
-- `STRIPE_CHECKOUT_PAYMENT_METHOD_TYPES`
-- `STRIPE_FORWARD_URL`
-- `MELHOR_ENVIO_TOKEN`
-- `MELHOR_ENVIO_BASE_URL`
 - `INSTAGRAM_ACCESS_TOKEN`
 - `INSTAGRAM_FALLBACK_POSTS`
 - `PORT`
@@ -240,7 +228,6 @@ npm run start
 npm run lint -- .
 npm run prisma:generate
 npm run integrations:check
-npm run stripe:listen
 ```
 
 ### O que cada script faz
@@ -250,14 +237,13 @@ npm run stripe:listen
 - `npm run start`: inicia a aplicacao em modo de producao apos o build
 - `npm run lint -- .`: executa a analise estatica com ESLint
 - `npm run prisma:generate`: regenera o Prisma Client
-- `npm run integrations:check`: testa o estado configurado de Stripe, Melhor Envio e Instagram
-- `npm run stripe:listen`: encaminha eventos locais do Stripe CLI para o webhook da aplicacao
+- `npm run integrations:check`: testa o estado configurado de Mercado Pago e Instagram
 
-### Stripe e Estoque
+### Mercado Pago e Estoque
 
 - o estoque so baixa quando o pedido fica com `paymentStatus=PAID`
 - se o pagamento mudar de `PAID` para `CANCELLED` ou `REFUNDED`, o sistema repoe o estoque automaticamente
-- refunds completos recebidos da Stripe via webhook (`charge.refunded`) tambem marcam o pedido como `REFUNDED` e repoe o estoque
+- reembolsos completos e chargebacks recebidos do Mercado Pago marcam o pedido como `REFUNDED` e repõem o estoque
 - mudar apenas o `status` operacional do pedido no admin nao repoe estoque; a regra de estoque fica no fluxo financeiro
 
 ## Deploy
@@ -292,18 +278,11 @@ Guia completo:
 
 ## Integracoes
 
-### Stripe
+### Mercado Pago
 
-- checkout implementado
-- criacao de sessao implementada
-- webhook implementado
-- fluxo de teste validado no projeto
-
-### Melhor Envio
-
-- calculo de frete nacional implementado
-- fallback para ambiente sandbox configuravel
-- depende de token e homologacao operacional para validacao final
+- Checkout Pro para Pix e cartão
+- webhook público HTTPS em `/api/mercadopago/webhook`
+- valide os cenários sandbox antes de produção
 
 ### Instagram
 
@@ -317,11 +296,11 @@ O projeto ainda nao possui uma suite automatizada versionada. No estado atual, o
 - `npm run lint -- .`
 - `npm run build`
 - verificacao manual dos fluxos alterados
-- `npm run integrations:check` quando houver mudancas em Stripe, Melhor Envio ou Instagram
+- `npm run integrations:check` quando houver mudanças em Mercado Pago ou Instagram
 
 ## Roadmap Proximo
 
-- concluir homologacao ponta a ponta do Melhor Envio
+- concluir homologação sandbox do Mercado Pago
 - ampliar cobertura automatizada de testes
 - endurecer documentacao de deploy e operacao
 - evoluir observabilidade e validacoes operacionais

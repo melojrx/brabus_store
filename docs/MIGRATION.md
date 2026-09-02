@@ -125,12 +125,9 @@ DATABASE_URL=postgresql://brabustore:PASSWORD@db:5432/brabustore
 NEXTAUTH_URL=https://brabustore.com.br
 NEXTAUTH_SECRET=
 AUTH_TRUST_HOST=true
-STRIPE_SECRET_KEY=
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=
-STRIPE_WEBHOOK_SECRET=
-STRIPE_CHECKOUT_PAYMENT_METHOD_TYPES=card
-MELHOR_ENVIO_TOKEN=
-MELHOR_ENVIO_BASE_URL=https://melhorenvio.com.br/api/v2
+MERCADO_PAGO_ACCESS_TOKEN=
+MERCADO_PAGO_ENVIRONMENT=production
+MERCADO_PAGO_WEBHOOK_SECRET=
 INSTAGRAM_ACCESS_TOKEN=
 INSTAGRAM_FALLBACK_POSTS=[]
 WEBHOOK_SECRET=
@@ -187,7 +184,7 @@ Checklist historico da migracao. Para operacao atual de deploy, use `docs/DEPLOY
 - [ ] Atualizar registro A de brabustore.com.br para 38.52.128.62
 - [ ] Atualizar registro A de www.brabustore.com.br para 38.52.128.62
 - [ ] Monitorar propagacao
-- [ ] Atualizar endpoint webhook no painel Stripe
+- [ ] Atualizar endpoint HTTPS do webhook Mercado Pago: `https://brabustore.com.br/api/mercadopago/webhook`
 
 ### 8.7 Pos-migracao
 
@@ -205,7 +202,7 @@ Checklist historico da migracao. Para operacao atual de deploy, use `docs/DEPLOY
 | Downtime durante DNS | TTL baixo + validacao pre-switch |
 | Perda de uploads | Backup local ja realizado |
 | Secrets expostos | GitHub Secrets + .env nao versionado |
-| Stripe webhook falha | Atualizar endpoint apos DNS propagar |
+| Webhook Mercado Pago falha | Atualizar endpoint HTTPS após DNS propagar |
 | Build falha na VPS | Testar build antes de migrar DNS |
 | Conflito de porta | Porta 3001 confirmada livre |
 

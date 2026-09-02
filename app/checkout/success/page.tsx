@@ -21,11 +21,17 @@ function CheckoutSuccessContent() {
   const [order, setOrder] = useState<CheckoutOrderSummary | null>(null)
   const [loading, setLoading] = useState(Boolean(orderId))
   const [error, setError] = useState("")
+  const [paymentLink, setPaymentLink] = useState("")
 
   useEffect(() => {
     if (!orderId) {
       setLoading(false)
       return
+    }
+
+    const fallbackLink = sessionStorage.getItem(`checkout-payment:${orderId}`)
+    if (fallbackLink) {
+      setPaymentLink(fallbackLink)
     }
 
     let cancelled = false
@@ -90,8 +96,23 @@ function CheckoutSuccessContent() {
       <p className="mb-8 max-w-2xl text-gray-400">{description}</p>
       {order ? <p className="mb-8 text-sm text-white">Pedido {getOrderDisplayNumber(order)}</p> : null}
       {error ? <p className="mb-8 text-sm text-red-400">{error}</p> : null}
+      {paymentLink && isPending ? (
+        <a
+          href={paymentLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => {
+            if (orderId) sessionStorage.removeItem(`checkout-payment:${orderId}`)
+            setPaymentLink("")
+          }}
+          className="mb-8 rounded-sm border border-[var(--color-primary)]/50 px-6 py-3 text-sm font-bold uppercase tracking-widest text-[var(--color-primary)]"
+        >
+          Abrir pagamento seguro
+        </a>
+      ) : null}
       <div className="flex flex-col gap-4 sm:flex-row">
         <Link href="/account/orders" className="glass px-8 py-4 font-bold uppercase tracking-widest text-white hover:bg-white/10">Ver Meus Pedidos</Link>
+        {order ? <Link href={`/account/orders/${order.id}`} className="glass px-8 py-4 font-bold uppercase tracking-widest text-white hover:bg-white/10">Ver Pedido</Link> : null}
         {!isPaid && !isPending ? <Link href="/checkout" className="bg-[var(--color-primary)] px-8 py-4 font-bold uppercase tracking-widest text-black">Tentar novamente</Link> : null}
       </div>
     </div>

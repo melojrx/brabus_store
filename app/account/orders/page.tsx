@@ -31,6 +31,17 @@ function formatStatus(status: string) {
   }
 }
 
+function formatPaymentStatus(status: string) {
+  switch (status) {
+    case "PENDING": return "Pendente"
+    case "PAID": return "Aprovado"
+    case "FAILED": return "Não aprovado"
+    case "CANCELLED": return "Cancelado"
+    case "REFUNDED": return "Reembolsado"
+    default: return status
+  }
+}
+
 export default async function AccountOrdersPage() {
   const session = await auth()
 
@@ -45,6 +56,7 @@ export default async function AccountOrdersPage() {
       id: true,
       orderNumber: true,
       status: true,
+      paymentStatus: true,
       total: true,
       createdAt: true,
       shippingType: true,
@@ -91,7 +103,8 @@ export default async function AccountOrdersPage() {
                   {formatCurrency(order.total.toNumber())}
                 </p>
                 <div className="mt-2 flex flex-wrap gap-3 text-xs text-gray-500">
-                  <span>{formatStatus(order.status)}</span>
+                  <span>Pedido: {formatStatus(order.status)}</span>
+                  <span>Pagamento: {formatPaymentStatus(order.paymentStatus)}</span>
                   <span>
                     {new Date(order.createdAt).toLocaleDateString("pt-BR", {
                       day: "2-digit",
