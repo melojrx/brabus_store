@@ -2,7 +2,6 @@ import { MercadoPagoConfig, User } from "mercadopago"
 import {
   getCuratedInstagramFallbackPosts,
   getInstagramIntegrationSummary,
-  getMelhorEnvioIntegrationSummary,
   getMercadoPagoIntegrationSummary,
 } from "../lib/integration-status"
 import { getMercadoPagoAccessTokenFromEnv } from "../lib/mercadopago/env"
@@ -54,62 +53,6 @@ async function validateMercadoPago() {
   }
 }
 
-async function validateMelhorEnvio() {
-  const summary = getMelhorEnvioIntegrationSummary()
-  printSection("Melhor Envio")
-  printSummary(summary)
-
-  if (summary.level !== "ok") {
-    console.log("- remote-check: skipped")
-    return { ok: false, blocking: false }
-  }
-
-  try {
-    const response = await fetch(
-      `${process.env.MELHOR_ENVIO_BASE_URL || "https://sandbox.melhorenvio.com.br/api/v2"}/me/shipment/calculate`,
-      {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${process.env.MELHOR_ENVIO_TOKEN}`,
-          "User-Agent": "BrabusStore (jrmelo@example.com)",
-        },
-        body: JSON.stringify({
-          from: { postal_code: "62765000" },
-          to: { postal_code: "01310930" },
-          products: [
-            {
-              id: "validation",
-              quantity: 1,
-              weight: 0.5,
-              height: 10,
-              width: 20,
-              length: 20,
-              insurance_value: 0,
-            },
-          ],
-        }),
-      },
-    )
-
-    if (!response.ok) {
-      const payload = await response.text()
-      throw new Error(payload || "Resposta inválida do Melhor Envio.")
-    }
-
-    const services = await response.json()
-    console.log("- remote-check: ok")
-    console.log(`- services-returned: ${Array.isArray(services) ? services.length : 0}`)
-    console.log("- note: a contratação real ainda depende da URL pública homologada.")
-    return { ok: true, blocking: false }
-  } catch (error) {
-    console.log("- remote-check: failed")
-    console.log(`- error: ${error instanceof Error ? error.message : "Erro desconhecido ao validar Melhor Envio."}`)
-    return { ok: false, blocking: false }
-  }
-}
-
 async function validateInstagram() {
   const summary = getInstagramIntegrationSummary()
   printSection("Instagram")
@@ -151,7 +94,6 @@ async function validateInstagram() {
 async function main() {
   const results = []
   results.push(await validateMercadoPago())
-  results.push(await validateMelhorEnvio())
   results.push(await validateInstagram())
 
   const hasBlockingFailure = results.some((result) => result.blocking && !result.ok)

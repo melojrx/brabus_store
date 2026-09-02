@@ -55,19 +55,6 @@ const CATEGORY_DEFAULTS: CategoryFlags = {
   trackStockByVariant: false,
 }
 
-const zones = [
-  { city: "Aracoiaba", price: 5.0, deadlineText: "Mesmo dia" },
-  { city: "Baturite", price: 10.0, deadlineText: "Mesmo dia ou proximo dia util" },
-  { city: "Capistrano", price: 10.0, deadlineText: "Mesmo dia ou proximo dia util" },
-  { city: "Aratuba", price: 15.0, deadlineText: "Proximo dia util" },
-  { city: "Mulungu", price: 15.0, deadlineText: "Proximo dia util" },
-  { city: "Pacoti", price: 15.0, deadlineText: "Proximo dia util" },
-  { city: "Guaramiranga", price: 15.0, deadlineText: "Proximo dia util" },
-  { city: "Caridade", price: 15.0, deadlineText: "Proximo dia util" },
-  { city: "Caninde", price: 20.0, deadlineText: "Proximo dia util" },
-  { city: "Itapiuna", price: 15.0, deadlineText: "Proximo dia util" },
-]
-
 const categories: readonly CategorySeed[] = [
   { name: "Roupas Fitness", slug: "roupas-fitness", sortOrder: 10 },
   { name: "Acessorios", slug: "acessorios", sortOrder: 20 },
@@ -444,10 +431,6 @@ async function main() {
       openingHours: "Seg-Sex: 8h-18h | Sab: 8h-13h",
     },
   })
-
-  for (const zone of zones) {
-    await prisma.localDeliveryZone.create({ data: zone })
-  }
 
   const categoriesBySlug = await createCategories()
   console.log(`Categories created: ${categoriesBySlug.size}`)

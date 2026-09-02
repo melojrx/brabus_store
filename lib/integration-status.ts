@@ -83,27 +83,6 @@ export function getMercadoPagoIntegrationSummary(): IntegrationSummary {
   }
 }
 
-export function getMelhorEnvioIntegrationSummary(): IntegrationSummary {
-  const token = process.env.MELHOR_ENVIO_TOKEN
-  const baseUrl = process.env.MELHOR_ENVIO_BASE_URL?.trim()
-
-  if (isConfiguredValue(token)) {
-    return {
-      name: "Melhor Envio",
-      level: "ok",
-      mode: baseUrl || (process.env.NODE_ENV === "production" ? "production" : "sandbox"),
-      message: "Token presente. A validação ponta a ponta ainda depende da URL pública de homologação/produção.",
-    }
-  }
-
-  return {
-    name: "Melhor Envio",
-    level: "warning",
-    mode: baseUrl || "sandbox",
-    message: "Token ainda não configurado. Integração nacional fica parcialmente bloqueada até existir URL pública para homologação.",
-  }
-}
-
 export function getCuratedInstagramFallbackPosts() {
   const rawPosts = parseJsonArray(process.env.INSTAGRAM_FALLBACK_POSTS)
 
