@@ -19,6 +19,16 @@ type CheckoutProPreferenceInput = {
   items: CheckoutProItem[]
 }
 
+type MercadoPagoPaymentSummaryInput = {
+  id?: string | number | null
+  status?: string | null
+  status_detail?: string | null
+  payment_type_id?: string | null
+  transaction_amount?: number | null
+  external_reference?: string | null
+  payer?: unknown
+}
+
 export function buildCheckoutUrls(origin: string, orderId: string) {
   const baseUrl = origin.replace(/\/$/, "")
 
@@ -63,5 +73,16 @@ export function buildCheckoutProPreference({
       orderNumber,
       userId,
     },
+  }
+}
+
+export function serializeMercadoPagoPaymentSummary(payment: MercadoPagoPaymentSummaryInput) {
+  return {
+    id: String(payment.id),
+    status: payment.status ?? null,
+    statusDetail: payment.status_detail ?? null,
+    paymentType: payment.payment_type_id ?? null,
+    amount: payment.transaction_amount ?? null,
+    orderId: payment.external_reference ?? null,
   }
 }
