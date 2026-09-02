@@ -101,7 +101,7 @@ export default function CartPage() {
           </div>
 
           <Link href="/checkout" className="bg-[var(--color-primary)] hover:bg-[var(--color-primary-dark)] text-black font-bold uppercase tracking-widest py-4 px-8 rounded-sm transition-all flex items-center justify-center gap-2 w-full">
-            Avançar para Checkout <ArrowRight className="w-5 h-5" />
+            Avançar <ArrowRight className="w-5 h-5" />
           </Link>
           
           <div className="mt-4 text-center">

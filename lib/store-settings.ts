@@ -2,6 +2,8 @@ import prisma from "@/lib/prisma"
 
 export const DEFAULT_STORE_INSTAGRAM_HANDLE = "@brabus_pstore"
 export const DEFAULT_STORE_INSTAGRAM_URL = "https://instagram.com/brabus_pstore"
+export const DEFAULT_STORE_ADDRESS_CITY = "Aracoiaba"
+export const DEFAULT_STORE_ADDRESS_STATE = "CE"
 
 export function normalizeInstagramHandle(value: string | null | undefined) {
   const normalizedValue = value?.trim() ?? ""
@@ -58,8 +60,8 @@ export async function getPublicStoreSettings() {
     openingHours: settings?.openingHours ?? "Seg–Sex: 8h–18h | Sáb: 8h–13h",
     addressStreet: settings?.addressStreet ?? "Rua Antônio Lopes, 571",
     addressComplement: settings?.addressComplement ?? "Conjunto Cohab",
-    addressCity: settings?.addressCity ?? "Aracoiaba",
-    addressState: settings?.addressState ?? "CE",
+    addressCity: settings?.addressCity ?? DEFAULT_STORE_ADDRESS_CITY,
+    addressState: settings?.addressState ?? DEFAULT_STORE_ADDRESS_STATE,
     addressZip: settings?.addressZip ?? "62765-000",
     googleMapsUrl: settings?.googleMapsUrl ?? null,
     googleMapsEmbed: settings?.googleMapsEmbed ?? null,

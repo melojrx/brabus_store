@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { OrderChannel, PaymentMethod, PaymentStatus, Prisma, ShippingType } from "@prisma/client"
+import { OrderChannel, PaymentMethod, PaymentStatus, Prisma } from "@prisma/client"
 import { ZodError } from "zod"
 import { auth } from "@/auth"
 import { createManualOrder } from "@/lib/manual-orders"
@@ -12,7 +12,7 @@ import {
   type PublicCheckoutPayload,
   resolveVariant,
 } from "@/lib/public-checkout"
-import { fetchMelhorEnvioServices, findLocalDeliveryZone } from "@/lib/shipping"
+import { DeliveryPolicyError, resolveDelivery } from "@/lib/delivery-policy"
 import { getMercadoPagoClient, isMercadoPagoConfigured } from "@/lib/mercadopago/client"
 import { generateQrCodeBase64 } from "@/lib/mercadopago/pix"
 import { getMercadoPagoSettings } from "@/lib/mercadopago/settings"
@@ -207,10 +207,14 @@ export async function POST(req: Request) {
       ...payload.address,
       addressZip: payload.address.addressZip ? normalizePostalCode(payload.address.addressZip) : null,
     }
+    const storeSettings = await getPublicStoreSettings()
+    const delivery = resolveDelivery({
+      shippingType: payload.shippingType,
+      address: normalizedAddress,
+      store: storeSettings,
+    })
 
     if (payload.paymentMethod === "MANUAL_PIX") {
-      const storeSettings = await getPublicStoreSettings()
-
       if (!storeSettings.pixKey) {
         return NextResponse.json(
           { error: "O Pix manual ainda não está disponível neste ambiente." },
@@ -234,7 +238,6 @@ export async function POST(req: Request) {
 
       const { preference } = getMercadoPagoClient(mercadoPagoSettings.accessToken)
       let total = 0
-      let totalWeightKg = 0
       const orderItemsRecord: Prisma.OrderItemUncheckedCreateWithoutOrderInput[] = []
 
       for (const item of resolvedItems) {
@@ -244,7 +247,6 @@ export async function POST(req: Request) {
         const subcategoryName = item.product.category.parent ? item.product.category.name : null
 
         total += priceToUse * item.quantity
-        totalWeightKg += (item.product.weightKg ?? 0.5) * item.quantity
 
         orderItemsRecord.push({
           productId: item.product.id,
@@ -264,59 +266,7 @@ export async function POST(req: Request) {
         })
       }
 
-      let resolvedShippingCost = 0
-      let resolvedShippingCarrier: string | null = null
-      let resolvedShippingDeadline: string | null = null
-
-      if (payload.shippingType === ShippingType.PICKUP) {
-        resolvedShippingCarrier = "Retirada na Loja"
-        resolvedShippingDeadline = "Retirada imediata"
-      }
-
-      if (payload.shippingType === ShippingType.LOCAL_DELIVERY) {
-        const localZone = await findLocalDeliveryZone(
-          prisma,
-          normalizedAddress.addressCity ?? "",
-          normalizedAddress.addressState,
-        )
-
-        if (!localZone) {
-          return NextResponse.json(
-            { error: "A cidade informada não possui entrega local disponível." },
-            { status: 400 },
-          )
-        }
-
-        resolvedShippingCost = localZone.price
-        resolvedShippingCarrier = "Entrega Local"
-        resolvedShippingDeadline = localZone.deadlineText
-      }
-
-      if (payload.shippingType === ShippingType.NATIONAL) {
-        if (!normalizedAddress.addressZip) {
-          return NextResponse.json({ error: "CEP inválido para frete nacional." }, { status: 400 })
-        }
-
-        const availableServices = await fetchMelhorEnvioServices({
-          toPostalCode: normalizedAddress.addressZip,
-          weightKg: totalWeightKg,
-        })
-
-        const selectedService = availableServices.find((service) => service.id === payload.shippingServiceId)
-
-        if (!selectedService) {
-          return NextResponse.json(
-            { error: "O serviço de frete selecionado não está mais disponível para este CEP." },
-            { status: 400 },
-          )
-        }
-
-        resolvedShippingCost = selectedService.price
-        resolvedShippingCarrier = selectedService.carrier
-        resolvedShippingDeadline = selectedService.deliveryTime
-      }
-
-      total += resolvedShippingCost
+      total += delivery.cost
 
       const order = await prisma.$transaction(async (tx) => {
         const orderCreatedAt = new Date()
@@ -338,10 +288,10 @@ export async function POST(req: Request) {
             customerEmailSnapshot: sessionAuth.user?.email ?? null,
             customerPhoneSnapshot: sessionAuth.user?.phone ?? null,
             shippingType: payload.shippingType,
-            shippingCost: resolvedShippingCost,
-            shippingCarrier: resolvedShippingCarrier,
-            shippingDeadline: resolvedShippingDeadline,
-            ...(payload.shippingType !== ShippingType.PICKUP ? normalizedAddress : {}),
+            shippingCost: delivery.cost,
+            shippingCarrier: delivery.carrier,
+            shippingDeadline: delivery.deadline,
+            ...(payload.shippingType !== "PICKUP" ? normalizedAddress : {}),
             items: {
               create: orderItemsRecord,
             },
@@ -409,7 +359,6 @@ export async function POST(req: Request) {
         mercadoPagoSettings.accessToken,
       )
       let total = 0
-      let totalWeightKg = 0
       const orderItemsRecord: Prisma.OrderItemUncheckedCreateWithoutOrderInput[] = []
 
       for (const item of resolvedItems) {
@@ -419,7 +368,6 @@ export async function POST(req: Request) {
         const subcategoryName = item.product.category.parent ? item.product.category.name : null
 
         total += priceToUse * item.quantity
-        totalWeightKg += (item.product.weightKg ?? 0.5) * item.quantity
 
         orderItemsRecord.push({
           productId: item.product.id,
@@ -439,59 +387,7 @@ export async function POST(req: Request) {
         })
       }
 
-      let resolvedShippingCost = 0
-      let resolvedShippingCarrier: string | null = null
-      let resolvedShippingDeadline: string | null = null
-
-      if (payload.shippingType === ShippingType.PICKUP) {
-        resolvedShippingCarrier = "Retirada na Loja"
-        resolvedShippingDeadline = "Retirada imediata"
-      }
-
-      if (payload.shippingType === ShippingType.LOCAL_DELIVERY) {
-        const localZone = await findLocalDeliveryZone(
-          prisma,
-          normalizedAddress.addressCity ?? "",
-          normalizedAddress.addressState,
-        )
-
-        if (!localZone) {
-          return NextResponse.json(
-            { error: "A cidade informada não possui entrega local disponível." },
-            { status: 400 },
-          )
-        }
-
-        resolvedShippingCost = localZone.price
-        resolvedShippingCarrier = "Entrega Local"
-        resolvedShippingDeadline = localZone.deadlineText
-      }
-
-      if (payload.shippingType === ShippingType.NATIONAL) {
-        if (!normalizedAddress.addressZip) {
-          return NextResponse.json({ error: "CEP inválido para frete nacional." }, { status: 400 })
-        }
-
-        const availableServices = await fetchMelhorEnvioServices({
-          toPostalCode: normalizedAddress.addressZip,
-          weightKg: totalWeightKg,
-        })
-
-        const selectedService = availableServices.find((service) => service.id === payload.shippingServiceId)
-
-        if (!selectedService) {
-          return NextResponse.json(
-            { error: "O serviço de frete selecionado não está mais disponível para este CEP." },
-            { status: 400 },
-          )
-        }
-
-        resolvedShippingCost = selectedService.price
-        resolvedShippingCarrier = selectedService.carrier
-        resolvedShippingDeadline = selectedService.deliveryTime
-      }
-
-      total += resolvedShippingCost
+      total += delivery.cost
 
       const order = await prisma.$transaction(async (tx) => {
         const orderCreatedAt = new Date()
@@ -513,10 +409,10 @@ export async function POST(req: Request) {
             customerEmailSnapshot: sessionAuth.user?.email ?? null,
             customerPhoneSnapshot: sessionAuth.user?.phone ?? null,
             shippingType: payload.shippingType,
-            shippingCost: resolvedShippingCost,
-            shippingCarrier: resolvedShippingCarrier,
-            shippingDeadline: resolvedShippingDeadline,
-            ...(payload.shippingType !== ShippingType.PICKUP ? normalizedAddress : {}),
+            shippingCost: delivery.cost,
+            shippingCarrier: delivery.carrier,
+            shippingDeadline: delivery.deadline,
+            ...(payload.shippingType !== "PICKUP" ? normalizedAddress : {}),
             items: {
               create: orderItemsRecord,
             },
@@ -604,7 +500,6 @@ export async function POST(req: Request) {
         quantity: item.quantity,
       })),
       shippingType: payload.shippingType,
-      shippingServiceId: payload.shippingServiceId,
       address: normalizedAddress,
       paymentMethod:
         payload.paymentMethod === "CASH"
@@ -627,6 +522,10 @@ export async function POST(req: Request) {
         { error: error.issues[0]?.message ?? "Payload inválido." },
         { status: 400 },
       )
+    }
+
+    if (error instanceof DeliveryPolicyError) {
+      return NextResponse.json({ error: error.message }, { status: 400 })
     }
 
     return NextResponse.json(

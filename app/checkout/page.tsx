@@ -7,6 +7,8 @@ export default async function CheckoutPage() {
   return (
     <CheckoutPageClient
       pixKey={storeSettings.pixKey}
+      addressCity={storeSettings.addressCity}
+      addressState={storeSettings.addressState}
     />
   )
 }

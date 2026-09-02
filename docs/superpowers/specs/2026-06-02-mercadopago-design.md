@@ -1,7 +1,7 @@
 # Design: Integração Mercado Pago — Checkout API
 
 **Data:** 2026-06-02
-**Status:** Aprovado
+**Status:** Substituido por `2026-09-01-checkout-mercadopago-go-live-design.md`
 **Responsável:** Junior Melo
 
 ---

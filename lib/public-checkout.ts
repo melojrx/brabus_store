@@ -1,4 +1,3 @@
-import { ShippingType } from "@prisma/client"
 import { z } from "zod"
 
 export const PUBLIC_CHECKOUT_PAYMENT_METHOD_VALUES = [
@@ -67,14 +66,7 @@ const optionalMoneyField = z
 export const createPublicCheckoutSchema = z
   .object({
     items: z.array(checkoutItemSchema).min(1, "Carrinho está vazio."),
-    shippingType: z.nativeEnum(ShippingType),
-    shippingServiceId: z
-      .string()
-      .trim()
-      .optional()
-      .nullable()
-      .or(z.literal(""))
-      .transform((value) => value || null),
+    shippingType: z.enum(["PICKUP", "LOCAL_DELIVERY"]),
     paymentMethod: z.enum(PUBLIC_CHECKOUT_PAYMENT_METHOD_VALUES),
     cashReceivedAmount: optionalMoneyField,
     address: z.object({
@@ -85,22 +77,10 @@ export const createPublicCheckoutSchema = z
       addressCity: optionalTrimmedString(120, "A cidade deve ter no máximo 120 caracteres."),
       addressState: optionalTrimmedString(80, "O estado deve ter no máximo 80 caracteres."),
       addressZip: optionalTrimmedString(20, "O CEP deve ter no máximo 20 caracteres."),
-    }),
+    }).optional().prefault({}),
   })
   .superRefine((data, ctx) => {
-    if (
-      data.shippingType === ShippingType.NATIONAL &&
-      data.paymentMethod !== "MERCADO_PAGO_CARD" &&
-      data.paymentMethod !== "MERCADO_PAGO_PIX"
-    ) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Entrega nacional aceita apenas pagamento online.",
-        path: ["paymentMethod"],
-      })
-    }
-
-    if (data.shippingType !== ShippingType.PICKUP) {
+    if (data.shippingType === "LOCAL_DELIVERY") {
       const requiredFields: Array<keyof typeof data.address> = [
         "addressStreet",
         "addressNumber",
@@ -119,15 +99,16 @@ export const createPublicCheckoutSchema = z
           })
         }
       }
+
+      if ((data.address.addressZip ?? "").replace(/\D/g, "").length !== 8) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Informe um CEP válido para a Entrega Braba.",
+          path: ["address", "addressZip"],
+        })
+      }
     }
 
-    if (data.shippingType === ShippingType.NATIONAL && !data.shippingServiceId) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Selecione um serviço de frete para entrega nacional.",
-        path: ["shippingServiceId"],
-      })
-    }
   })
 
 export type PublicCheckoutPayload = z.infer<typeof createPublicCheckoutSchema>

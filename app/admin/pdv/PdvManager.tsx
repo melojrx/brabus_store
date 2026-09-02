@@ -13,7 +13,6 @@ import {
   Search,
   ShoppingBasket,
   Trash2,
-  Truck,
   UserRound,
   WalletCards,
 } from "lucide-react"
@@ -28,6 +27,7 @@ import {
 import { buildPdvManualPixReference } from "@/lib/pdv"
 import { getPaymentMethodLabel } from "@/lib/payment-status"
 import { getExpiryBadgeClass } from "@/lib/expiry-utils"
+import { isDeliveryReady } from "@/lib/delivery-policy"
 
 type Feedback =
   | {
@@ -99,22 +99,6 @@ type CartItem = {
   quantity: number
 }
 
-type LocalZone = {
-  id: string
-  city: string
-  state: string
-  price: number
-  deadlineText: string
-}
-
-type ShippingService = {
-  id: string
-  name: string
-  carrier: string
-  price: number
-  deliveryTime: string
-}
-
 type AddressState = {
   addressStreet: string
   addressNumber: string
@@ -142,14 +126,6 @@ function formatCurrency(value: number) {
   }).format(value)
 }
 
-function normalizeLocationValue(value: string | null | undefined) {
-  return (value ?? "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim()
-    .toLowerCase()
-}
-
 async function parseErrorMessage(response: Response) {
   try {
     const payload = await response.json()
@@ -164,7 +140,15 @@ async function parseErrorMessage(response: Response) {
   return null
 }
 
-export default function PdvManager({ pixKey }: { pixKey: string | null }) {
+export default function PdvManager({
+  pixKey,
+  addressCity: storeAddressCity,
+  addressState: storeAddressState,
+}: {
+  pixKey: string | null
+  addressCity: string
+  addressState: string
+}) {
   const router = useRouter()
   const customerSearchRef = useRef<HTMLDivElement | null>(null)
   const [productSearch, setProductSearch] = useState("")
@@ -180,16 +164,13 @@ export default function PdvManager({ pixKey }: { pixKey: string | null }) {
     totalPages: 1,
   })
   const [customers, setCustomers] = useState<PdvCustomer[]>([])
-  const [localZones, setLocalZones] = useState<LocalZone[]>([])
   const [selectedCustomer, setSelectedCustomer] = useState<PdvCustomer | null>(null)
   const [walkInCustomerName, setWalkInCustomerName] = useState("")
   const [walkInCustomerEmail, setWalkInCustomerEmail] = useState("")
   const [walkInCustomerPhone, setWalkInCustomerPhone] = useState("")
   const [address, setAddress] = useState<AddressState>(EMPTY_ADDRESS)
   const [items, setItems] = useState<CartItem[]>([])
-  const [shippingType, setShippingType] = useState<"PICKUP" | "LOCAL_DELIVERY" | "NATIONAL">("PICKUP")
-  const [shippingServices, setShippingServices] = useState<ShippingService[]>([])
-  const [selectedShippingServiceId, setSelectedShippingServiceId] = useState("")
+  const [shippingType, setShippingType] = useState<"PICKUP" | "LOCAL_DELIVERY">("PICKUP")
   const [paymentMethod, setPaymentMethod] = useState<"CASH" | "MANUAL_PIX" | "POS_DEBIT" | "POS_CREDIT">("CASH")
   const [paymentStatus, setPaymentStatus] = useState<"PENDING" | "PAID">("PAID")
   const [paymentInstallments, setPaymentInstallments] = useState("1")
@@ -199,13 +180,10 @@ export default function PdvManager({ pixKey }: { pixKey: string | null }) {
   const [discountAmount, setDiscountAmount] = useState("")
   const [productsFeedback, setProductsFeedback] = useState<Feedback>(null)
   const [expirySummary, setExpirySummary] = useState<PdvExpirySummary | null>(null)
-  const [shippingFeedback, setShippingFeedback] = useState<Feedback>(null)
   const [currentOrderFeedback, setCurrentOrderFeedback] = useState<Feedback>(null)
   const [checkoutFeedback, setCheckoutFeedback] = useState<Feedback>(null)
   const [isLoadingProducts, setIsLoadingProducts] = useState(false)
   const [isLoadingCustomers, setIsLoadingCustomers] = useState(false)
-  const [isLoadingLocalZones, setIsLoadingLocalZones] = useState(false)
-  const [isCalculatingShipping, setIsCalculatingShipping] = useState(false)
   const [isSubmitting, startSubmitTransition] = useTransition()
   const deferredProductSearch = useDeferredValue(productSearch)
   const deferredCustomerSearch = useDeferredValue(customerSearch)
@@ -314,52 +292,6 @@ export default function PdvManager({ pixKey }: { pixKey: string | null }) {
   }, [deferredCustomerSearch])
 
   useEffect(() => {
-    const controller = new AbortController()
-
-    async function loadLocalZones() {
-      setIsLoadingLocalZones(true)
-
-      try {
-        const response = await fetch("/api/shipping/local-zones", {
-          signal: controller.signal,
-        })
-
-        if (!response.ok) {
-          throw new Error("Falha ao carregar zonas locais.")
-        }
-
-        const payload = (await response.json()) as LocalZone[]
-        setLocalZones(payload)
-      } catch (error) {
-        if ((error as Error).name !== "AbortError") {
-          setLocalZones([])
-        }
-      } finally {
-        setIsLoadingLocalZones(false)
-      }
-    }
-
-    void loadLocalZones()
-
-    return () => controller.abort()
-  }, [])
-
-  useEffect(() => {
-    if (shippingType !== "NATIONAL") {
-      setShippingServices([])
-      setSelectedShippingServiceId("")
-      setIsCalculatingShipping(false)
-      setShippingFeedback(null)
-    }
-  }, [shippingType])
-
-  useEffect(() => {
-    if (shippingType === "NATIONAL") {
-      setSelectedShippingServiceId("")
-    }
-  }, [items, address.addressZip, shippingType])
-
-  useEffect(() => {
     function handlePointerDown(event: MouseEvent) {
       if (!customerSearchRef.current?.contains(event.target as Node)) {
         setCustomerSearch("")
@@ -373,36 +305,15 @@ export default function PdvManager({ pixKey }: { pixKey: string | null }) {
     }
   }, [])
 
-  const selectedLocalZone = useMemo(() => {
-    if (shippingType !== "LOCAL_DELIVERY") {
-      return null
-    }
-
-    return (
-      localZones.find(
-        (zone) =>
-          normalizeLocationValue(zone.city) === normalizeLocationValue(address.addressCity) &&
-          normalizeLocationValue(zone.state) === normalizeLocationValue(address.addressState || "CE"),
-      ) ?? null
-    )
-  }, [address.addressCity, address.addressState, localZones, shippingType])
-
-  const selectedShippingService = useMemo(
-    () => shippingServices.find((service) => service.id === selectedShippingServiceId) ?? null,
-    [selectedShippingServiceId, shippingServices],
-  )
-
-  const shippingCost = useMemo(() => {
-    if (shippingType === "PICKUP") {
-      return 0
-    }
-
-    if (shippingType === "LOCAL_DELIVERY") {
-      return selectedLocalZone?.price ?? 0
-    }
-
-    return selectedShippingService?.price ?? 0
-  }, [selectedLocalZone, selectedShippingService, shippingType])
+  const isEntregaBrabaAvailable = isDeliveryReady({
+    shippingType,
+    address,
+    store: {
+      addressCity: storeAddressCity,
+      addressState: storeAddressState,
+    },
+  })
+  const shippingCost = 0
 
   const subtotal = useMemo(
     () => items.reduce((sum, item) => sum + item.productPrice * item.quantity, 0),
@@ -423,11 +334,10 @@ export default function PdvManager({ pixKey }: { pixKey: string | null }) {
   const hasManualCustomerInfo = Boolean(
     walkInCustomerName.trim() || walkInCustomerEmail.trim() || walkInCustomerPhone.trim(),
   )
-  const isDeliveryReady =
+  const deliveryReady =
     shippingType === "PICKUP" ||
-    (shippingType === "LOCAL_DELIVERY" && selectedLocalZone !== null) ||
-    (shippingType === "NATIONAL" && selectedShippingService !== null)
-  const canSubmitOrder = items.length > 0 && isDeliveryReady
+    (shippingType === "LOCAL_DELIVERY" && isEntregaBrabaAvailable)
+  const canSubmitOrder = items.length > 0 && deliveryReady
   const selectedVariantQuantityMap = useMemo(
     () => new Map(items.map((item) => [item.variantId, item.quantity])),
     [items],
@@ -592,8 +502,6 @@ export default function PdvManager({ pixKey }: { pixKey: string | null }) {
     setAddress(EMPTY_ADDRESS)
     setItems([])
     setShippingType("PICKUP")
-    setShippingServices([])
-    setSelectedShippingServiceId("")
     setPaymentMethod("CASH")
     setPaymentStatus("PAID")
     setPaymentInstallments("1")
@@ -603,73 +511,6 @@ export default function PdvManager({ pixKey }: { pixKey: string | null }) {
     setDiscountAmount("")
     setCurrentOrderFeedback(null)
     setCheckoutFeedback(null)
-    setShippingFeedback(null)
-  }
-
-  async function handleCalculateNationalShipping() {
-    setShippingFeedback(null)
-
-    if (items.length === 0) {
-      setShippingFeedback({
-        type: "error",
-        message: "Adicione itens ao pedido antes de calcular o frete nacional.",
-      })
-      return
-    }
-
-    if (!address.addressZip.trim()) {
-      setShippingFeedback({
-        type: "error",
-        message: "Informe o CEP de entrega para calcular o frete nacional.",
-      })
-      return
-    }
-
-    setIsCalculatingShipping(true)
-
-    try {
-      const response = await fetch("/api/shipping/calculate", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          toPostalCode: address.addressZip,
-          items: items.map((item) => ({
-            productId: item.productId,
-            quantity: item.quantity,
-          })),
-        }),
-      })
-
-      if (!response.ok) {
-        const message = await parseErrorMessage(response)
-        setShippingFeedback({
-          type: "error",
-          message: message ?? "Não foi possível calcular o frete nacional.",
-        })
-        setShippingServices([])
-        return
-      }
-
-      const payload = (await response.json()) as { services: ShippingService[] }
-      setShippingServices(payload.services)
-      setSelectedShippingServiceId(payload.services[0]?.id ?? "")
-      setShippingFeedback({
-        type: "success",
-        message: payload.services.length > 0
-          ? "Frete calculado. Escolha o serviço desejado."
-          : "Nenhum serviço disponível para o CEP informado.",
-      })
-    } catch {
-      setShippingFeedback({
-        type: "error",
-        message: "Erro de conexão ao calcular o frete nacional.",
-      })
-      setShippingServices([])
-    } finally {
-      setIsCalculatingShipping(false)
-    }
   }
 
   function handleSubmit() {
@@ -701,7 +542,6 @@ export default function PdvManager({ pixKey }: { pixKey: string | null }) {
               quantity: item.quantity,
             })),
             shippingType,
-            shippingServiceId: shippingType === "NATIONAL" ? selectedShippingServiceId || null : null,
             address,
             paymentMethod,
             paymentStatus,
@@ -1322,13 +1162,9 @@ export default function PdvManager({ pixKey }: { pixKey: string | null }) {
                   <span>
                     {shippingType === "PICKUP"
                       ? "Retirada em loja"
-                      : shippingType === "LOCAL_DELIVERY"
-                        ? selectedLocalZone
-                          ? `${selectedLocalZone.city} • ${formatCurrency(selectedLocalZone.price)}`
-                          : "Entrega local pendente"
-                        : selectedShippingService
-                          ? `${selectedShippingService.carrier} • ${formatCurrency(selectedShippingService.price)}`
-                          : "Frete nacional pendente"}
+                      : isEntregaBrabaAvailable
+                        ? "Entrega Braba • Grátis"
+                        : "Entrega Braba indisponível"}
                   </span>
                 </div>
                 {appliedDiscountAmount > 0 ? (
@@ -1351,7 +1187,7 @@ export default function PdvManager({ pixKey }: { pixKey: string | null }) {
               <div>
                 <h2 className="font-heading text-sm uppercase tracking-wider text-white">Entrega</h2>
                 <p className="mt-1 text-sm text-gray-500">
-                  Escolha retirada, entrega local ou frete nacional conforme a venda.
+                  Escolha retirada ou Entrega Braba conforme a venda.
                 </p>
               </div>
             </div>
@@ -1365,8 +1201,7 @@ export default function PdvManager({ pixKey }: { pixKey: string | null }) {
                   className="input-admin"
                 >
                   <option value="PICKUP">Retirada na Loja</option>
-                  <option value="LOCAL_DELIVERY">Entrega Local</option>
-                  <option value="NATIONAL">Entrega Nacional</option>
+                  <option value="LOCAL_DELIVERY">Entrega Braba</option>
                 </select>
               </div>
 
@@ -1442,77 +1277,19 @@ export default function PdvManager({ pixKey }: { pixKey: string | null }) {
 
               {shippingType === "LOCAL_DELIVERY" ? (
                 <div className="rounded-sm border border-white/5 bg-black/30 px-4 py-4 text-sm">
-                  {isLoadingLocalZones ? (
-                    <p className="text-gray-400">Carregando zonas locais...</p>
-                  ) : selectedLocalZone ? (
+                  {isEntregaBrabaAvailable ? (
                     <>
-                      <p className="font-medium text-white">Entrega Local Disponível</p>
+                      <p className="font-medium text-white">Entrega Braba Disponível</p>
                       <p className="mt-2 text-gray-300">
-                        {selectedLocalZone.city}/{selectedLocalZone.state} • {formatCurrency(selectedLocalZone.price)}
+                        {storeAddressCity}/{storeAddressState} • Grátis
                       </p>
-                      <p className="text-xs text-gray-500">{selectedLocalZone.deadlineText}</p>
+                      <p className="text-xs text-gray-500">A confirmar pela loja</p>
                     </>
                   ) : (
                     <p className="text-gray-400">
-                      Informe uma cidade/estado atendidos para calcular a entrega local.
+                      Informe a mesma cidade e UF da loja para usar a Entrega Braba.
                     </p>
                   )}
-                </div>
-              ) : null}
-
-              {shippingType === "NATIONAL" ? (
-                <div className="space-y-4 rounded-sm border border-white/5 bg-black/30 px-4 py-4">
-                  <div>
-                    <p className="font-medium text-white">Frete Nacional</p>
-                    <p className="text-xs text-gray-500">
-                      O cálculo considera os itens atuais do pedido e o CEP informado.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleCalculateNationalShipping}
-                    disabled={isCalculatingShipping || items.length === 0}
-                    className="inline-flex items-center gap-2 rounded-sm border border-white/10 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-gray-200 transition-colors hover:border-[var(--color-primary)] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {isCalculatingShipping ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin" /> Calculando
-                      </>
-                    ) : (
-                      <>
-                        <Truck className="h-4 w-4" /> Calcular Frete
-                      </>
-                    )}
-                  </button>
-                </div>
-              ) : null}
-
-              {shippingFeedback ? (
-                <p
-                  className={`rounded-sm border px-4 py-3 text-sm ${
-                    shippingFeedback.type === "success"
-                      ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
-                      : "border-red-500/30 bg-red-500/10 text-red-300"
-                  }`}
-                >
-                  {shippingFeedback.message}
-                </p>
-              ) : null}
-
-              {shippingServices.length > 0 && shippingType === "NATIONAL" ? (
-                <div>
-                  <label className="label-admin">Serviço de Frete</label>
-                  <select
-                    value={selectedShippingServiceId}
-                    onChange={(event) => setSelectedShippingServiceId(event.target.value)}
-                    className="input-admin"
-                  >
-                    {shippingServices.map((service) => (
-                      <option key={service.id} value={service.id}>
-                        {service.carrier} • {service.name} • {formatCurrency(service.price)} • {service.deliveryTime}
-                      </option>
-                    ))}
-                  </select>
                 </div>
               ) : null}
             </div>
@@ -1679,14 +1456,12 @@ export default function PdvManager({ pixKey }: { pixKey: string | null }) {
                   <p className="mt-2 text-sm font-medium text-white">
                     {shippingType === "PICKUP"
                       ? "Retirada em loja"
-                      : shippingType === "LOCAL_DELIVERY"
-                        ? "Entrega local"
-                        : "Entrega nacional"}
+                      : "Entrega Braba"}
                   </p>
                   <p className="mt-1 text-xs text-gray-400">
                     {shippingType === "PICKUP"
                       ? "Pronta para concluir"
-                      : isDeliveryReady
+                      : deliveryReady
                         ? "Configuração concluída"
                         : "Configuração pendente"}
                   </p>
@@ -1726,7 +1501,7 @@ export default function PdvManager({ pixKey }: { pixKey: string | null }) {
                 </div>
               </div>
 
-              {!isDeliveryReady ? (
+              {!deliveryReady ? (
                 <p className="rounded-sm border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
                   Configure a entrega antes de concluir o pedido.
                 </p>

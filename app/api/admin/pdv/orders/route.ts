@@ -71,7 +71,6 @@ export async function POST(req: Request) {
       customerPhoneSnapshot,
       items: payload.items,
       shippingType: payload.shippingType,
-      shippingServiceId: payload.shippingServiceId,
       address: payload.address,
       paymentMethod: payload.paymentMethod,
       paymentStatus: payload.paymentStatus === "PAID" ? PaymentStatus.PAID : PaymentStatus.PENDING,

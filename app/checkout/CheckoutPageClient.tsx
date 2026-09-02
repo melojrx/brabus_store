@@ -11,7 +11,6 @@ import {
   LoaderCircle,
   MapPin,
   QrCode,
-  Truck,
 } from "lucide-react"
 import { useCartStore } from "@/store/cartStore"
 
@@ -25,22 +24,6 @@ type CheckoutAddress = {
   addressZip: string
 }
 
-type LocalZone = {
-  id: string
-  city: string
-  state: string
-  price: number
-  deadlineText: string
-}
-
-type NationalService = {
-  id: string
-  name: string
-  carrier: string
-  price: number
-  deliveryTime: string
-}
-
 type AddressLookupResult = {
   cep: string
   street: string
@@ -50,7 +33,7 @@ type AddressLookupResult = {
   complement: string
 }
 
-type ShippingTypeValue = "PICKUP" | "LOCAL_DELIVERY" | "NATIONAL"
+type ShippingTypeValue = "PICKUP" | "LOCAL_DELIVERY"
 type PublicCheckoutPaymentMethod = "MERCADO_PAGO_CARD" | "MERCADO_PAGO_PIX" | "CASH"
 
 const addressInputCls =
@@ -111,7 +94,49 @@ function getPaymentActionLabel(paymentMethod: PublicCheckoutPaymentMethod) {
   return "Confirmar"
 }
 
-export default function CheckoutPageClient({ pixKey }: { pixKey: string | null }) {
+export function getLocalDeliveryHelperText({
+  hasMatchingStoreLocation,
+  isLocalDeliveryAvailable,
+  addressCity,
+  addressState,
+}: {
+  hasMatchingStoreLocation: boolean
+  isLocalDeliveryAvailable: boolean
+  addressCity: string
+  addressState: string
+}) {
+  if (!hasMatchingStoreLocation) {
+    return `A Entrega Braba está disponível somente para ${addressCity} - ${addressState}.`
+  }
+
+  if (!isLocalDeliveryAvailable) {
+    return "Preencha o endereço completo para liberar esta opção."
+  }
+
+  return `Disponível para ${addressCity} - ${addressState}. Prazo a confirmar pela loja.`
+}
+
+export function isLocalDeliveryAvailable({
+  hasCompleteAddress,
+  hasMatchingStoreLocation,
+  addressZip,
+}: {
+  hasCompleteAddress: boolean
+  hasMatchingStoreLocation: boolean
+  addressZip: string
+}) {
+  return hasCompleteAddress && hasMatchingStoreLocation && addressZip.replace(/\D/g, "").length === 8
+}
+
+export default function CheckoutPageClient({
+  pixKey,
+  addressCity,
+  addressState,
+}: {
+  pixKey: string | null
+  addressCity: string
+  addressState: string
+}) {
   const { items, getTotal } = useCartStore()
   const { status } = useSession()
   const router = useRouter()
@@ -122,12 +147,8 @@ export default function CheckoutPageClient({ pixKey }: { pixKey: string | null }
   const [error, setError] = useState("")
   const [cashReceivedAmount, setCashReceivedAmount] = useState("")
   const [address, setAddress] = useState<CheckoutAddress>(initialAddress)
-  const [localZones, setLocalZones] = useState<LocalZone[]>([])
-  const [nationalServices, setNationalServices] = useState<NationalService[]>([])
-  const [selectedNationalServiceId, setSelectedNationalServiceId] = useState("")
   const [addressLookupError, setAddressLookupError] = useState("")
-  const [shippingLookupError, setShippingLookupError] = useState("")
-  const [shippingLookupLoading, setShippingLookupLoading] = useState(false)
+  const [addressLookupLoading, setAddressLookupLoading] = useState(false)
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -135,52 +156,25 @@ export default function CheckoutPageClient({ pixKey }: { pixKey: string | null }
     }
   }, [status, router])
 
-  useEffect(() => {
-    let cancelled = false
-
-    async function loadLocalZones() {
-      try {
-        const response = await fetch("/api/shipping/local-zones", { cache: "no-store" })
-        const data = (await response.json()) as LocalZone[] | { error?: string }
-
-        if (!response.ok || !Array.isArray(data)) {
-          return
-        }
-
-        if (!cancelled) {
-          setLocalZones(
-            data.map((zone) => ({
-              ...zone,
-              price: Number(zone.price),
-            })),
-          )
-        }
-      } catch (lookupError) {
-        console.error("Erro ao carregar zonas locais:", lookupError)
-      }
-    }
-
-    void loadLocalZones()
-
-    return () => {
-      cancelled = true
-    }
-  }, [])
-
   const zipDigits = normalizePostalCode(address.addressZip)
   const requiresAddress = shippingType !== "PICKUP"
-
-  const matchingLocalZone =
-    address.addressCity.trim() && address.addressState.trim()
-      ? localZones.find(
-          (zone) =>
-            normalizeLocationText(zone.city) === normalizeLocationText(address.addressCity) &&
-            normalizeLocationText(zone.state) === normalizeLocationText(address.addressState || "CE"),
-        ) ?? null
-      : null
-
-  const selectedNationalService =
-    nationalServices.find((service) => service.id === selectedNationalServiceId) ?? null
+  const hasMatchingStoreLocation =
+    Boolean(address.addressCity.trim() && address.addressState.trim()) &&
+    normalizeLocationText(address.addressCity) === normalizeLocationText(addressCity) &&
+    normalizeLocationText(address.addressState) === normalizeLocationText(addressState)
+  const hasCompleteAddress = [
+    address.addressStreet,
+    address.addressNumber,
+    address.addressNeighborhood,
+    address.addressCity,
+    address.addressState,
+    address.addressZip,
+  ].every((value) => value.trim().length > 0)
+  const localDeliveryAvailable = isLocalDeliveryAvailable({
+    hasCompleteAddress,
+    hasMatchingStoreLocation,
+    addressZip: address.addressZip,
+  })
 
   const resolvedShipping =
     shippingType === "PICKUP"
@@ -189,48 +183,25 @@ export default function CheckoutPageClient({ pixKey }: { pixKey: string | null }
           carrier: "Retirada na Loja",
           deadline: "Retirada imediata",
         }
-      : shippingType === "LOCAL_DELIVERY" && matchingLocalZone
-        ? {
-            cost: matchingLocalZone.price,
-            carrier: "Entrega Local",
-            deadline: matchingLocalZone.deadlineText,
-          }
-        : shippingType === "NATIONAL" && selectedNationalService
-          ? {
-              cost: selectedNationalService.price,
-              carrier: selectedNationalService.carrier,
-              deadline: selectedNationalService.deliveryTime,
-            }
-          : {
-              cost: 0,
-              carrier: null,
-              deadline: null,
-            }
-  const localDeliveryHelperText = matchingLocalZone
-    ? `${matchingLocalZone.city} - ${matchingLocalZone.state} · ${matchingLocalZone.deadlineText}`
-    : zipDigits.length === 8
-      ? "Este CEP não pertence a uma zona ativa de entrega local."
-      : "Informe um CEP atendido no Maciço de Baturité para liberar esta opção."
+      : {
+          cost: 0,
+          carrier: "Entrega Braba",
+          deadline: "A confirmar pela loja",
+        }
 
   useEffect(() => {
-    if (shippingType === "LOCAL_DELIVERY" && !matchingLocalZone) {
+    if (shippingType === "LOCAL_DELIVERY" && !localDeliveryAvailable) {
       setShippingType("PICKUP")
     }
-  }, [matchingLocalZone, shippingType])
+  }, [localDeliveryAvailable, shippingType])
 
   useEffect(() => {
     const mercadoPagoPixAvailable = Boolean(pixKey)
-    const cashAvailable = shippingType !== "NATIONAL"
 
     if (paymentMethod === "MERCADO_PAGO_PIX" && !mercadoPagoPixAvailable) {
       setPaymentMethod("MERCADO_PAGO_CARD")
-      return
     }
-
-    if (paymentMethod === "CASH" && !cashAvailable) {
-      setPaymentMethod("MERCADO_PAGO_CARD")
-    }
-  }, [paymentMethod, pixKey, shippingType])
+  }, [paymentMethod, pixKey])
 
   useEffect(() => {
     if (paymentMethod !== "CASH" && cashReceivedAmount) {
@@ -240,22 +211,18 @@ export default function CheckoutPageClient({ pixKey }: { pixKey: string | null }
 
   useEffect(() => {
     if (zipDigits.length !== 8) {
-      setNationalServices([])
-      setSelectedNationalServiceId("")
       setAddressLookupError("")
-      setShippingLookupError("")
-      setShippingLookupLoading(false)
+      setAddressLookupLoading(false)
       return
     }
 
     const controller = new AbortController()
     const timeoutId = window.setTimeout(async () => {
-      setShippingLookupLoading(true)
+      setAddressLookupLoading(true)
       setAddressLookupError("")
-      setShippingLookupError("")
 
-      const [addressResult, shippingResult] = await Promise.allSettled([
-        fetch(`/api/address/${zipDigits}`, {
+      try {
+        const addressResult = await fetch(`/api/address/${zipDigits}`, {
           cache: "no-store",
           signal: controller.signal,
         }).then(async (response) => {
@@ -266,73 +233,36 @@ export default function CheckoutPageClient({ pixKey }: { pixKey: string | null }
           }
 
           return data as AddressLookupResult
-        }),
-        fetch("/api/shipping/calculate", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          signal: controller.signal,
-          body: JSON.stringify({
-            toPostalCode: zipDigits,
-            items: items.map((item) => ({
-              productId: item.productId,
-              quantity: item.quantity,
-            })),
-          }),
-        }).then(async (response) => {
-          const data = (await response.json()) as
-            | { services: NationalService[] }
-            | { error?: string }
+        })
 
-          if (!response.ok || !("services" in data)) {
-            throw new Error(("error" in data && data.error) || "Não foi possível calcular o frete nacional.")
-          }
+        if (controller.signal.aborted) {
+          return
+        }
 
-          return data.services
-        }),
-      ])
-
-      if (controller.signal.aborted) {
-        return
-      }
-
-      if (addressResult.status === "fulfilled") {
         setAddress((current) => ({
           ...current,
           addressZip: formatPostalCode(zipDigits),
-          addressStreet: addressResult.value.street || current.addressStreet,
-          addressNeighborhood: addressResult.value.neighborhood || current.addressNeighborhood,
-          addressCity: addressResult.value.city || current.addressCity,
-          addressState: addressResult.value.state || current.addressState,
+          addressStreet: addressResult.street || current.addressStreet,
+          addressNeighborhood: addressResult.neighborhood || current.addressNeighborhood,
+          addressCity: addressResult.city || current.addressCity,
+          addressState: addressResult.state || current.addressState,
         }))
-      } else {
-        setAddressLookupError(addressResult.reason instanceof Error ? addressResult.reason.message : "CEP não encontrado.")
+      } catch (lookupError) {
+        if (!controller.signal.aborted) {
+          setAddressLookupError(lookupError instanceof Error ? lookupError.message : "CEP não encontrado.")
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setAddressLookupLoading(false)
+        }
       }
-
-      if (shippingResult.status === "fulfilled") {
-        setNationalServices(shippingResult.value)
-        setSelectedNationalServiceId((current) =>
-          shippingResult.value.some((service) => service.id === current)
-            ? current
-            : shippingResult.value[0]?.id ?? "",
-        )
-      } else {
-        setNationalServices([])
-        setSelectedNationalServiceId("")
-        setShippingLookupError(
-          shippingResult.reason instanceof Error
-            ? shippingResult.reason.message
-            : "Não foi possível calcular o frete nacional.",
-        )
-      }
-
-      setShippingLookupLoading(false)
     }, 800)
 
     return () => {
       controller.abort()
       window.clearTimeout(timeoutId)
     }
-  }, [items, zipDigits])
+  }, [zipDigits])
 
   if (items.length === 0) {
     return (
@@ -381,40 +311,18 @@ export default function CheckoutPageClient({ pixKey }: { pixKey: string | null }
       return `Preencha o endereço de entrega: ${missingFields.join(", ")}.`
     }
 
-    if (shippingType === "NATIONAL" && zipDigits.length !== 8) {
-      return "Informe um CEP válido para calcular o frete nacional."
-    }
-
     return null
   }
 
   const validateShippingSelection = () => {
-    if (shippingType === "LOCAL_DELIVERY" && !matchingLocalZone) {
-      return "A cidade informada não possui entrega local disponível."
-    }
-
-    if (shippingType === "NATIONAL") {
-      if (shippingLookupLoading) {
-        return "Aguarde o cálculo do frete nacional."
-      }
-
-      if (nationalServices.length === 0) {
-        return shippingLookupError || "Nenhuma transportadora disponível para este CEP."
-      }
-
-      if (!selectedNationalService) {
-        return "Selecione uma transportadora para o envio nacional."
-      }
+    if (shippingType === "LOCAL_DELIVERY" && !localDeliveryAvailable) {
+      return `A Entrega Braba está disponível somente para ${addressCity} - ${addressState}.`
     }
 
     return null
   }
 
   const validatePaymentSelection = () => {
-    if (shippingType === "NATIONAL" && paymentMethod === "CASH") {
-      return "Entrega nacional não aceita pagamento em dinheiro."
-    }
-
     if (paymentMethod === "CASH") {
       const parsedCashReceivedAmount = parseMoneyInput(cashReceivedAmount)
 
@@ -465,7 +373,6 @@ export default function CheckoutPageClient({ pixKey }: { pixKey: string | null }
           paymentMethod,
           cashReceivedAmount:
             paymentMethod === "CASH" ? parseMoneyInput(cashReceivedAmount) : null,
-          shippingServiceId: shippingType === "NATIONAL" ? selectedNationalService?.id ?? null : null,
           address: requiresAddress
             ? {
                 ...address,
@@ -508,10 +415,9 @@ export default function CheckoutPageClient({ pixKey }: { pixKey: string | null }
     parsedCashReceivedAmount >= estimatedTotal
       ? Number((parsedCashReceivedAmount - estimatedTotal).toFixed(2))
       : null
-  const availablePaymentMethods: PublicCheckoutPaymentMethod[] =
-    shippingType === "NATIONAL"
-      ? ["MERCADO_PAGO_CARD", "MERCADO_PAGO_PIX"]
-      : ["MERCADO_PAGO_CARD", "MERCADO_PAGO_PIX", "CASH"]
+  const availablePaymentMethods: PublicCheckoutPaymentMethod[] = pixKey
+    ? ["MERCADO_PAGO_CARD", "MERCADO_PAGO_PIX", "CASH"]
+    : ["MERCADO_PAGO_CARD", "CASH"]
 
   return (
     <div className="container mx-auto px-4 py-12 lg:py-20">
@@ -554,32 +460,10 @@ export default function CheckoutPageClient({ pixKey }: { pixKey: string | null }
 
               <label
                 className={`border rounded-sm p-4 cursor-pointer transition-all ${
-                  shippingType === "NATIONAL"
-                    ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5"
-                    : "border-white/10 hover:border-white/30"
-                }`}
-              >
-                <input
-                  type="radio"
-                  name="shipping"
-                  value="NATIONAL"
-                  checked={shippingType === "NATIONAL"}
-                  onChange={() => setShippingType("NATIONAL")}
-                  className="hidden"
-                />
-                <div className="flex justify-between items-center mb-2 gap-3">
-                  <span className="font-bold uppercase tracking-widest text-sm">Envio Nacional</span>
-                  <span className="text-white font-bold">Melhor Envio</span>
-                </div>
-                <p className="text-xs text-gray-400">Digite o CEP para carregar PAC, SEDEX, Jadlog e outras opções.</p>
-              </label>
-
-              <label
-                className={`border rounded-sm p-4 transition-all md:col-span-2 ${
                   shippingType === "LOCAL_DELIVERY"
                     ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5"
-                    : matchingLocalZone
-                      ? "border-white/10 hover:border-white/30 cursor-pointer"
+                  : localDeliveryAvailable
+                      ? "border-white/10 hover:border-white/30"
                       : "border-white/10 opacity-70 cursor-not-allowed"
                 }`}
               >
@@ -589,21 +473,26 @@ export default function CheckoutPageClient({ pixKey }: { pixKey: string | null }
                   value="LOCAL_DELIVERY"
                   checked={shippingType === "LOCAL_DELIVERY"}
                   onChange={() => {
-                    if (matchingLocalZone) {
+                    if (localDeliveryAvailable) {
                       setShippingType("LOCAL_DELIVERY")
                     }
                   }}
-                  disabled={!matchingLocalZone}
+                  disabled={!localDeliveryAvailable}
                   className="hidden"
                 />
-                <div className="flex items-center justify-between gap-3 mb-2">
-                  <span className="font-bold uppercase tracking-widest text-sm">Entrega Local</span>
-                  <span className={`font-bold ${matchingLocalZone ? "text-[var(--color-primary)]" : "text-gray-500"}`}>
-                    {matchingLocalZone ? formatCurrency(matchingLocalZone.price) : "Disponível sob consulta"}
+                <div className="flex justify-between items-center mb-2 gap-3">
+                  <span className="font-bold uppercase tracking-widest text-sm">Entrega Braba</span>
+                  <span className={localDeliveryAvailable ? "text-[var(--color-primary)] font-bold" : "text-gray-500 font-bold"}>
+                    Grátis
                   </span>
                 </div>
-                <p className={`text-xs ${matchingLocalZone ? "text-gray-400" : "text-gray-500"}`}>
-                  {localDeliveryHelperText}
+                <p className={`text-xs ${localDeliveryAvailable ? "text-gray-400" : "text-gray-500"}`}>
+                  {getLocalDeliveryHelperText({
+                    hasMatchingStoreLocation,
+                    isLocalDeliveryAvailable: localDeliveryAvailable,
+                    addressCity,
+                    addressState,
+                  })}
                 </p>
               </label>
             </div>
@@ -617,7 +506,7 @@ export default function CheckoutPageClient({ pixKey }: { pixKey: string | null }
               <div>
                 <h2 className="text-2xl font-heading tracking-wider uppercase">Endereço e CEP</h2>
                 <p className="text-sm text-gray-500 mt-2">
-                  Informe o CEP para carregar Melhor Envio e detectar automaticamente a entrega local por mototáxi.
+                  Informe o CEP para preencher seu endereço automaticamente.
                 </p>
               </div>
             </div>
@@ -669,75 +558,20 @@ export default function CheckoutPageClient({ pixKey }: { pixKey: string | null }
             </div>
 
             <div className="mt-4 space-y-2 text-sm">
-              {shippingLookupLoading && (
+              {addressLookupLoading && (
                 <div className="inline-flex items-center gap-2 text-gray-400">
                   <LoaderCircle className="w-4 h-4 animate-spin" />
-                  Consultando CEP e opções de frete...
+                  Consultando CEP...
                 </div>
               )}
-              {matchingLocalZone && (
+              {localDeliveryAvailable && (
                 <p className="text-emerald-400">
-                  Entrega local disponível para {matchingLocalZone.city} - {matchingLocalZone.state}.
+                  Entrega Braba disponível para {addressCity} - {addressState}.
                 </p>
               )}
               {addressLookupError && <p className="text-yellow-400">{addressLookupError}</p>}
-              {shippingLookupError && <p className="text-yellow-400">{shippingLookupError}</p>}
-              {!shippingLookupLoading && !shippingLookupError && zipDigits.length === 8 && nationalServices.length > 0 && (
-                <p className="text-emerald-400">Transportadoras carregadas para o CEP informado.</p>
-              )}
             </div>
           </div>
-
-          {shippingType === "NATIONAL" && requiresAddress && (
-            <div className="glass p-8 rounded-sm border border-white/5">
-              <div className="flex items-center gap-4 mb-6">
-                <div className="w-10 h-10 bg-[var(--color-primary)]/10 flex items-center justify-center rounded-full">
-                  <Truck className="w-5 h-5 text-[var(--color-primary)]" />
-                </div>
-                <h2 className="text-2xl font-heading tracking-wider uppercase">Transportadoras</h2>
-              </div>
-
-              {zipDigits.length !== 8 ? (
-                <p className="text-sm text-gray-400">Informe um CEP válido para carregar as opções do Melhor Envio.</p>
-              ) : shippingLookupLoading ? (
-                <div className="inline-flex items-center gap-2 text-gray-400 text-sm">
-                  <LoaderCircle className="w-4 h-4 animate-spin" />
-                  Calculando opções de frete...
-                </div>
-              ) : nationalServices.length === 0 ? (
-                <p className="text-sm text-gray-400">Nenhuma transportadora disponível para este CEP no momento.</p>
-              ) : (
-                <div className="space-y-3">
-                  {nationalServices.map((service) => (
-                    <label
-                      key={service.id}
-                      className={`flex cursor-pointer items-center justify-between gap-4 rounded-sm border p-4 transition-colors ${
-                        selectedNationalServiceId === service.id
-                          ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5"
-                          : "border-white/10 hover:border-white/30"
-                      }`}
-                    >
-                      <input
-                        type="radio"
-                        name="national-service"
-                        value={service.id}
-                        checked={selectedNationalServiceId === service.id}
-                        onChange={() => setSelectedNationalServiceId(service.id)}
-                        className="hidden"
-                      />
-                      <div>
-                        <p className="text-sm font-bold uppercase tracking-widest text-white">{service.name}</p>
-                        <p className="text-xs text-gray-400">
-                          {service.carrier} · {service.deliveryTime}
-                        </p>
-                      </div>
-                      <span className="text-sm font-bold text-[var(--color-primary)]">{formatCurrency(service.price)}</span>
-                    </label>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
 
           <div className="glass p-8 rounded-sm border border-white/5">
             <div className="flex items-center gap-4 mb-6">

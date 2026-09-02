@@ -14,13 +14,12 @@ import {
   calculateDiscountedOrderTotal,
 } from "@/lib/order-discount"
 import { dispatchOrderPaid } from "@/lib/webhooks/order-paid"
-import {
-  calculateOrderWeight,
-  fetchMelhorEnvioServices,
-  findLocalDeliveryZone,
-  normalizePostalCode,
-} from "@/lib/shipping"
+import { resolveDelivery } from "@/lib/delivery-policy"
 import { allocateOrderNumber } from "@/lib/order-number-service"
+import {
+  DEFAULT_STORE_ADDRESS_CITY,
+  DEFAULT_STORE_ADDRESS_STATE,
+} from "@/lib/store-settings"
 
 export type ManualOrderItemInput = {
   productId: string
@@ -46,7 +45,6 @@ export type ManualOrderCreateInput = {
   customerPhoneSnapshot?: string | null
   items: ManualOrderItemInput[]
   shippingType: ShippingType
-  shippingServiceId?: string | null
   address: ManualOrderAddressInput
   paymentMethod: "CASH" | "MANUAL_PIX" | "POS_DEBIT" | "POS_CREDIT"
   paymentStatus: "PENDING" | "PAID" | "FAILED" | "CANCELLED" | "REFUNDED"
@@ -116,7 +114,7 @@ function validateAddressForShipping(
   shippingType: ShippingType,
   address: ReturnType<typeof normalizeAddress>,
 ) {
-  if (shippingType === ShippingType.PICKUP) {
+  if (shippingType !== ShippingType.LOCAL_DELIVERY) {
     return
   }
 
@@ -196,6 +194,12 @@ export async function createManualOrder(
 
   const normalizedAddress = normalizeAddress(input.address)
   validateAddressForShipping(input.shippingType, normalizedAddress)
+  const storeSettings = await prisma.storeSettings.findFirst({
+    select: {
+      addressCity: true,
+      addressState: true,
+    },
+  })
 
   const variantIds = input.items.map((item) => item.productVariantId)
   const productIds = input.items.map((item) => item.productId)
@@ -228,9 +232,6 @@ export async function createManualOrder(
 
   const variantsById = new Map(variants.map((variant) => [variant.id, variant]))
   let total = 0
-  let shippingCost = 0
-  let shippingCarrier: string | null = null
-  let shippingDeadline: string | null = null
   const allowNegativeStock = input.channel === OrderChannel.PDV
 
   const orderItemsRecord: Prisma.OrderItemUncheckedCreateWithoutOrderInput[] = input.items.map((item) => {
@@ -267,66 +268,18 @@ export async function createManualOrder(
     }
   })
 
-  if (input.shippingType === ShippingType.PICKUP) {
-    shippingCarrier = "Retirada na Loja"
-    shippingDeadline = "Retirada imediata"
-  }
-
-  if (input.shippingType === ShippingType.LOCAL_DELIVERY) {
-    const localZone = await findLocalDeliveryZone(
-      prisma,
-      normalizedAddress.addressCity ?? "",
-      normalizedAddress.addressState,
-    )
-
-    if (!localZone) {
-      throw new Error("A cidade informada não possui entrega local disponível.")
-    }
-
-    shippingCost = localZone.price
-    shippingCarrier = "Entrega Local"
-    shippingDeadline = localZone.deadlineText
-  }
-
-  if (input.shippingType === ShippingType.NATIONAL) {
-    const destinationPostalCode = normalizePostalCode(normalizedAddress.addressZip ?? "")
-
-    if (!destinationPostalCode || destinationPostalCode.length !== 8) {
-      throw new Error("CEP inválido para entrega nacional.")
-    }
-
-    const weightKg = await calculateOrderWeight(
-      prisma,
-      input.items.map((item) => ({
-        productId: item.productId,
-        quantity: item.quantity,
-      })),
-    )
-
-    const availableServices = await fetchMelhorEnvioServices({
-      toPostalCode: destinationPostalCode,
-      weightKg,
-    })
-
-    if (availableServices.length === 0) {
-      throw new Error("Nenhuma opção de frete nacional disponível para este pedido.")
-    }
-
-    const selectedService = availableServices.find((service) => service.id === input.shippingServiceId)
-
-    if (!selectedService) {
-      throw new Error("Selecione um serviço de frete válido para entrega nacional.")
-    }
-
-    shippingCost = selectedService.price
-    shippingCarrier = selectedService.carrier
-    shippingDeadline = selectedService.deliveryTime
-    normalizedAddress.addressZip = destinationPostalCode
-  }
+  const delivery = resolveDelivery({
+    shippingType: input.shippingType,
+    address: normalizedAddress,
+    store: {
+      addressCity: storeSettings?.addressCity ?? DEFAULT_STORE_ADDRESS_CITY,
+      addressState: storeSettings?.addressState ?? DEFAULT_STORE_ADDRESS_STATE,
+    },
+  })
 
   const discountCalculation = calculateDiscountedOrderTotal({
     subtotal: total,
-    shippingCost,
+    shippingCost: delivery.cost,
     discountAmount: input.channel === OrderChannel.PDV ? input.discountAmount : null,
   })
   total = discountCalculation.total
@@ -397,9 +350,9 @@ export async function createManualOrder(
         orderNumber,
         total,
         shippingType: input.shippingType,
-        shippingCost,
-        shippingCarrier,
-        shippingDeadline,
+        shippingCost: delivery.cost,
+        shippingCarrier: delivery.carrier,
+        shippingDeadline: delivery.deadline,
         ...(input.shippingType !== ShippingType.PICKUP ? normalizedAddress : {}),
         items: {
           create: orderItemsRecord,

@@ -13,5 +13,11 @@ export default async function AdminPdvPage() {
 
   const storeSettings = await getPublicStoreSettings()
 
-  return <PdvManager pixKey={storeSettings.pixKey} />
+  return (
+    <PdvManager
+      pixKey={storeSettings.pixKey}
+      addressCity={storeSettings.addressCity}
+      addressState={storeSettings.addressState}
+    />
+  )
 }

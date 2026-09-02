@@ -228,6 +228,7 @@ export default function ProductDetailClient({ product }: { product: Product }) {
             product={product}
             selectedVariant={selectedVariant}
             selectionRequired={hasPendingSelection}
+            redirectToCart
           />
 
           <div className="mt-8 pt-8 border-t border-white/10 text-sm text-gray-400 space-y-2">

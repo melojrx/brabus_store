@@ -31,6 +31,36 @@ interface AddToCartButtonProps {
   selectedVariant?: ProductVariant | null
   selectionRequired?: boolean
   quantity?: number
+  redirectToCart?: boolean
+}
+
+export function getAddToCartNavigation({
+  redirectToCart,
+  shouldRedirectToProduct,
+  slug,
+}: {
+  redirectToCart: boolean
+  shouldRedirectToProduct: boolean
+  slug: string
+}) {
+  if (shouldRedirectToProduct) {
+    return `/products/${slug}`
+  }
+
+  return redirectToCart ? "/cart" : null
+}
+
+export function addItemAndNavigate<Item>(
+  addItem: (item: Item) => void,
+  item: Item,
+  route: string | null,
+  navigate: (route: string) => void,
+) {
+  addItem(item)
+
+  if (route) {
+    navigate(route)
+  }
 }
 
 export default function AddToCartButton({
@@ -39,6 +69,7 @@ export default function AddToCartButton({
   selectedVariant,
   selectionRequired = false,
   quantity = 1,
+  redirectToCart = false,
 }: AddToCartButtonProps) {
   const { addItem } = useCartStore()
   const router = useRouter()
@@ -51,18 +82,19 @@ export default function AddToCartButton({
     : sellableVariants.reduce((sum, variant) => sum + variant.stock, 0)
   const requiresSelection = selectionRequired && !selectedVariant
   const shouldRedirectToProduct = compact && !selectedVariant && sellableVariants.length > 1
+  const navigation = getAddToCartNavigation({ redirectToCart, shouldRedirectToProduct, slug: product.slug })
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault() // evitar navegação se dentro de Link
 
-    if (shouldRedirectToProduct) {
-      router.push(`/products/${product.slug}`)
+    if (navigation?.startsWith("/products/")) {
+      router.push(navigation)
       return
     }
 
     if (requiresSelection || availableStock === 0) return
 
-    addItem({
+    const item = {
       productId: product.id,
       productSlug: product.slug,
       productName: product.name,
@@ -75,7 +107,13 @@ export default function AddToCartButton({
       selectedSize: directVariant?.size ?? undefined,
       selectedColor: directVariant?.color ?? undefined,
       selectedFlavor: directVariant?.flavor ?? undefined,
-    })
+    }
+
+    addItemAndNavigate(addItem, item, navigation, router.push)
+
+    if (navigation) {
+      return
+    }
 
     setAdded(true)
     setTimeout(() => setAdded(false), 1500)

@@ -1,6 +1,7 @@
 import { hash } from "bcryptjs"
 import { PrismaClient, Role, ShippingType } from "@prisma/client"
 import { z } from "zod"
+import { normalizePostalCode } from "@/lib/delivery-policy"
 
 export const PDV_PAYMENT_METHOD_VALUES = [
   "CASH",
@@ -13,7 +14,6 @@ export const PDV_PAYMENT_STATUS_VALUES = ["PENDING", "PAID"] as const
 export const PDV_SHIPPING_TYPE_VALUES = [
   ShippingType.PICKUP,
   ShippingType.LOCAL_DELIVERY,
-  ShippingType.NATIONAL,
 ] as const
 
 export const PDV_WALK_IN_CUSTOMER_EMAIL = "pdv-balcao@brabus.local"
@@ -96,13 +96,6 @@ export const createPdvOrderSchema = z
       )
       .min(1, "Adicione ao menos um item ao pedido."),
     shippingType: z.enum(PDV_SHIPPING_TYPE_VALUES),
-    shippingServiceId: z
-      .string()
-      .trim()
-      .optional()
-      .nullable()
-      .or(z.literal(""))
-      .transform((value) => value || null),
     address: z.object({
       addressStreet: optionalTrimmedString(160, "A rua deve ter no máximo 160 caracteres."),
       addressNumber: optionalTrimmedString(30, "O número deve ter no máximo 30 caracteres."),
@@ -111,7 +104,7 @@ export const createPdvOrderSchema = z
       addressCity: optionalTrimmedString(120, "A cidade deve ter no máximo 120 caracteres."),
       addressState: optionalTrimmedString(80, "O estado deve ter no máximo 80 caracteres."),
       addressZip: optionalTrimmedString(20, "O CEP deve ter no máximo 20 caracteres."),
-    }),
+    }).optional().prefault({}),
     paymentMethod: z.enum(PDV_PAYMENT_METHOD_VALUES),
     paymentStatus: z.enum(PDV_PAYMENT_STATUS_VALUES),
     paymentInstallments: z
@@ -148,7 +141,7 @@ export const createPdvOrderSchema = z
       })
     }
 
-    if (data.shippingType !== ShippingType.PICKUP) {
+    if (data.shippingType === ShippingType.LOCAL_DELIVERY) {
       const requiredFields: Array<keyof typeof data.address> = [
         "addressStreet",
         "addressNumber",
@@ -167,15 +160,16 @@ export const createPdvOrderSchema = z
           })
         }
       }
+
+      if (normalizePostalCode(data.address.addressZip).length !== 8) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Informe um CEP válido para a Entrega Braba.",
+          path: ["address", "addressZip"],
+        })
+      }
     }
 
-    if (data.shippingType === ShippingType.NATIONAL && !data.shippingServiceId) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: "Selecione um serviço de frete para entrega nacional.",
-        path: ["shippingServiceId"],
-      })
-    }
   })
   .transform((data) => ({
     ...data,
