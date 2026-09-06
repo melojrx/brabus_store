@@ -509,7 +509,7 @@ export async function getAdminDashboardData(
   ])
 
   // buscar users dos pedidos pagos para nomes de clientes
-  const paidUserIds = [...new Set(paidOrders.map((o) => o.userId).filter(Boolean))]
+  const paidUserIds = [...new Set(paidOrders.map((o) => o.userId).filter((id): id is string => Boolean(id)))]
   const paidUsers =
     paidUserIds.length > 0
       ? await prisma.user.findMany({

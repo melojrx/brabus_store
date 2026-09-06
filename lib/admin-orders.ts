@@ -38,10 +38,24 @@ const adminOrderListInclude = Prisma.validator<Prisma.OrderInclude>()({
       phone: true,
     },
   },
+  customer: {
+    select: {
+      name: true,
+      email: true,
+      phone: true,
+    },
+  },
 })
 
 const adminOrderDetailInclude = Prisma.validator<Prisma.OrderInclude>()({
   user: {
+    select: {
+      name: true,
+      email: true,
+      phone: true,
+    },
+  },
+  customer: {
     select: {
       name: true,
       email: true,
@@ -208,16 +222,17 @@ export function normalizeOrdersPageSize(value: number | null | undefined) {
 }
 
 export function serializeAdminOrderListItem(order: AdminOrderListRecord) {
+  const customer = order.customer ?? order.user
   const customerEmail =
     order.customerEmailSnapshot ??
-    (order.user.email === PDV_WALK_IN_CUSTOMER_EMAIL ? "Não informado" : order.user.email)
+    (customer?.email === PDV_WALK_IN_CUSTOMER_EMAIL ? "Não informado" : customer?.email ?? "Não informado")
 
   return {
     id: order.id,
     orderNumber: order.orderNumber,
-    customerName: order.customerNameSnapshot ?? order.user.name,
+    customerName: order.customerNameSnapshot ?? customer?.name ?? "Cliente não informado",
     customerEmail,
-    customerPhone: order.customerPhoneSnapshot ?? order.user.phone,
+    customerPhone: order.customerPhoneSnapshot ?? customer?.phone ?? null,
     createdAt: order.createdAt.toISOString(),
     total: decimalToNumber(order.total),
     status: order.status as OrderStatusValue,

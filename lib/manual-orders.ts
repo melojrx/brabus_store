@@ -16,6 +16,7 @@ import {
 import { dispatchOrderPaid } from "@/lib/webhooks/order-paid"
 import { resolveDelivery } from "@/lib/delivery-policy"
 import { allocateOrderNumber } from "@/lib/order-number-service"
+import { assertFiadoCustomerEligible } from "@/lib/customer-credit"
 import {
   DEFAULT_STORE_ADDRESS_CITY,
   DEFAULT_STORE_ADDRESS_STATE,
@@ -38,7 +39,9 @@ export type ManualOrderAddressInput = {
 }
 
 export type ManualOrderCreateInput = {
-  userId: string
+  userId?: string | null
+  customerId?: string | null
+  actorUserId?: string | null
   channel: OrderChannel
   customerNameSnapshot?: string | null
   customerEmailSnapshot?: string | null
@@ -46,7 +49,7 @@ export type ManualOrderCreateInput = {
   items: ManualOrderItemInput[]
   shippingType: ShippingType
   address: ManualOrderAddressInput
-  paymentMethod: "CASH" | "MANUAL_PIX" | "POS_DEBIT" | "POS_CREDIT"
+  paymentMethod: "CASH" | "MANUAL_PIX" | "POS_DEBIT" | "POS_CREDIT" | "FIADO"
   paymentStatus: "PENDING" | "PAID" | "FAILED" | "CANCELLED" | "REFUNDED"
   paymentInstallments?: number | null
   manualPaymentReference?: string | null
@@ -192,6 +195,35 @@ export async function createManualOrder(
     throw new Error("Adicione ao menos um item ao pedido.")
   }
 
+  const isFiado = input.paymentMethod === "FIADO"
+  if (isFiado && (!input.customerId || !input.actorUserId)) {
+    throw new Error("Venda fiado exige cliente cadastrado e operador responsável.")
+  }
+  if (isFiado && input.paymentStatus !== PaymentStatus.PENDING) {
+    throw new Error("A venda fiado deve permanecer pendente até o recebimento.")
+  }
+
+  const fiadoCustomer = isFiado
+    ? await prisma.customer.findUnique({
+        where: { id: input.customerId! },
+        select: {
+          id: true,
+          name: true,
+          phone: true,
+          active: true,
+          creditBlocked: true,
+        },
+      })
+    : null
+
+  if (isFiado) {
+    if (!fiadoCustomer) {
+      throw new Error("Cliente não encontrado para a venda fiado.")
+    }
+
+    assertFiadoCustomerEligible(fiadoCustomer)
+  }
+
   const normalizedAddress = normalizeAddress(input.address)
   validateAddressForShipping(input.shippingType, normalizedAddress)
   const storeSettings = await prisma.storeSettings.findFirst({
@@ -318,16 +350,20 @@ export async function createManualOrder(
       createdAt: orderCreatedAt,
     })
 
-    if (input.paymentStatus === PaymentStatus.PAID) {
+    const shouldDecrementStock = input.paymentStatus === PaymentStatus.PAID || isFiado
+    if (shouldDecrementStock) {
       await decrementOrderItemStock(tx, stockItems, { allowNegativeStock })
     }
 
-    return tx.order.create({
+    const createdOrder = await tx.order.create({
       data: {
-        userId: input.userId,
+        userId: input.userId ?? null,
+        customerId: input.customerId ?? null,
         channel: input.channel,
         sellerId: input.sellerId ?? null,
-        status: input.paymentStatus === PaymentStatus.PAID ? OrderStatus.PAID : OrderStatus.PENDING,
+        status: isFiado
+          ? OrderStatus.DELIVERED
+          : input.paymentStatus === PaymentStatus.PAID ? OrderStatus.PAID : OrderStatus.PENDING,
         paymentMethod: input.paymentMethod,
         paymentStatus: input.paymentStatus,
         paymentInstallments:
@@ -360,9 +396,32 @@ export async function createManualOrder(
       },
       select: checkoutOrderSummarySelect,
     })
+
+    if (isFiado) {
+      const receivable = await tx.customerReceivable.create({
+        data: {
+          customerId: input.customerId!,
+          orderId: createdOrder.id,
+          originalAmount: total,
+          openAmount: total,
+        },
+      })
+      await tx.customerCreditEvent.create({
+        data: {
+          customerId: input.customerId!,
+          actorUserId: input.actorUserId!,
+          type: "RECEIVABLE_CREATED",
+          amount: total,
+          orderId: createdOrder.id,
+          receivableId: receivable.id,
+        },
+      })
+    }
+
+    return createdOrder
   })
 
-  if (input.paymentStatus === PaymentStatus.PAID) {
+  if (input.paymentStatus === PaymentStatus.PAID && !isFiado) {
     dispatchOrderPaid(createdOrder.id).catch(() => {})
   }
 

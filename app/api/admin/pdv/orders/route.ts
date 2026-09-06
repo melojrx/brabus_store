@@ -28,27 +28,29 @@ export async function POST(req: Request) {
 
     const [selectedCustomer, walkInCustomer] = await Promise.all([
       payload.customerId
-        ? prisma.user.findUnique({
+        ? prisma.customer.findUnique({
             where: { id: payload.customerId },
             select: {
               id: true,
               name: true,
               email: true,
               phone: true,
-              role: true,
+              userId: true,
+              active: true,
+              creditBlocked: true,
             },
           })
         : Promise.resolve(null),
       payload.customerId ? Promise.resolve(null) : ensurePdvWalkInCustomer(prisma),
     ])
 
-    if (payload.customerId && (!selectedCustomer || selectedCustomer.role !== "CUSTOMER")) {
+    if (payload.customerId && !selectedCustomer) {
       return NextResponse.json({ error: "Cliente inválido para a venda presencial." }, { status: 400 })
     }
 
-    const customerId = selectedCustomer?.id ?? walkInCustomer?.id
+    const userId = selectedCustomer?.userId ?? walkInCustomer?.id ?? null
 
-    if (!customerId) {
+    if (!userId && !selectedCustomer) {
       return NextResponse.json({ error: "Não foi possível resolver o cliente do pedido." }, { status: 500 })
     }
 
@@ -63,7 +65,9 @@ export async function POST(req: Request) {
       : payload.customerPhone
 
     const createdOrder = await createManualOrder(prisma, {
-      userId: customerId,
+      userId,
+      customerId: selectedCustomer?.id ?? null,
+      actorUserId: session.user.id,
       channel: OrderChannel.PDV,
       sellerId: seller?.id ?? null,
       customerNameSnapshot,
