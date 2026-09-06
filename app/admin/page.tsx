@@ -700,9 +700,9 @@ export default async function AdminDashboard({
         <div className="space-y-10">
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
             <MetricCard
-              title="Faturamento"
-              value={formatCurrency(dashboard.financial.cards.revenue)}
-              caption={`Itens vendidos em pedidos validados em ${dashboard.period.label.toLowerCase()}.`}
+              title="Recebido"
+              value={formatCurrency(dashboard.financial.cards.receivedRevenue)}
+              caption={`Entradas de caixa registradas em ${dashboard.period.label.toLowerCase()}.`}
               icon={<TrendingUp className="h-5 w-5" />}
             />
             <MetricCard
@@ -712,9 +712,9 @@ export default async function AdminDashboard({
               icon={<Wallet className="h-5 w-5" />}
             />
             <MetricCard
-              title="Lucro Bruto"
-              value={formatCurrency(dashboard.financial.cards.profit)}
-              caption="Diferenca entre faturamento e custo dos itens vendidos."
+              title="Títulos em Aberto"
+              value={formatCurrency(dashboard.financial.cards.openReceivables)}
+              caption="Saldo de vendas Fiado ainda não recebido."
               icon={<DollarSign className="h-5 w-5" />}
             />
             <MetricCard

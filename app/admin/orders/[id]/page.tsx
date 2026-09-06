@@ -60,11 +60,12 @@ export default async function AdminOrderDetailPage({ params }: { params: Promise
   const subtotal = order.items.reduce((acc, item) => acc + (item.unitPrice ?? item.price).toNumber() * item.quantity, 0)
   const discountAmount = order.discountAmount.toNumber()
   const displayOrderNumber = getOrderDisplayNumber(order)
-  const customerName = order.customerNameSnapshot ?? order.user.name
+  const customer = order.customer ?? order.user
+  const customerName = order.customerNameSnapshot ?? customer?.name ?? "Cliente não informado"
   const customerEmail =
     order.customerEmailSnapshot ??
-    (order.user.email === PDV_WALK_IN_CUSTOMER_EMAIL ? "Não informado" : order.user.email)
-  const customerPhone = order.customerPhoneSnapshot ?? order.user.phone
+    (customer?.email === PDV_WALK_IN_CUSTOMER_EMAIL ? "Não informado" : customer?.email ?? "Não informado")
+  const customerPhone = order.customerPhoneSnapshot ?? customer?.phone ?? null
 
   return (
     <div className="max-w-5xl space-y-8">

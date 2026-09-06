@@ -24,7 +24,7 @@ import {
   maskCurrencyInput,
   parseCurrencyInputValue,
 } from "@/lib/currency-input"
-import { buildPdvManualPixReference } from "@/lib/pdv"
+import { buildPdvManualPixReference, buildQuickPdvCustomerInput, canQuickRegisterPdvCustomer } from "@/lib/pdv"
 import { getPaymentMethodLabel } from "@/lib/payment-status"
 import { getExpiryBadgeClass } from "@/lib/expiry-utils"
 import { isDeliveryReady } from "@/lib/delivery-policy"
@@ -77,8 +77,9 @@ type PdvProductsResponse = {
 type PdvCustomer = {
   id: string
   name: string
-  email: string
+  email: string | null
   phone: string | null
+  creditBlocked: boolean
   addressStreet: string | null
   addressNumber: string | null
   addressComplement: string | null
@@ -171,7 +172,7 @@ export default function PdvManager({
   const [address, setAddress] = useState<AddressState>(EMPTY_ADDRESS)
   const [items, setItems] = useState<CartItem[]>([])
   const [shippingType, setShippingType] = useState<"PICKUP" | "LOCAL_DELIVERY">("PICKUP")
-  const [paymentMethod, setPaymentMethod] = useState<"CASH" | "MANUAL_PIX" | "POS_DEBIT" | "POS_CREDIT">("CASH")
+  const [paymentMethod, setPaymentMethod] = useState<"CASH" | "MANUAL_PIX" | "POS_DEBIT" | "POS_CREDIT" | "FIADO">("CASH")
   const [paymentStatus, setPaymentStatus] = useState<"PENDING" | "PAID">("PAID")
   const [paymentInstallments, setPaymentInstallments] = useState("1")
   const [manualPaymentReference, setManualPaymentReference] = useState("")
@@ -184,6 +185,7 @@ export default function PdvManager({
   const [checkoutFeedback, setCheckoutFeedback] = useState<Feedback>(null)
   const [isLoadingProducts, setIsLoadingProducts] = useState(false)
   const [isLoadingCustomers, setIsLoadingCustomers] = useState(false)
+  const [isCreatingCustomer, setIsCreatingCustomer] = useState(false)
   const [isSubmitting, startSubmitTransition] = useTransition()
   const deferredProductSearch = useDeferredValue(productSearch)
   const deferredCustomerSearch = useDeferredValue(customerSearch)
@@ -329,15 +331,30 @@ export default function PdvManager({
   const isCashPayment = paymentMethod === "CASH"
   const isManualPixPayment = paymentMethod === "MANUAL_PIX"
   const isCardTerminalPayment = paymentMethod === "POS_DEBIT" || paymentMethod === "POS_CREDIT"
+  const isFiadoPayment = paymentMethod === "FIADO"
   const shouldShowReference = isManualPixPayment || isCardTerminalPayment
   const shouldShowCustomerResults = customerSearch.trim().length >= 2
   const hasManualCustomerInfo = Boolean(
     walkInCustomerName.trim() || walkInCustomerEmail.trim() || walkInCustomerPhone.trim(),
   )
+  const canQuickRegisterCustomer = canQuickRegisterPdvCustomer({
+    selectedCustomerId: selectedCustomer?.id ?? null,
+    name: walkInCustomerName,
+    phone: walkInCustomerPhone,
+  })
   const deliveryReady =
     shippingType === "PICKUP" ||
     (shippingType === "LOCAL_DELIVERY" && isEntregaBrabaAvailable)
-  const canSubmitOrder = items.length > 0 && deliveryReady
+  const fiadoCustomerIssue = !isFiadoPayment
+    ? null
+    : !selectedCustomer
+      ? "Selecione um cliente cadastrado para vender fiado."
+      : selectedCustomer.creditBlocked
+        ? "O fiado está bloqueado para este cliente."
+        : !selectedCustomer.name.trim() || !selectedCustomer.phone?.trim()
+          ? "O cliente precisa ter nome e telefone cadastrados para comprar fiado."
+          : null
+  const canSubmitOrder = items.length > 0 && deliveryReady && !fiadoCustomerIssue
   const selectedVariantQuantityMap = useMemo(
     () => new Map(items.map((item) => [item.variantId, item.quantity])),
     [items],
@@ -484,12 +501,56 @@ export default function PdvManager({
     })
   }
 
+  function handlePaymentMethodChange(method: typeof paymentMethod) {
+    setPaymentMethod(method)
+
+    if (method === "FIADO") {
+      setPaymentStatus("PENDING")
+      setPaymentInstallments("1")
+      setManualPaymentReference("")
+      setCashReceivedAmount("")
+    }
+  }
+
   function handleClearCustomerInfo() {
     setSelectedCustomer(null)
     setCustomerSearch("")
     setWalkInCustomerName("")
     setWalkInCustomerEmail("")
     setWalkInCustomerPhone("")
+  }
+
+  async function handleQuickRegisterCustomer() {
+    try {
+      setIsCreatingCustomer(true)
+      setCurrentOrderFeedback(null)
+      const input = buildQuickPdvCustomerInput({
+        name: walkInCustomerName,
+        phone: walkInCustomerPhone,
+        email: walkInCustomerEmail,
+      })
+      const response = await fetch("/api/admin/customers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
+      })
+      const payload = await response.json()
+
+      if (!response.ok) {
+        setCurrentOrderFeedback({ type: "error", message: payload.error ?? "Não foi possível cadastrar o cliente." })
+        return
+      }
+
+      handleSelectCustomer({ ...payload.data, creditBlocked: false })
+      setCurrentOrderFeedback({ type: "success", message: "Cliente cadastrado e selecionado para esta venda." })
+    } catch (error) {
+      setCurrentOrderFeedback({
+        type: "error",
+        message: error instanceof Error ? error.message : "Não foi possível cadastrar o cliente.",
+      })
+    } finally {
+      setIsCreatingCustomer(false)
+    }
   }
 
   function resetForm() {
@@ -525,6 +586,14 @@ export default function PdvManager({
         return
       }
 
+      if (paymentMethod === "FIADO" && !selectedCustomer) {
+        setCheckoutFeedback({
+          type: "error",
+          message: "Selecione um cliente cadastrado para concluir uma venda fiado.",
+        })
+        return
+      }
+
       try {
         const response = await fetch("/api/admin/pdv/orders", {
           method: "POST",
@@ -546,9 +615,9 @@ export default function PdvManager({
             paymentMethod,
             paymentStatus,
             paymentInstallments: paymentMethod === "POS_CREDIT" ? paymentInstallments : null,
-            manualPaymentReference: shouldShowReference ? manualPaymentReference.trim() : null,
+            manualPaymentReference: paymentMethod !== "FIADO" && shouldShowReference ? manualPaymentReference.trim() : null,
             manualPaymentNotes: manualPaymentNotes.trim() || null,
-            cashReceivedAmount: isCashPayment && parsedCashReceivedAmount != null ? parsedCashReceivedAmount.toFixed(2) : null,
+            cashReceivedAmount: paymentMethod !== "FIADO" && isCashPayment && parsedCashReceivedAmount != null ? parsedCashReceivedAmount.toFixed(2) : null,
             discountAmount: appliedDiscountAmount > 0 ? appliedDiscountAmount.toFixed(2) : null,
             changeAmount: null,
           }),
@@ -1004,6 +1073,9 @@ export default function PdvManager({
                         <p className="font-medium text-white">{selectedCustomer.name}</p>
                         <p className="mt-1 text-gray-300">{selectedCustomer.email}</p>
                         {selectedCustomer.phone ? <p className="text-gray-400">{selectedCustomer.phone}</p> : null}
+                        {isFiadoPayment && fiadoCustomerIssue ? (
+                          <p className="mt-2 text-sm text-red-300">{fiadoCustomerIssue}</p>
+                        ) : null}
                       </div>
 
                       <button
@@ -1049,6 +1121,18 @@ export default function PdvManager({
                     />
                   </div>
                 </div>
+
+                {canQuickRegisterCustomer ? (
+                  <button
+                    type="button"
+                    onClick={() => void handleQuickRegisterCustomer()}
+                    disabled={isCreatingCustomer}
+                    className="inline-flex items-center justify-center gap-2 rounded-sm border border-[var(--color-primary)]/40 bg-[var(--color-primary)]/10 px-4 py-3 text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-primary)] transition-colors hover:bg-[var(--color-primary)]/20 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {isCreatingCustomer ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                    Cadastrar e selecionar cliente
+                  </button>
+                ) : null}
               </div>
             ) : null}
           </section>
@@ -1312,10 +1396,10 @@ export default function PdvManager({
                   <label className="label-admin">Método</label>
                   <select
                     value={paymentMethod}
-                    onChange={(event) => setPaymentMethod(event.target.value as typeof paymentMethod)}
+                    onChange={(event) => handlePaymentMethodChange(event.target.value as typeof paymentMethod)}
                     className="input-admin"
                   >
-                    {(["CASH", "MANUAL_PIX", "POS_DEBIT", "POS_CREDIT"] as const).map((method) => (
+                    {(["CASH", "MANUAL_PIX", "POS_DEBIT", "POS_CREDIT", "FIADO"] as const).map((method) => (
                       <option key={method} value={method}>
                         {getPaymentMethodLabel(method)}
                       </option>
@@ -1323,18 +1407,31 @@ export default function PdvManager({
                   </select>
                 </div>
 
-                <div>
-                  <label className="label-admin">Status Inicial</label>
-                  <select
-                    value={paymentStatus}
-                    onChange={(event) => setPaymentStatus(event.target.value as typeof paymentStatus)}
-                    className="input-admin"
-                  >
-                    <option value="PAID">Pago</option>
-                    <option value="PENDING">Pendente</option>
-                  </select>
-                </div>
+                {isFiadoPayment ? (
+                  <div>
+                    <label className="label-admin">Status Inicial</label>
+                    <div className="input-admin flex items-center text-amber-200">Pendente — a receber do cliente</div>
+                  </div>
+                ) : (
+                  <div>
+                    <label className="label-admin">Status Inicial</label>
+                    <select
+                      value={paymentStatus}
+                      onChange={(event) => setPaymentStatus(event.target.value as typeof paymentStatus)}
+                      className="input-admin"
+                    >
+                      <option value="PAID">Pago</option>
+                      <option value="PENDING">Pendente</option>
+                    </select>
+                  </div>
+                )}
               </div>
+
+              {isFiadoPayment ? (
+                <p className="rounded-sm border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+                  O estoque será baixado agora. O recebimento será registrado depois, na aba Títulos do cliente.
+                </p>
+              ) : null}
 
               <div>
                 <label className="label-admin">Desconto em R$</label>
@@ -1471,7 +1568,9 @@ export default function PdvManager({
                   <p className="text-xs font-bold uppercase tracking-[0.2em] text-gray-500">Pagamento</p>
                   <p className="mt-2 text-sm font-medium text-white">{getPaymentMethodLabel(paymentMethod)}</p>
                   <p className="mt-1 text-xs text-gray-400">
-                    {paymentStatus === "PAID" ? "Marcado como pago" : "Marcado como pendente"}
+                    {isFiadoPayment
+                      ? "A receber do cliente"
+                      : paymentStatus === "PAID" ? "Marcado como pago" : "Marcado como pendente"}
                   </p>
                 </div>
               </div>
@@ -1504,6 +1603,12 @@ export default function PdvManager({
               {!deliveryReady ? (
                 <p className="rounded-sm border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200">
                   Configure a entrega antes de concluir o pedido.
+                </p>
+              ) : null}
+
+              {fiadoCustomerIssue ? (
+                <p className="rounded-sm border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+                  {fiadoCustomerIssue}
                 </p>
               ) : null}
 

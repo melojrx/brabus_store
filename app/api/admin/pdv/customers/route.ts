@@ -38,6 +38,7 @@ export async function GET(req: Request) {
       email: true,
       phone: true,
       userId: true,
+      creditBlocked: true,
       addressStreet: true,
       addressNumber: true,
       addressComplement: true,
@@ -48,13 +49,12 @@ export async function GET(req: Request) {
     },
   })
 
-  // PDV needs userId for Order creation — map accordingly
   const mapped = customers.map((c) => ({
-    id: c.userId ?? c.id, // Use userId if linked, otherwise customer id (walk-in fallback)
-    customerId: c.id,
+    id: c.id,
     name: c.name,
     email: c.email,
     phone: c.phone,
+    creditBlocked: c.creditBlocked,
     addressStreet: c.addressStreet,
     addressNumber: c.addressNumber,
     addressComplement: c.addressComplement,

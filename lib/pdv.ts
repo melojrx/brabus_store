@@ -8,6 +8,7 @@ export const PDV_PAYMENT_METHOD_VALUES = [
   "MANUAL_PIX",
   "POS_DEBIT",
   "POS_CREDIT",
+  "FIADO",
 ] as const
 
 export const PDV_PAYMENT_STATUS_VALUES = ["PENDING", "PAID"] as const
@@ -18,6 +19,36 @@ export const PDV_SHIPPING_TYPE_VALUES = [
 
 export const PDV_WALK_IN_CUSTOMER_EMAIL = "pdv-balcao@brabus.local"
 const PDV_WALK_IN_CUSTOMER_PASSWORD = "pdv-balcao-interno"
+
+export type QuickPdvCustomerInput = {
+  name: string
+  phone: string
+  email: string | null
+}
+
+export function buildQuickPdvCustomerInput(input: {
+  name: string
+  phone: string
+  email: string
+}): QuickPdvCustomerInput {
+  const name = input.name.trim()
+  const phone = input.phone.trim()
+  const email = input.email.trim() || null
+
+  if (!name || !phone) {
+    throw new Error("Informe nome e telefone para cadastrar o cliente.")
+  }
+
+  return { name, phone, email }
+}
+
+export function canQuickRegisterPdvCustomer(input: {
+  selectedCustomerId: string | null
+  name: string
+  phone: string
+}) {
+  return !input.selectedCustomerId && Boolean(input.name.trim() && input.phone.trim())
+}
 
 function optionalTrimmedString(max: number, message: string) {
   return z
@@ -139,6 +170,32 @@ export const createPdvOrderSchema = z
         message: "Informe o parcelamento do cartão de crédito.",
         path: ["paymentInstallments"],
       })
+    }
+
+    if (data.paymentMethod === "FIADO") {
+      if (!data.customerId) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Selecione um cliente cadastrado para vender fiado.",
+          path: ["customerId"],
+        })
+      }
+
+      if (data.paymentStatus !== "PENDING") {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "A venda fiado deve permanecer pendente até o recebimento.",
+          path: ["paymentStatus"],
+        })
+      }
+
+      if (data.paymentInstallments || data.manualPaymentReference || data.cashReceivedAmount || data.changeAmount) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Fiado não aceita dados de pagamento imediato.",
+          path: ["paymentMethod"],
+        })
+      }
     }
 
     if (data.shippingType === ShippingType.LOCAL_DELIVERY) {

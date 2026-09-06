@@ -7,13 +7,12 @@ import OrderRowActions from "@/components/admin/OrderRowActions"
 import {
   ADMIN_ORDERS_PAGE_SIZE,
   getAdminOrders,
-  normalizeOrdersPage,
+  parseAdminOrdersQuery,
 } from "@/lib/admin-orders"
 import { getOrderDisplayNumber } from "@/lib/order-number"
 import {
   ADMIN_ORDER_STATUS_OPTIONS,
   getOrderStatusMeta,
-  parseAdminOrderStatusFilter,
 } from "@/lib/order-status"
 import { getPaymentMethodLabel, getPaymentStatusMeta } from "@/lib/payment-status"
 import prisma from "@/lib/prisma"
@@ -105,7 +104,7 @@ function PaginationLink({
 export default async function AdminOrdersPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string; status?: string }>
+  searchParams: Promise<Record<string, string | undefined>>
 }) {
   const session = await auth()
 
@@ -114,12 +113,12 @@ export default async function AdminOrdersPage({
   }
 
   const resolvedSearchParams = await searchParams
-  const page = normalizeOrdersPage(resolvedSearchParams.page ?? null)
-  const status = parseAdminOrderStatusFilter(resolvedSearchParams.status ?? null)
+  const filters = parseAdminOrdersQuery(new URLSearchParams(
+    Object.entries(resolvedSearchParams).filter((entry): entry is [string, string] => typeof entry[1] === "string"),
+  ))
   const orders = await getAdminOrders(prisma, {
-    page,
     pageSize: ADMIN_ORDERS_PAGE_SIZE,
-    status,
+    filters,
   })
 
   return (
@@ -143,6 +142,16 @@ export default async function AdminOrdersPage({
       </div>
 
       <section className="space-y-5">
+        <form className="grid gap-3 rounded-sm border border-white/5 bg-zinc-900 p-4 md:grid-cols-4">
+          <input name="q" defaultValue={filters.q} className="input-admin" placeholder="Cliente ou pedido" />
+          <input name="from" type="date" defaultValue={filters.from ?? ""} className="input-admin" />
+          <input name="to" type="date" defaultValue={filters.to ?? ""} className="input-admin" />
+          <select name="channel" defaultValue={filters.channel} className="input-admin"><option value="ALL">Todos os canais</option><option value="PDV">PDV</option><option value="ONLINE">Online</option><option value="LEGACY">Legado</option></select>
+          <select name="paymentMethod" defaultValue={filters.paymentMethod} className="input-admin"><option value="ALL">Todos os pagamentos</option><option value="FIADO">Fiado</option><option value="CASH">Dinheiro</option><option value="MANUAL_PIX">Pix manual</option><option value="POS_DEBIT">Débito</option><option value="POS_CREDIT">Crédito</option></select>
+          <select name="paymentStatus" defaultValue={filters.paymentStatus} className="input-admin"><option value="ALL">Todos os status financeiros</option><option value="PENDING">Pendente</option><option value="PAID">Pago</option></select>
+          <select name="receivableStatus" defaultValue={filters.receivableStatus} className="input-admin"><option value="ALL">Todos os títulos</option><option value="OPEN">Em aberto</option><option value="PARTIAL">Parcial</option><option value="SETTLED">Quitado</option></select>
+          <button className="rounded-sm bg-[var(--color-primary)] px-4 py-2 text-sm font-bold text-black">Filtrar</button>
+        </form>
         <div className="flex flex-wrap gap-3">
           {ADMIN_ORDER_STATUS_OPTIONS.map((option) => (
             <FilterLink

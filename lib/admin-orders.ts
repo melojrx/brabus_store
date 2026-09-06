@@ -1,4 +1,4 @@
-import { OrderStatus, PaymentStatus, Prisma, PrismaClient } from "@prisma/client"
+import { CustomerReceivableStatus, OrderChannel, OrderStatus, PaymentMethod, PaymentStatus, Prisma, PrismaClient } from "@prisma/client"
 import { z } from "zod"
 import {
   ADMIN_ORDER_STATUS_OPTIONS,
@@ -38,10 +38,25 @@ const adminOrderListInclude = Prisma.validator<Prisma.OrderInclude>()({
       phone: true,
     },
   },
+  customer: {
+    select: {
+      name: true,
+      email: true,
+      phone: true,
+    },
+  },
+  receivable: { select: { openAmount: true, status: true } },
 })
 
 const adminOrderDetailInclude = Prisma.validator<Prisma.OrderInclude>()({
   user: {
+    select: {
+      name: true,
+      email: true,
+      phone: true,
+    },
+  },
+  customer: {
     select: {
       name: true,
       email: true,
@@ -183,14 +198,34 @@ function decimalToNumber(value: { toNumber(): number } | number | null | undefin
   return typeof value === "number" ? value : value.toNumber()
 }
 
-function buildAdminOrdersWhere(status: AdminOrderStatusFilter): Prisma.OrderWhereInput {
-  if (status === "ALL") {
-    return {}
-  }
+export type AdminOrdersFilters = {
+  page: number
+  status: AdminOrderStatusFilter
+  q: string
+  from: string | null
+  to: string | null
+  channel: "ALL" | OrderChannel
+  paymentMethod: "ALL" | PaymentMethod
+  paymentStatus: "ALL" | PaymentStatus
+  receivableStatus: "ALL" | CustomerReceivableStatus
+}
 
-  return {
-    status,
-  }
+function buildAdminOrdersWhere(filters: AdminOrdersFilters): Prisma.OrderWhereInput {
+  const where: Prisma.OrderWhereInput = {}
+  if (filters.status !== "ALL") where.status = filters.status
+  if (filters.channel !== "ALL") where.channel = filters.channel
+  if (filters.paymentMethod !== "ALL") where.paymentMethod = filters.paymentMethod
+  if (filters.paymentStatus !== "ALL") where.paymentStatus = filters.paymentStatus
+  if (filters.receivableStatus !== "ALL") where.receivable = { status: filters.receivableStatus }
+  if (filters.from || filters.to) where.createdAt = { ...(filters.from ? { gte: new Date(`${filters.from}T00:00:00`) } : {}), ...(filters.to ? { lte: new Date(`${filters.to}T23:59:59.999`) } : {}) }
+  if (filters.q) where.OR = [
+    { orderNumber: { contains: filters.q, mode: "insensitive" } },
+    { customerNameSnapshot: { contains: filters.q, mode: "insensitive" } },
+    { customerPhoneSnapshot: { contains: filters.q, mode: "insensitive" } },
+    { customer: { is: { OR: [{ name: { contains: filters.q, mode: "insensitive" } }, { phone: { contains: filters.q, mode: "insensitive" } }] } } },
+    { user: { is: { OR: [{ name: { contains: filters.q, mode: "insensitive" } }, { phone: { contains: filters.q, mode: "insensitive" } }] } } },
+  ]
+  return where
 }
 
 export function normalizeOrdersPage(value: string | null | undefined) {
@@ -208,16 +243,17 @@ export function normalizeOrdersPageSize(value: number | null | undefined) {
 }
 
 export function serializeAdminOrderListItem(order: AdminOrderListRecord) {
+  const customer = order.customer ?? order.user
   const customerEmail =
     order.customerEmailSnapshot ??
-    (order.user.email === PDV_WALK_IN_CUSTOMER_EMAIL ? "Não informado" : order.user.email)
+    (customer?.email === PDV_WALK_IN_CUSTOMER_EMAIL ? "Não informado" : customer?.email ?? "Não informado")
 
   return {
     id: order.id,
     orderNumber: order.orderNumber,
-    customerName: order.customerNameSnapshot ?? order.user.name,
+    customerName: order.customerNameSnapshot ?? customer?.name ?? "Cliente não informado",
     customerEmail,
-    customerPhone: order.customerPhoneSnapshot ?? order.user.phone,
+    customerPhone: order.customerPhoneSnapshot ?? customer?.phone ?? null,
     createdAt: order.createdAt.toISOString(),
     total: decimalToNumber(order.total),
     status: order.status as OrderStatusValue,
@@ -226,6 +262,8 @@ export function serializeAdminOrderListItem(order: AdminOrderListRecord) {
     shippingType: order.shippingType,
     shippingCarrier: order.shippingCarrier,
     trackingCode: order.trackingCode,
+    receivableOpenAmount: order.receivable ? decimalToNumber(order.receivable.openAmount) : null,
+    receivableStatus: order.receivable?.status ?? null,
   }
 }
 
@@ -235,12 +273,17 @@ export async function getAdminOrders(
     page?: number
     pageSize?: number
     status?: AdminOrderStatusFilter
+    filters?: AdminOrdersFilters
   },
 ) {
-  const page = Math.max(1, options?.page ?? 1)
+  const filters = options?.filters ?? {
+    page: Math.max(1, options?.page ?? 1), status: options?.status ?? "ALL", q: "", from: null, to: null,
+    channel: "ALL", paymentMethod: "ALL", paymentStatus: "ALL", receivableStatus: "ALL",
+  }
+  const page = filters.page
   const pageSize = normalizeOrdersPageSize(options?.pageSize)
-  const status = options?.status ?? "ALL"
-  const where = buildAdminOrdersWhere(status)
+  const status = filters.status
+  const where = buildAdminOrdersWhere(filters)
 
   const [totalItems, orders] = await Promise.all([
     prisma.order.count({ where }),
@@ -255,7 +298,7 @@ export async function getAdminOrders(
 
   return {
     filters: {
-      status,
+      ...filters,
     },
     items: orders.map(serializeAdminOrderListItem),
     pagination: {
@@ -275,9 +318,17 @@ export async function getAdminOrderDetail(prisma: AdminOrderDetailClient, id: st
 }
 
 export function parseAdminOrdersQuery(searchParams: URLSearchParams) {
+  const enumValue = <T extends readonly string[]>(value: string | null, values: T) => value && values.includes(value) ? value as T[number] : "ALL" as const
   return {
     page: normalizeOrdersPage(searchParams.get("page")),
     status: parseAdminOrderStatusFilter(searchParams.get("status")),
+    q: searchParams.get("q")?.trim() ?? "",
+    from: searchParams.get("from") || null,
+    to: searchParams.get("to") || null,
+    channel: enumValue(searchParams.get("channel"), ["ONLINE", "PDV", "LEGACY"] as const),
+    paymentMethod: enumValue(searchParams.get("paymentMethod"), PAYMENT_METHOD_VALUES),
+    paymentStatus: enumValue(searchParams.get("paymentStatus"), PAYMENT_STATUS_VALUES),
+    receivableStatus: enumValue(searchParams.get("receivableStatus"), ["OPEN", "PARTIAL", "SETTLED", "CANCELLED"] as const),
   }
 }
 

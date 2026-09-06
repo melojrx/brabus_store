@@ -16,7 +16,8 @@ function isOnlinePaymentMethod(paymentMethod: PaymentMethod) {
 }
 
 export async function PATCH(_req: Request, { params }: { params: Promise<{ id: string }> }) {
-  if (!(await checkAdmin())) {
+  const session = await auth()
+  if (!isStaffRole(session?.user?.role)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
@@ -30,6 +31,7 @@ export async function PATCH(_req: Request, { params }: { params: Promise<{ id: s
         paymentMethod: true,
         paymentStatus: true,
         paidAt: true,
+        receivable: { include: { allocations: { include: { payment: { select: { reversedAt: true } } } } } },
         items: {
           select: {
             id: true,
@@ -45,7 +47,16 @@ export async function PATCH(_req: Request, { params }: { params: Promise<{ id: s
       return NextResponse.json({ error: "Pedido não encontrado." }, { status: 404 })
     }
 
-    if (!canAdminCancelOrder(order.status, order.paymentStatus)) {
+    const hasActiveFiadoReceipt = order.paymentMethod === PaymentMethod.FIADO &&
+      order.receivable?.allocations.some((allocation) => !allocation.payment.reversedAt)
+    if (hasActiveFiadoReceipt) {
+      return NextResponse.json(
+        { error: "Estorne os recebimentos deste título antes de cancelar a venda fiado." },
+        { status: 400 },
+      )
+    }
+
+    if (order.paymentMethod !== PaymentMethod.FIADO && !canAdminCancelOrder(order.status, order.paymentStatus)) {
       return NextResponse.json(
         { error: "Este pedido não pode mais ser cancelado pelo atalho da listagem." },
         { status: 400 },
@@ -67,6 +78,7 @@ export async function PATCH(_req: Request, { params }: { params: Promise<{ id: s
           paymentMethod: true,
           paymentStatus: true,
           paidAt: true,
+          receivable: { include: { allocations: { include: { payment: { select: { reversedAt: true } } } } } },
           items: {
             select: {
               id: true,
@@ -82,7 +94,13 @@ export async function PATCH(_req: Request, { params }: { params: Promise<{ id: s
         throw new Error("Pedido não encontrado durante o cancelamento.")
       }
 
-      if (!canAdminCancelOrder(currentOrder.status, currentOrder.paymentStatus)) {
+      const currentHasActiveFiadoReceipt = currentOrder.paymentMethod === PaymentMethod.FIADO &&
+        currentOrder.receivable?.allocations.some((allocation) => !allocation.payment.reversedAt)
+      if (currentHasActiveFiadoReceipt) {
+        throw new Error("Estorne os recebimentos deste título antes de cancelar a venda fiado.")
+      }
+
+      if (currentOrder.paymentMethod !== PaymentMethod.FIADO && !canAdminCancelOrder(currentOrder.status, currentOrder.paymentStatus)) {
         return tx.order.findUniqueOrThrow({
           where: { id },
           select: {
@@ -94,15 +112,35 @@ export async function PATCH(_req: Request, { params }: { params: Promise<{ id: s
         })
       }
 
-      const shouldReturnStock = currentOrder.paymentStatus === PaymentStatus.PAID
+      const isFiadoOrder = currentOrder.paymentMethod === PaymentMethod.FIADO
+      const shouldReturnStock = currentOrder.paymentStatus === PaymentStatus.PAID || isFiadoOrder
       const currentIsOnlineOrder = isOnlinePaymentMethod(currentOrder.paymentMethod)
-      const nextPaymentStatus =
+      const nextPaymentStatus = isFiadoOrder
+        ? PaymentStatus.CANCELLED
+        :
         currentIsOnlineOrder && shouldReturnStock ? PaymentStatus.REFUNDED : PaymentStatus.CANCELLED
       const nextStatus =
         nextPaymentStatus === PaymentStatus.REFUNDED ? OrderStatus.REFUNDED : OrderStatus.CANCELLED
 
       if (shouldReturnStock) {
         await incrementOrderItemStock(tx, currentOrder.items)
+      }
+
+      if (isFiadoOrder && currentOrder.receivable) {
+        await tx.customerReceivable.update({
+          where: { id: currentOrder.receivable.id },
+          data: { status: "CANCELLED", openAmount: 0, cancelledAt: new Date() },
+        })
+        await tx.customerCreditEvent.create({
+          data: {
+            customerId: currentOrder.receivable.customerId,
+            actorUserId: session!.user!.id,
+            type: "RECEIVABLE_CANCELLED",
+            amount: currentOrder.receivable.originalAmount,
+            orderId: currentOrder.id,
+            receivableId: currentOrder.receivable.id,
+          },
+        })
       }
 
       return tx.order.update({
