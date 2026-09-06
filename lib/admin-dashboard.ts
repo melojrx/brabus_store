@@ -410,6 +410,8 @@ export async function getAdminDashboardData(
     firstPaidOrder,
     productsCount,
     stockVariants,
+    receivedPayments,
+    openReceivables,
   ] = await Promise.all([
     prisma.order.count({
       where: orderDateFilter,
@@ -505,6 +507,14 @@ export async function getAdminDashboardData(
           },
         },
       },
+    }),
+    prisma.customerPayment.aggregate({
+      where: { reversedAt: null, ...(periodStartDate ? { receivedAt: { gte: periodStartDate } } : {}) },
+      _sum: { amount: true },
+    }),
+    prisma.customerReceivable.aggregate({
+      where: { status: { in: ["OPEN", "PARTIAL"] } },
+      _sum: { openAmount: true },
     }),
   ])
 
@@ -679,6 +689,8 @@ export async function getAdminDashboardData(
     financial: {
       cards: {
         revenue: currencyValue(grossRevenue),
+        receivedRevenue: currencyValue(decimalToNumber(receivedPayments._sum.amount)),
+        openReceivables: currencyValue(decimalToNumber(openReceivables._sum.openAmount)),
         cost: currencyValue(grossCost),
         profit: currencyValue(grossProfit),
         margin: grossMargin,
