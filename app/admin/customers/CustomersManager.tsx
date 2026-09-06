@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Link from "next/link"
 import { Loader2, Plus, Search, UserMinus, Pencil, X } from "lucide-react"
 import AdminInlineFeedback, { type AdminInlineFeedbackState } from "@/components/admin/AdminInlineFeedback"
 import type { SerializedCustomer } from "@/lib/customers"
@@ -376,6 +377,7 @@ export default function CustomersManager({
                   </td>
                   <td className="px-4 py-4">
                     <div className="flex items-center gap-2">
+                      <Link href={`/admin/customers/${c.id}`} className="rounded-sm border border-white/10 px-2 py-1.5 text-xs text-gray-300 hover:text-white">Detalhes</Link>
                       <button
                         type="button"
                         onClick={() => openEdit(c)}
