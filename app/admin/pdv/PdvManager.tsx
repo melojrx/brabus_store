@@ -24,7 +24,7 @@ import {
   maskCurrencyInput,
   parseCurrencyInputValue,
 } from "@/lib/currency-input"
-import { buildPdvManualPixReference } from "@/lib/pdv"
+import { buildPdvManualPixReference, buildQuickPdvCustomerInput, canQuickRegisterPdvCustomer } from "@/lib/pdv"
 import { getPaymentMethodLabel } from "@/lib/payment-status"
 import { getExpiryBadgeClass } from "@/lib/expiry-utils"
 import { isDeliveryReady } from "@/lib/delivery-policy"
@@ -185,6 +185,7 @@ export default function PdvManager({
   const [checkoutFeedback, setCheckoutFeedback] = useState<Feedback>(null)
   const [isLoadingProducts, setIsLoadingProducts] = useState(false)
   const [isLoadingCustomers, setIsLoadingCustomers] = useState(false)
+  const [isCreatingCustomer, setIsCreatingCustomer] = useState(false)
   const [isSubmitting, startSubmitTransition] = useTransition()
   const deferredProductSearch = useDeferredValue(productSearch)
   const deferredCustomerSearch = useDeferredValue(customerSearch)
@@ -336,6 +337,11 @@ export default function PdvManager({
   const hasManualCustomerInfo = Boolean(
     walkInCustomerName.trim() || walkInCustomerEmail.trim() || walkInCustomerPhone.trim(),
   )
+  const canQuickRegisterCustomer = canQuickRegisterPdvCustomer({
+    selectedCustomerId: selectedCustomer?.id ?? null,
+    name: walkInCustomerName,
+    phone: walkInCustomerPhone,
+  })
   const deliveryReady =
     shippingType === "PICKUP" ||
     (shippingType === "LOCAL_DELIVERY" && isEntregaBrabaAvailable)
@@ -512,6 +518,39 @@ export default function PdvManager({
     setWalkInCustomerName("")
     setWalkInCustomerEmail("")
     setWalkInCustomerPhone("")
+  }
+
+  async function handleQuickRegisterCustomer() {
+    try {
+      setIsCreatingCustomer(true)
+      setCurrentOrderFeedback(null)
+      const input = buildQuickPdvCustomerInput({
+        name: walkInCustomerName,
+        phone: walkInCustomerPhone,
+        email: walkInCustomerEmail,
+      })
+      const response = await fetch("/api/admin/customers", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(input),
+      })
+      const payload = await response.json()
+
+      if (!response.ok) {
+        setCurrentOrderFeedback({ type: "error", message: payload.error ?? "Não foi possível cadastrar o cliente." })
+        return
+      }
+
+      handleSelectCustomer({ ...payload.data, creditBlocked: false })
+      setCurrentOrderFeedback({ type: "success", message: "Cliente cadastrado e selecionado para esta venda." })
+    } catch (error) {
+      setCurrentOrderFeedback({
+        type: "error",
+        message: error instanceof Error ? error.message : "Não foi possível cadastrar o cliente.",
+      })
+    } finally {
+      setIsCreatingCustomer(false)
+    }
   }
 
   function resetForm() {
@@ -1082,6 +1121,18 @@ export default function PdvManager({
                     />
                   </div>
                 </div>
+
+                {canQuickRegisterCustomer ? (
+                  <button
+                    type="button"
+                    onClick={() => void handleQuickRegisterCustomer()}
+                    disabled={isCreatingCustomer}
+                    className="inline-flex items-center justify-center gap-2 rounded-sm border border-[var(--color-primary)]/40 bg-[var(--color-primary)]/10 px-4 py-3 text-xs font-bold uppercase tracking-[0.16em] text-[var(--color-primary)] transition-colors hover:bg-[var(--color-primary)]/20 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {isCreatingCustomer ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                    Cadastrar e selecionar cliente
+                  </button>
+                ) : null}
               </div>
             ) : null}
           </section>
