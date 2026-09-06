@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation"
+import { auth } from "@/auth"
 import prisma from "@/lib/prisma"
 import CustomerDetailClient from "./CustomerDetailClient"
 
@@ -11,5 +12,6 @@ export default async function CustomerDetailPage({ params }: { params: Promise<{
 
   if (!customer) notFound()
 
-  return <CustomerDetailClient customer={customer} />
+  const session = await auth()
+  return <CustomerDetailClient customer={customer} canManageCredit={session?.user?.role === "ADMIN"} />
 }
