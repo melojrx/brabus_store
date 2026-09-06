@@ -42,6 +42,23 @@ enum PaymentMethod {
   MANUAL_PIX
   POS_DEBIT
   POS_CREDIT
+  FIADO
+}
+
+enum CustomerReceivableStatus {
+  OPEN
+  PARTIAL
+  SETTLED
+  CANCELLED
+}
+
+enum CustomerCreditEventType {
+  RECEIVABLE_CREATED
+  RECEIVABLE_CANCELLED
+  PAYMENT_RECORDED
+  PAYMENT_REVERSED
+  CREDIT_BLOCKED
+  CREDIT_UNBLOCKED
 }
 
 enum PaymentStatus {
@@ -81,10 +98,14 @@ model User {
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
-  orders              Order[]
-  passwordResetTokens PasswordResetToken[]
-  customer            Customer?
-  seller              Seller?
+  orders                   Order[]
+  receivedCustomerPayments CustomerPayment[]     @relation("CustomerPaymentReceivedBy")
+  reversedCustomerPayments CustomerPayment[]     @relation("CustomerPaymentReversedBy")
+  customerCreditEvents     CustomerCreditEvent[] @relation("CustomerCreditEventActor")
+  creditBlockedCustomers   Customer[]            @relation("CustomerCreditBlockedBy")
+  passwordResetTokens      PasswordResetToken[]
+  customer                 Customer?
+  seller                   Seller?
 
   @@map("users")
 }
@@ -161,27 +182,27 @@ model Product {
 }
 
 model Order {
-  id              String        @id @default(cuid())
-  orderNumber     String?       @unique
-  status          OrderStatus   @default(PENDING)
-  channel         OrderChannel  @default(LEGACY)
-  paymentMethod   PaymentMethod @default(MERCADO_PAGO_CARD)
-  paymentStatus   PaymentStatus @default(PENDING)
-  paymentInstallments Int?
-  total           Decimal       @db.Decimal(10, 2)
-  stripeSessionId String?       @unique
-  stripePaymentId String?
-  mercadoPagoPaymentId  String?
+  id                      String        @id @default(cuid())
+  orderNumber             String?       @unique
+  status                  OrderStatus   @default(PENDING)
+  channel                 OrderChannel  @default(LEGACY)
+  paymentMethod           PaymentMethod @default(MERCADO_PAGO_CARD)
+  paymentStatus           PaymentStatus @default(PENDING)
+  paymentInstallments     Int?
+  total                   Decimal       @db.Decimal(10, 2)
+  stripeSessionId         String?       @unique
+  stripePaymentId         String?
+  mercadoPagoPaymentId    String?
   mercadoPagoPreferenceId String?
-  paidAt          DateTime?
-  manualPaymentReference String?
-  manualPaymentNotes     String?
-  cashReceivedAmount     Decimal? @db.Decimal(10, 2)
-  changeAmount           Decimal? @db.Decimal(10, 2)
-  discountAmount         Decimal  @default(0) @db.Decimal(10, 2)
-  customerNameSnapshot   String?
-  customerEmailSnapshot  String?
-  customerPhoneSnapshot  String?
+  paidAt                  DateTime?
+  manualPaymentReference  String?
+  manualPaymentNotes      String?
+  cashReceivedAmount      Decimal?      @db.Decimal(10, 2)
+  changeAmount            Decimal?      @db.Decimal(10, 2)
+  discountAmount          Decimal       @default(0) @db.Decimal(10, 2)
+  customerNameSnapshot    String?
+  customerEmailSnapshot   String?
+  customerPhoneSnapshot   String?
 
   // Modalidade e custo de entrega
   shippingType     ShippingType
@@ -203,14 +224,19 @@ model Order {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  userId String
-  user   User   @relation(fields: [userId], references: [id])
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id])
+
+  customerId String?
+  customer   Customer? @relation(fields: [customerId], references: [id])
 
   sellerId String?
   seller   Seller? @relation(fields: [sellerId], references: [id])
 
-  items OrderItem[]
+  items      OrderItem[]
+  receivable CustomerReceivable?
 
+  @@index([customerId])
   @@map("orders")
 }
 
@@ -257,8 +283,8 @@ model OrderItem {
 }
 
 model ProductVariant {
-  id        String   @id @default(cuid())
-  sku       String?  @unique
+  id        String    @id @default(cuid())
+  sku       String?   @unique
   name      String?
   size      String?
   color     String?
@@ -272,8 +298,8 @@ model ProductVariant {
   productId String
   product   Product @relation(fields: [productId], references: [id])
 
-  orderItems       OrderItem[]
-  expiryAlertLogs  ExpiryAlertLog[]
+  orderItems      OrderItem[]
+  expiryAlertLogs ExpiryAlertLog[]
 
   @@index([productId])
   @@index([expiresAt])
@@ -322,12 +348,12 @@ model StoreSettings {
 }
 
 model ExpiryAlertLog {
-  id         String   @id @default(cuid())
+  id         String         @id @default(cuid())
   variantId  String
   variant    ProductVariant @relation(fields: [variantId], references: [id], onDelete: Cascade)
-  alertLevel String   // "warning" | "critical" | "expired"
-  dateKey    String   // YYYY-MM-DD
-  createdAt  DateTime @default(now())
+  alertLevel String // "warning" | "critical" | "expired"
+  dateKey    String // YYYY-MM-DD
+  createdAt  DateTime       @default(now())
 
   @@unique([variantId, alertLevel, dateKey])
   @@index([dateKey])
@@ -339,33 +365,125 @@ model ExpiryAlertLog {
 // ─────────────────────────────────────────
 
 model Customer {
-  id                  String   @id @default(cuid())
-  name                String
-  email               String?
-  phone               String?
-  cpf                 String?  @unique
-  cnpj                String?  @unique
-  personType          String?  // "PF" | "PJ"
-  stateRegistration   String?  // Inscrição estadual (PJ)
-  addressStreet       String?
-  addressNumber       String?
-  addressComplement   String?
-  addressNeighborhood String?
-  addressCity         String?
-  addressState        String?
-  addressZip          String?
-  notes               String?
-  active              Boolean  @default(true)
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  id                    String    @id @default(cuid())
+  name                  String
+  email                 String?
+  phone                 String?
+  cpf                   String?   @unique
+  cnpj                  String?   @unique
+  personType            String? // "PF" | "PJ"
+  stateRegistration     String? // Inscrição estadual (PJ)
+  addressStreet         String?
+  addressNumber         String?
+  addressComplement     String?
+  addressNeighborhood   String?
+  addressCity           String?
+  addressState          String?
+  addressZip            String?
+  notes                 String?
+  active                Boolean   @default(true)
+  creditBlocked         Boolean   @default(false)
+  creditBlockedReason   String?
+  creditBlockedAt       DateTime?
+  creditBlockedByUserId String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
 
-  userId String? @unique
-  user   User?   @relation(fields: [userId], references: [id])
+  userId              String? @unique
+  user                User?   @relation(fields: [userId], references: [id])
+  creditBlockedByUser User?   @relation("CustomerCreditBlockedBy", fields: [creditBlockedByUserId], references: [id])
+
+  orders       Order[]
+  receivables  CustomerReceivable[]
+  payments     CustomerPayment[]
+  creditEvents CustomerCreditEvent[]
 
   @@index([email])
   @@index([phone])
   @@index([personType])
+  @@index([creditBlockedByUserId])
   @@map("customers")
+}
+
+model CustomerReceivable {
+  id             String                   @id @default(cuid())
+  orderId        String                   @unique
+  customerId     String
+  originalAmount Decimal                  @db.Decimal(10, 2)
+  openAmount     Decimal                  @db.Decimal(10, 2)
+  status         CustomerReceivableStatus @default(OPEN)
+  settledAt      DateTime?
+  cancelledAt    DateTime?
+  createdAt      DateTime                 @default(now())
+  updatedAt      DateTime                 @updatedAt
+
+  order       Order                       @relation(fields: [orderId], references: [id])
+  customer    Customer                    @relation(fields: [customerId], references: [id])
+  allocations CustomerPaymentAllocation[]
+
+  @@index([customerId, status, createdAt])
+  @@map("customer_receivables")
+}
+
+model CustomerPayment {
+  id               String        @id @default(cuid())
+  customerId       String
+  amount           Decimal       @db.Decimal(10, 2)
+  paymentMethod    PaymentMethod
+  reference        String?
+  notes            String?
+  receivedAt       DateTime      @default(now())
+  receivedByUserId String
+  idempotencyKey   String        @unique
+  reversedAt       DateTime?
+  reversedByUserId String?
+  reversalReason   String?
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  customer       Customer                    @relation(fields: [customerId], references: [id])
+  receivedByUser User                        @relation("CustomerPaymentReceivedBy", fields: [receivedByUserId], references: [id])
+  reversedByUser User?                       @relation("CustomerPaymentReversedBy", fields: [reversedByUserId], references: [id])
+  allocations    CustomerPaymentAllocation[]
+
+  @@index([customerId, receivedAt])
+  @@index([reversedByUserId])
+  @@map("customer_payments")
+}
+
+model CustomerPaymentAllocation {
+  id           String   @id @default(cuid())
+  paymentId    String
+  receivableId String
+  amount       Decimal  @db.Decimal(10, 2)
+  createdAt    DateTime @default(now())
+
+  payment    CustomerPayment    @relation(fields: [paymentId], references: [id])
+  receivable CustomerReceivable @relation(fields: [receivableId], references: [id])
+
+  @@unique([paymentId, receivableId])
+  @@index([receivableId])
+  @@map("customer_payment_allocations")
+}
+
+model CustomerCreditEvent {
+  id           String                  @id @default(cuid())
+  customerId   String
+  actorUserId  String
+  type         CustomerCreditEventType
+  amount       Decimal?                @db.Decimal(10, 2)
+  orderId      String?
+  receivableId String?
+  paymentId    String?
+  reason       String?
+  createdAt    DateTime                @default(now())
+
+  customer Customer @relation(fields: [customerId], references: [id])
+  actor    User     @relation("CustomerCreditEventActor", fields: [actorUserId], references: [id])
+
+  @@index([customerId, createdAt])
+  @@index([actorUserId])
+  @@map("customer_credit_events")
 }
 
 model Seller {
@@ -394,7 +512,7 @@ model Supplier {
   phone               String?
   cpf                 String?  @unique
   cnpj                String?  @unique
-  personType          String?  // "PF" | "PJ"
+  personType          String? // "PF" | "PJ"
   stateRegistration   String?
   contactName         String?
   addressStreet       String?
@@ -473,18 +591,18 @@ model WebhookEndpoint {
 }
 
 model WebhookDelivery {
-  id            String    @id @default(cuid())
+  id            String          @id @default(cuid())
   endpointId    String
   endpoint      WebhookEndpoint @relation(fields: [endpointId], references: [id], onDelete: Cascade)
   event         String
   payload       Json
   httpStatus    Int?
   responseBody  String?
-  success       Boolean   @default(false)
-  attempts      Int       @default(0)
+  success       Boolean         @default(false)
+  attempts      Int             @default(0)
   lastAttemptAt DateTime?
   nextRetryAt   DateTime?
-  createdAt     DateTime  @default(now())
+  createdAt     DateTime        @default(now())
 
   @@index([endpointId, createdAt])
   @@index([success, nextRetryAt])

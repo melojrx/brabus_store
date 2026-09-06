@@ -5,6 +5,7 @@ export const PAYMENT_METHOD_VALUES = [
   "MANUAL_PIX",
   "POS_DEBIT",
   "POS_CREDIT",
+  "FIADO",
 ] as const
 
 export const PAYMENT_STATUS_VALUES = [
@@ -26,6 +27,7 @@ export const PAYMENT_METHOD_LABELS: Record<PaymentMethodValue, string> = {
   MANUAL_PIX: "Pix Manual",
   POS_DEBIT: "Cartão Débito",
   POS_CREDIT: "Cartão Crédito",
+  FIADO: "Fiado",
 }
 
 export const PAYMENT_STATUS_META: Record<
