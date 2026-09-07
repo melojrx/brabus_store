@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/auth"
-import { isStaffRole } from "@/lib/auth-guard"
+import { isAdminRole } from "@/lib/auth-guard"
 import {
   DASHBOARD_ORDERS_PAGE_SIZE,
   getAdminDashboardData,
@@ -10,8 +10,12 @@ import prisma from "@/lib/prisma"
 
 export async function GET(req: Request) {
   const session = await auth()
-  if (!session || !isStaffRole(session.user?.role)) {
+  if (!session) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+
+  if (!isAdminRole(session.user?.role)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
   try {

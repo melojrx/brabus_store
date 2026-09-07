@@ -1,15 +1,16 @@
 "use client"
 
 import { Suspense, useState } from "react"
-import { signIn } from "next-auth/react"
+import { getSession, signIn } from "next-auth/react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Eye, EyeOff, LogIn, AlertCircle } from "lucide-react"
+import { resolvePostLoginDestination } from "@/lib/post-login-destination"
 
 function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const callbackUrl = searchParams.get("callbackUrl") || "/"
+  const callbackUrl = searchParams.get("callbackUrl")
   const registered = searchParams.get("registered") === "1"
   const passwordReset = searchParams.get("reset") === "1"
 
@@ -34,7 +35,8 @@ function LoginForm() {
       setError("Email ou senha inválidos. Verifique e tente novamente.")
       setLoading(false)
     } else {
-      router.push(callbackUrl)
+      const session = await getSession()
+      router.push(resolvePostLoginDestination(session?.user?.role, callbackUrl))
       router.refresh()
     }
   }

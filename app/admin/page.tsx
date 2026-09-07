@@ -25,6 +25,7 @@ import {
 } from "@/lib/admin-dashboard"
 import DashboardPeriodPicker from "@/components/admin/DashboardPeriodPicker"
 import prisma from "@/lib/prisma"
+import { isAdminRole } from "@/lib/auth-guard"
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("pt-BR", {
@@ -667,7 +668,7 @@ export default async function AdminDashboard({
 }) {
   const session = await auth()
 
-  if (!session || session.user?.role !== "ADMIN") {
+  if (!session || !isAdminRole(session.user?.role)) {
     redirect(session?.user?.role === "SELLER" ? "/admin/pdv" : "/")
   }
 

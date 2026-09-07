@@ -406,6 +406,7 @@ async function main() {
   await prisma.category.deleteMany()
   await prisma.localDeliveryZone.deleteMany()
   await prisma.storeSettings.deleteMany()
+  await prisma.seller.deleteMany()
   await prisma.user.deleteMany()
 
   const hashedPassword = await bcrypt.hash("Admin@123", 10)
@@ -418,6 +419,22 @@ async function main() {
     },
   })
   console.log(`Admin created: ${admin.email}`)
+
+  const seller = await prisma.user.create({
+    data: {
+      name: "Vendedor Brabus",
+      email: "seller@brabus.com",
+      password: await bcrypt.hash("Seller@123", 10),
+      role: Role.SELLER,
+      seller: {
+        create: {
+          name: "Vendedor Brabus",
+          email: "seller@brabus.com",
+        },
+      },
+    },
+  })
+  console.log(`Seller created: ${seller.email}`)
 
   await prisma.storeSettings.create({
     data: {
