@@ -12,6 +12,7 @@
     "expiry:check": "node --env-file=.env --import tsx scripts/check-expiry-alerts.ts",
     "expiry:seed-demo": "node --env-file=.env --import tsx scripts/seed-expiry-demo.ts",
     "fiado:seed-demo": "node --env-file=.env --import tsx scripts/seed-fiado-demo.ts",
+    "seller-sales:seed-demo": "node --env-file=.env --import tsx scripts/seed-seller-sales-demo.ts",
     "orders:backfill-number": "node --env-file=.env --import tsx scripts/backfill-order-numbers.ts",
     "prisma:generate": "prisma generate",
     "postinstall": "prisma generate"
