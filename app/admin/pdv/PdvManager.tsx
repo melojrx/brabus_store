@@ -665,7 +665,7 @@ export default function PdvManager({
         </div>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
+      <div data-testid="pdv-layout" className="grid gap-6 xl:grid-cols-[1.4fr_1fr]">
         <div className="space-y-6 xl:sticky xl:top-24 xl:self-start">
           <section className="rounded-sm border border-white/5 bg-zinc-900 p-6 xl:flex xl:h-[calc(100vh-8rem)] xl:flex-col">
             <div className="flex items-center gap-3">
@@ -841,7 +841,7 @@ export default function PdvManager({
                         ))}
                       </div>
                     ) : (
-                      <div className="overflow-x-auto rounded-sm border border-white/5">
+                      <div data-testid="pdv-product-table-scroll" className="overflow-x-auto rounded-sm border border-white/5">
                         <table className="min-w-full divide-y divide-white/5 text-sm">
                           <thead className="bg-black/30">
                             <tr className="text-left text-[11px] uppercase tracking-[0.2em] text-gray-500">
@@ -993,7 +993,7 @@ export default function PdvManager({
           </section>
         </div>
 
-        <div className="space-y-6 xl:sticky xl:top-24 xl:self-start">
+        <div data-testid="pdv-checkout-panel" className="space-y-6 xl:sticky xl:top-24 xl:self-start">
           <section className="rounded-sm border border-white/5 bg-zinc-900 p-6">
             <button
               type="button"
