@@ -18,7 +18,7 @@ export default async function AdminLayout({
     <div className="min-h-screen bg-black md:flex">
       <AdminNavigation />
 
-      <main className="min-w-0 flex-1 bg-background overflow-y-auto">
+      <main data-testid="admin-main" className="min-w-0 flex-1 bg-background overflow-y-auto">
         <div className="p-4 md:p-8">
           {children}
         </div>

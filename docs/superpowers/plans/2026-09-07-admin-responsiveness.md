@@ -29,6 +29,7 @@
 | `package.json` | Declare Playwright and `test:e2e`. |
 | `package-lock.json` | Lock the approved Playwright dependency graph. |
 | `.env.example` | Document `DATABASE_URL_E2E` without credentials. |
+| `.gitignore` | Keep Playwright failure artifacts out of version control. |
 | `scripts/run-e2e.ts` | Guard the E2E database, migrate it, seed it, then run Playwright with E2E-only environment values. |
 | `playwright.config.ts` | Start an isolated Next dev server on port 3100 and configure browser-test diagnostics. |
 | `tests/e2e/support/admin.ts` | Provide reproducible administrator login and layout assertions. |
@@ -42,6 +43,7 @@
 - Modify: `package.json`
 - Modify: `package-lock.json`
 - Modify: `.env.example`
+- Modify: `.gitignore`
 - Create: `scripts/run-e2e.ts`
 - Create: `playwright.config.ts`
 - Create: `tests/e2e/support/admin.ts`
@@ -74,6 +76,8 @@
   # Banco local exclusivo dos testes Playwright. O nome do banco deve terminar em _e2e.
   DATABASE_URL_E2E="postgresql://USER:PASSWORD@HOST:5432/brabus_store_e2e?schema=public"
   ```
+
+  Add `/test-results` to the testing section of `.gitignore` so screenshots and traces from failed browser runs remain local artifacts.
 
 - [ ] **Step 2: Create the guarded E2E runner before allowing any destructive seed.**
 
@@ -137,13 +141,15 @@
       trace: "on-first-retry",
     },
     webServer: {
-      command: "npm run dev -- --hostname 127.0.0.1 --port 3100",
+      command: "npm run build && npm run start -- --hostname 127.0.0.1 --port 3100",
       url: "http://127.0.0.1:3100",
       reuseExistingServer: false,
       timeout: 120_000,
     },
   })
   ```
+
+  The E2E server uses a production build followed by `next start` because this repository is intentionally executed in a single checkout without a second worktree. Next.js 16 places a development lock in `.next/dev`; using `next dev` here would conflict with an already running local development server.
 
 - [ ] **Step 4: Add stable, non-visual test boundaries.**
 
@@ -252,10 +258,10 @@
   Run:
 
   ```bash
-  npm run test:e2e -- --grep "1366x768.*recolhido"
+  npm run test:e2e -- --grep=1366x768
   ```
 
-  Expected: FAIL at `expectNoAdminHorizontalOverflow`, because the current default table forces the PDV grid wider than `admin-main` at 1366 px. Do not change layout until this failure is observed.
+  Expected: the two 1366 px tests FAIL at `expectNoAdminHorizontalOverflow`, because the current default table forces the PDV grid wider than `admin-main`. Do not change layout until this failure is observed.
 
 - [ ] **Step 8: Commit the isolated test foundation.**
 
@@ -279,7 +285,7 @@
   Run:
 
   ```bash
-  npm run test:e2e -- --grep "1366x768.*recolhido"
+  npm run test:e2e -- --grep=1366x768
   ```
 
   Expected: FAIL at the outer-overflow assertion, not at login, server startup, or product loading.
@@ -317,7 +323,7 @@
   Run:
 
   ```bash
-  npm run test:e2e -- --grep "^PDV não corta checkout"
+  npm run test:e2e -- --grep=PDV
   ```
 
   Expected: 8 passing tests — four viewports multiplied by two sidebar states. Each test proves no outer Admin overflow, a fully visible checkout panel, and local product-table overflow.
@@ -380,7 +386,7 @@
   Run:
 
   ```bash
-  npm run test:e2e -- --grep "Dashboard mantém"
+  npm run test:e2e -- --grep=Dashboard
   ```
 
   Expected: PASS. If it fails due to outer `admin-main` overflow, first identify the responsible chart or table wrapper and restrict overflow to that component; do not weaken the assertion.
