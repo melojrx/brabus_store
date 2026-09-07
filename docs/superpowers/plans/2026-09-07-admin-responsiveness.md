@@ -258,10 +258,10 @@
   Run:
 
   ```bash
-  npm run test:e2e -- --grep "1366x768.*recolhido"
+  npm run test:e2e -- --grep=1366x768
   ```
 
-  Expected: FAIL at `expectNoAdminHorizontalOverflow`, because the current default table forces the PDV grid wider than `admin-main` at 1366 px. Do not change layout until this failure is observed.
+  Expected: the two 1366 px tests FAIL at `expectNoAdminHorizontalOverflow`, because the current default table forces the PDV grid wider than `admin-main`. Do not change layout until this failure is observed.
 
 - [ ] **Step 8: Commit the isolated test foundation.**
 
@@ -285,7 +285,7 @@
   Run:
 
   ```bash
-  npm run test:e2e -- --grep "1366x768.*recolhido"
+  npm run test:e2e -- --grep=1366x768
   ```
 
   Expected: FAIL at the outer-overflow assertion, not at login, server startup, or product loading.
@@ -323,7 +323,7 @@
   Run:
 
   ```bash
-  npm run test:e2e -- --grep "^PDV não corta checkout"
+  npm run test:e2e -- --grep=PDV
   ```
 
   Expected: 8 passing tests — four viewports multiplied by two sidebar states. Each test proves no outer Admin overflow, a fully visible checkout panel, and local product-table overflow.
@@ -386,7 +386,7 @@
   Run:
 
   ```bash
-  npm run test:e2e -- --grep "Dashboard mantém"
+  npm run test:e2e -- --grep=Dashboard
   ```
 
   Expected: PASS. If it fails due to outer `admin-main` overflow, first identify the responsible chart or table wrapper and restrict overflow to that component; do not weaken the assertion.
