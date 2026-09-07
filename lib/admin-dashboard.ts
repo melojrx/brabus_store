@@ -12,7 +12,7 @@ export const DEFAULT_DASHBOARD_PERIOD: DashboardPeriod = "7d"
 export const DASHBOARD_ORDERS_PAGE_SIZE = 8
 export const LOW_STOCK_THRESHOLD = 10
 
-const paidStatuses = [OrderStatus.PAID, OrderStatus.SHIPPED, OrderStatus.DELIVERED]
+const paidStatuses: OrderStatus[] = [OrderStatus.PAID, OrderStatus.SHIPPED, OrderStatus.DELIVERED]
 const dayLabelFormatter = new Intl.DateTimeFormat("pt-BR", {
   day: "2-digit",
   month: "2-digit",
@@ -161,6 +161,39 @@ function decimalToNumber(value: { toNumber(): number } | number | null | undefin
 
 function currencyValue(value: number) {
   return Number.isFinite(value) ? value : 0
+}
+
+export function aggregatePdvSalesBySeller(orders: Array<{
+  channel: OrderChannel
+  status: OrderStatus
+  total: { toNumber(): number } | number
+  seller: { id: string; name: string } | null
+}>) {
+  const sales = new Map<string, { sellerId: string; name: string; orders: number; revenue: number }>()
+
+  for (const order of orders) {
+    if (order.channel !== OrderChannel.PDV || !paidStatuses.includes(order.status) || !order.seller) {
+      continue
+    }
+
+    const current = sales.get(order.seller.id) ?? {
+      sellerId: order.seller.id,
+      name: order.seller.name,
+      orders: 0,
+      revenue: 0,
+    }
+    current.orders += 1
+    current.revenue += decimalToNumber(order.total)
+    sales.set(current.sellerId, current)
+  }
+
+  return Array.from(sales.values())
+    .map((item) => ({
+      ...item,
+      revenue: currencyValue(item.revenue),
+      averageTicket: currencyValue(item.revenue / item.orders),
+    }))
+    .sort((left, right) => right.revenue - left.revenue)
 }
 
 function getDashboardPeriodOption(period: DashboardPeriod) {
@@ -429,7 +462,14 @@ export async function getAdminDashboardData(
         createdAt: true,
         paymentMethod: true,
         channel: true,
+        status: true,
         userId: true,
+        seller: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     }),
     prisma.orderItem.findMany({
@@ -530,6 +570,7 @@ export async function getAdminDashboardData(
   const userNameMap = new Map(
     paidUsers.map((u) => [u.id, u.name || u.email?.split("@")[0] || "Cliente sem identificacao"]),
   )
+  const salesBySeller = aggregatePdvSalesBySeller(paidOrders)
 
   const timeline = createTimelineBuckets(normalizedPeriod, parseFirstPaidAt(firstPaidOrder), now)
   const paymentMethodSales = new Map<string, number>()
@@ -742,6 +783,7 @@ export async function getAdminDashboardData(
         }))
         .sort((left, right) => right.revenue - left.revenue)
         .slice(0, 10),
+      salesBySeller,
     },
     stock: {
       cards: {

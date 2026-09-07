@@ -30,7 +30,7 @@
 - Produces: `dashboard.commercial.salesBySeller` com o retorno da agregação.
 - Consumes: objetos de pedido com `channel`, `status`, `total` e `seller` opcional.
 
-- [ ] **Step 1: Escrever testes para a regra comercial de vendedor**
+- [x] **Step 1: Escrever testes para a regra comercial de vendedor**
 
 ```ts
 import assert from "node:assert/strict"
@@ -60,13 +60,13 @@ test("sorts seller sales by revenue", () => {
 })
 ```
 
-- [ ] **Step 2: Executar o teste para verificar o estado RED**
+- [x] **Step 2: Executar o teste para verificar o estado RED**
 
 Run: `node --import tsx --test tests/admin-dashboard.test.ts`
 
 Expected: FAIL com `aggregatePdvSalesBySeller is not a function` porque a agregação ainda não existe.
 
-- [ ] **Step 3: Implementar a agregação pura em `lib/admin-dashboard.ts`**
+- [x] **Step 3: Implementar a agregação pura em `lib/admin-dashboard.ts`**
 
 ```ts
 export function aggregatePdvSalesBySeller(orders: Array<{
@@ -91,7 +91,7 @@ export function aggregatePdvSalesBySeller(orders: Array<{
 }
 ```
 
-- [ ] **Step 4: Incluir os campos necessários na consulta e expor o retorno comercial**
+- [x] **Step 4: Incluir os campos necessários na consulta e expor o retorno comercial**
 
 ```ts
 const paidOrders = await prisma.order.findMany({
@@ -121,7 +121,7 @@ commercial: {
 }
 ```
 
-- [ ] **Step 5: Criar a tabela no padrão comercial existente em `app/admin/page.tsx`**
+- [x] **Step 5: Criar a tabela no padrão comercial existente em `app/admin/page.tsx`**
 
 ```tsx
 function SalesBySellerTable({ items }: { items: ReadonlyArray<{ sellerId: string; name: string; orders: number; revenue: number; averageTicket: number }> }) {
@@ -138,19 +138,19 @@ function SalesBySellerTable({ items }: { items: ReadonlyArray<{ sellerId: string
 <SalesBySellerTable items={dashboard.commercial.salesBySeller} />
 ```
 
-- [ ] **Step 6: Executar o teste específico e a suíte completa para verificar o estado GREEN**
+- [x] **Step 6: Executar o teste específico e a suíte completa para verificar o estado GREEN**
 
 Run: `node --import tsx --test tests/admin-dashboard.test.ts && npm test`
 
 Expected: PASS, com canal online, pedido pendente e pedido sem vendedor excluídos; os testes existentes de checkout, PDV e títulos também permanecem verdes.
 
-- [ ] **Step 7: Validar lint, build e integridade do diff**
+- [x] **Step 7: Validar lint, build e integridade do diff**
 
 Run: `npm run lint -- . && npm run build && git diff --check`
 
 Expected: build aprovado e nenhum erro de lint introduzido.
 
-- [ ] **Step 8: Registrar a entrega**
+- [x] **Step 8: Registrar a entrega**
 
 ```bash
 git add lib/admin-dashboard.ts app/admin/page.tsx tests/admin-dashboard.test.ts docs/superpowers/plans/2026-09-07-pdv-sales-by-seller.md
