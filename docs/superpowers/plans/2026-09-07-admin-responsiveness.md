@@ -137,13 +137,15 @@
       trace: "on-first-retry",
     },
     webServer: {
-      command: "npm run dev -- --hostname 127.0.0.1 --port 3100",
+      command: "npm run build && npm run start -- --hostname 127.0.0.1 --port 3100",
       url: "http://127.0.0.1:3100",
       reuseExistingServer: false,
       timeout: 120_000,
     },
   })
   ```
+
+  The E2E server uses a production build followed by `next start` because this repository is intentionally executed in a single checkout without a second worktree. Next.js 16 places a development lock in `.next/dev`; using `next dev` here would conflict with an already running local development server.
 
 - [ ] **Step 4: Add stable, non-visual test boundaries.**
 
