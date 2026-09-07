@@ -29,6 +29,7 @@
 | `package.json` | Declare Playwright and `test:e2e`. |
 | `package-lock.json` | Lock the approved Playwright dependency graph. |
 | `.env.example` | Document `DATABASE_URL_E2E` without credentials. |
+| `.gitignore` | Keep Playwright failure artifacts out of version control. |
 | `scripts/run-e2e.ts` | Guard the E2E database, migrate it, seed it, then run Playwright with E2E-only environment values. |
 | `playwright.config.ts` | Start an isolated Next dev server on port 3100 and configure browser-test diagnostics. |
 | `tests/e2e/support/admin.ts` | Provide reproducible administrator login and layout assertions. |
@@ -42,6 +43,7 @@
 - Modify: `package.json`
 - Modify: `package-lock.json`
 - Modify: `.env.example`
+- Modify: `.gitignore`
 - Create: `scripts/run-e2e.ts`
 - Create: `playwright.config.ts`
 - Create: `tests/e2e/support/admin.ts`
@@ -74,6 +76,8 @@
   # Banco local exclusivo dos testes Playwright. O nome do banco deve terminar em _e2e.
   DATABASE_URL_E2E="postgresql://USER:PASSWORD@HOST:5432/brabus_store_e2e?schema=public"
   ```
+
+  Add `/test-results` to the testing section of `.gitignore` so screenshots and traces from failed browser runs remain local artifacts.
 
 - [ ] **Step 2: Create the guarded E2E runner before allowing any destructive seed.**
 
