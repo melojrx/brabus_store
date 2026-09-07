@@ -97,7 +97,7 @@ test("descarta retornos externos e páginas de autenticação", () => {
 
 - [ ] **Step 2: executar os testes para confirmar a falha inicial**
 
-Run: `npm test -- tests/auth-guard.test.ts tests/post-login-destination.test.ts`
+Run: `node --import tsx --test tests/auth-guard.test.ts tests/post-login-destination.test.ts`
 
 Expected: FAIL porque `isAdminRole` e `lib/post-login-destination.ts` ainda não existem.
 
@@ -145,7 +145,7 @@ export function resolvePostLoginDestination(role: AuthenticatedRole, callbackUrl
 
 - [ ] **Step 4: executar novamente os testes focados**
 
-Run: `npm test -- tests/auth-guard.test.ts tests/post-login-destination.test.ts`
+Run: `node --import tsx --test tests/auth-guard.test.ts tests/post-login-destination.test.ts`
 
 Expected: PASS para todos os cenários de perfil, retorno interno e URL insegura.
 
@@ -339,7 +339,7 @@ const adminLink = session.user.role === "SELLER" ? "/admin/pdv" : "/admin"
 
 - [ ] **Step 3: executar os testes unitários e E2E focados**
 
-Run: `npm test -- tests/auth-guard.test.ts tests/post-login-destination.test.ts`
+Run: `node --import tsx --test tests/auth-guard.test.ts tests/post-login-destination.test.ts`
 
 Expected: PASS; o helper de destino e a regra exclusiva de administrador permanecem cobertos.
 
