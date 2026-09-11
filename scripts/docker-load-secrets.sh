@@ -10,7 +10,10 @@ load_brabustore_secret() {
   fi
 
   value=$(cat "$file")
-  if [ "$name" = 'INTEGRATION_API_KEY_PEPPER' ] && [ "$value" = '__BRABUS_EMPTY__' ]; then
+  if [ "$value" = '__BRABUS_EMPTY__' ] && {
+    [ "$name" = 'INTEGRATION_API_KEY_PEPPER' ] ||
+    [ "$name" = 'MERCADO_PAGO_WEBHOOK_SECRET' ]
+  }; then
     value=''
   fi
   export "$name=$value"
