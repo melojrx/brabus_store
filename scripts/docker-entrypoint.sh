@@ -1,10 +1,8 @@
 #!/bin/sh
 set -eu
 
-mkdir -p /app/public/uploads/products
-
 echo "Running Prisma migrations..."
-npx prisma migrate deploy
+docker-migrate.sh
 
 echo "Starting Next.js..."
-exec node server.js
+exec docker-start.sh

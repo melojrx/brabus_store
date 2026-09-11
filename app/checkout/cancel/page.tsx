@@ -1,5 +1,8 @@
 import Link from "next/link"
 import { XCircle, ArrowLeft } from "lucide-react"
+import OnlineSalesUnavailable from "@/components/OnlineSalesUnavailable"
+import { isOnlineSalesEnabled } from "@/lib/online-sales"
+import { getPublicStoreSettings } from "@/lib/store-settings"
 
 export default async function CheckoutCancelPage({
   searchParams,
@@ -7,6 +10,11 @@ export default async function CheckoutCancelPage({
   searchParams: Promise<{ order_id?: string }>
 }) {
   const { order_id: orderId } = await searchParams
+
+  if (!isOnlineSalesEnabled()) {
+    const storeSettings = await getPublicStoreSettings()
+    return <OnlineSalesUnavailable whatsapp={storeSettings.whatsapp} />
+  }
 
   return (
     <div className="container mx-auto px-4 py-20 min-h-[70vh] flex flex-col items-center justify-center text-center">

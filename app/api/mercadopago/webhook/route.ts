@@ -2,8 +2,13 @@ import { NextResponse } from "next/server"
 import { validateWebhookSignature, processWebhookPayment } from "@/lib/mercadopago/webhook"
 import { getMercadoPagoWebhookSecret } from "@/lib/mercadopago/env"
 import { getMercadoPagoSettings } from "@/lib/mercadopago/settings"
+import { isOnlineSalesEnabled, onlineSalesUnavailableResponse } from "@/lib/online-sales"
 
 export async function POST(req: Request) {
+  if (!isOnlineSalesEnabled()) {
+    return onlineSalesUnavailableResponse()
+  }
+
   try {
     const signature = req.headers.get("x-signature")
     const requestId = req.headers.get("x-request-id")

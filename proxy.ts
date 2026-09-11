@@ -1,7 +1,17 @@
 import { auth } from "./auth"
 import { isStaffRole } from "./lib/auth-guard"
+import { isOnlineSalesEnabled } from "./lib/online-sales"
 
 export default auth((req) => {
+  // This application exposes API route handlers, not Server Actions. Reject
+  // stray action probes before Next's internal action dispatcher logs them.
+  if (req.method === "POST" && req.headers.has("next-action")) {
+    return new Response("Server Actions are not enabled", {
+      status: 400,
+      headers: { "Cache-Control": "no-store" },
+    })
+  }
+
   const isLoggedIn = !!req.auth
   const pathname = req.nextUrl.pathname
 
@@ -24,7 +34,7 @@ export default auth((req) => {
   }
 
   // Redireciona usuários não autenticados que tentam acessar /checkout
-  if (!isLoggedIn && pathname.startsWith("/checkout")) {
+  if (!isLoggedIn && pathname.startsWith("/checkout") && isOnlineSalesEnabled()) {
     return Response.redirect(new URL("/auth/login?callbackUrl=/checkout", req.nextUrl))
   }
 

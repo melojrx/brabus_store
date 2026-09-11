@@ -1,5 +1,7 @@
 import ProductDetailClient from "./ProductDetailClient"
 import Link from "next/link"
+import { getPublicStoreSettings } from "@/lib/store-settings"
+import { isOnlineSalesEnabled } from "@/lib/online-sales"
 
 async function getProduct(slug: string) {
   try {
@@ -26,5 +28,16 @@ export default async function ProductDetail({ params }: { params: Promise<{ slug
     )
   }
 
-  return <ProductDetailClient product={product} />
+  const [storeSettings, onlineSalesEnabled] = await Promise.all([
+    getPublicStoreSettings(),
+    Promise.resolve(isOnlineSalesEnabled()),
+  ])
+
+  return (
+    <ProductDetailClient
+      product={product}
+      onlineSalesEnabled={onlineSalesEnabled}
+      whatsapp={storeSettings.whatsapp}
+    />
+  )
 }

@@ -1,9 +1,10 @@
 "use client"
 
 import { useCartStore } from "@/store/cartStore"
-import { ShoppingCart, Check } from "lucide-react"
+import { ShoppingCart, Check, MessageCircle } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
+import { buildWhatsAppUrl } from "@/lib/whatsapp"
 
 interface ProductVariant {
   id: string
@@ -27,6 +28,8 @@ interface Product {
 
 interface AddToCartButtonProps {
   product: Product
+  onlineSalesEnabled?: boolean
+  whatsapp?: string
   compact?: boolean
   selectedVariant?: ProductVariant | null
   selectionRequired?: boolean
@@ -50,6 +53,25 @@ export function getAddToCartNavigation({
   return redirectToCart ? "/cart" : null
 }
 
+export function getProductPurchaseAction({
+  onlineSalesEnabled,
+  whatsapp,
+  productName,
+}: {
+  onlineSalesEnabled: boolean
+  whatsapp: string
+  productName: string
+}) {
+  if (!onlineSalesEnabled) {
+    return {
+      kind: "whatsapp" as const,
+      href: buildWhatsAppUrl(whatsapp, `Olá! Tenho interesse em ${productName}.`),
+    }
+  }
+
+  return { kind: "cart" as const }
+}
+
 export function addItemAndNavigate<Item>(
   addItem: (item: Item) => void,
   item: Item,
@@ -65,6 +87,8 @@ export function addItemAndNavigate<Item>(
 
 export default function AddToCartButton({
   product,
+  onlineSalesEnabled = true,
+  whatsapp = "",
   compact = false,
   selectedVariant,
   selectionRequired = false,
@@ -83,6 +107,7 @@ export default function AddToCartButton({
   const requiresSelection = selectionRequired && !selectedVariant
   const shouldRedirectToProduct = compact && !selectedVariant && sellableVariants.length > 1
   const navigation = getAddToCartNavigation({ redirectToCart, shouldRedirectToProduct, slug: product.slug })
+  const purchaseAction = getProductPurchaseAction({ onlineSalesEnabled, whatsapp, productName: product.name })
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault() // evitar navegação se dentro de Link
@@ -117,6 +142,24 @@ export default function AddToCartButton({
 
     setAdded(true)
     setTimeout(() => setAdded(false), 1500)
+  }
+
+  if (purchaseAction.kind === "whatsapp") {
+    return (
+      <a
+        href={purchaseAction.href}
+        target="_blank"
+        rel="noopener noreferrer"
+        onClick={(event) => event.stopPropagation()}
+        aria-label={`Falar no WhatsApp sobre ${product.name}`}
+        className={compact
+          ? "flex items-center justify-center rounded-sm border border-green-500/50 p-2 text-green-400 transition-colors hover:bg-green-500/10"
+          : "flex w-full items-center justify-center gap-2 rounded-sm bg-green-600 px-8 py-4 font-bold uppercase tracking-widest text-white transition-colors hover:bg-green-500"}
+      >
+        <MessageCircle className={compact ? "h-4 w-4" : "h-5 w-5"} />
+        {compact ? null : "Falar no WhatsApp"}
+      </a>
+    )
   }
 
   if (compact) {

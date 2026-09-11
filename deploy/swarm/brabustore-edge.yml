@@ -1,0 +1,25 @@
+version: "3.8"
+
+services:
+  cloudflared:
+    image: cloudflare/cloudflared:2026.8.1
+    command:
+      - tunnel
+      - --no-autoupdate
+      - run
+      - --token-file
+      - /run/secrets/brabustore_cloudflared_tunnel_token
+    secrets:
+      - brabustore_cloudflared_tunnel_token
+    networks:
+      - edge
+    deploy:
+      replicas: 1
+
+networks:
+  edge:
+    external: true
+
+secrets:
+  brabustore_cloudflared_tunnel_token:
+    external: true

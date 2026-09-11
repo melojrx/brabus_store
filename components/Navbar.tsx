@@ -6,7 +6,7 @@ import { useCartStore } from "@/store/cartStore"
 import { useSession } from "next-auth/react"
 import { useEffect, useRef, useState } from "react"
 
-export default function Navbar() {
+export default function Navbar({ onlineSalesEnabled = true }: { onlineSalesEnabled?: boolean }) {
   const { getItemCount, hasHydrated } = useCartStore()
   const { data: session } = useSession()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -140,15 +140,16 @@ export default function Navbar() {
             </Link>
           )}
 
-          {/* Cart */}
-          <Link href="/cart" className={`${actionButtonClassName} relative`} aria-label="Abrir carrinho">
-            <ShoppingCart className="w-5 h-5" />
-            {itemCount > 0 && (
-              <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--color-secondary)] px-1 text-[10px] font-bold text-white">
-                {itemCount > 9 ? "9+" : itemCount}
-              </span>
-            )}
-          </Link>
+          {onlineSalesEnabled ? (
+            <Link href="/cart" className={`${actionButtonClassName} relative`} aria-label="Abrir carrinho">
+              <ShoppingCart className="w-5 h-5" />
+              {itemCount > 0 && (
+                <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--color-secondary)] px-1 text-[10px] font-bold text-white">
+                  {itemCount > 9 ? "9+" : itemCount}
+                </span>
+              )}
+            </Link>
+          ) : null}
 
           {/* Mobile Menu Toggle */}
           <button

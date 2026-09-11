@@ -17,6 +17,7 @@ import { getMercadoPagoClient, isMercadoPagoConfigured } from "@/lib/mercadopago
 import { buildCheckoutProPreference } from "@/lib/mercadopago/checkout-pro"
 import { getMercadoPagoSettings } from "@/lib/mercadopago/settings"
 import { getPublicStoreSettings } from "@/lib/store-settings"
+import { isOnlineSalesEnabled, onlineSalesUnavailableResponse } from "@/lib/online-sales"
 
 type ProductRecord = Prisma.ProductGetPayload<{
   include: {
@@ -179,6 +180,10 @@ function resolveCheckoutItems(
 }
 
 export async function POST(req: Request) {
+  if (!isOnlineSalesEnabled()) {
+    return onlineSalesUnavailableResponse()
+  }
+
   try {
     const sessionAuth = await auth()
     const userId = sessionAuth?.user?.id

@@ -1,6 +1,10 @@
 import assert from "node:assert/strict"
 import test from "node:test"
-import { addItemAndNavigate, getAddToCartNavigation } from "../components/AddToCartButton"
+import {
+  addItemAndNavigate,
+  getAddToCartNavigation,
+  getProductPurchaseAction,
+} from "../components/AddToCartButton"
 
 test("navigates compact cards with a pending variant selection to the product", () => {
   assert.equal(
@@ -49,4 +53,18 @@ test("does not navigate when the route is null", () => {
   )
 
   assert.deepEqual(calls, ["add"])
+})
+
+test("uses WhatsApp rather than cart when online sales are disabled", () => {
+  assert.deepEqual(
+    getProductPurchaseAction({
+      onlineSalesEnabled: false,
+      whatsapp: "5585997839040",
+      productName: "Whey Pro",
+    }),
+    {
+      kind: "whatsapp",
+      href: "https://wa.me/5585997839040?text=Ol%C3%A1%21+Tenho+interesse+em+Whey+Pro.",
+    },
+  )
 })

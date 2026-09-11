@@ -1,0 +1,143 @@
+version: "3.8"
+
+x-web-environment: &web_environment
+  NODE_ENV: production
+  PORT: "3000"
+  HOSTNAME: 0.0.0.0
+  POSTGRES_DB: ${POSTGRES_DB}
+  POSTGRES_USER: ${POSTGRES_USER}
+  DATABASE_HOST: ${DATABASE_HOST}
+  DATABASE_PORT: ${DATABASE_PORT}
+  NEXTAUTH_URL: ${NEXTAUTH_URL}
+  AUTH_TRUST_HOST: ${AUTH_TRUST_HOST}
+  ONLINE_SALES_ENABLED: ${ONLINE_SALES_ENABLED}
+
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD_FILE: /run/secrets/brabustore_postgres_password
+    secrets:
+      - brabustore_postgres_password
+    networks:
+      - brabustore_backend
+    volumes:
+      - brabustore_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.hostname == homelab
+
+  web:
+    image: ${BRABUS_STORE_IMAGE}
+    command: ["/usr/local/bin/docker-start.sh"]
+    environment: *web_environment
+    secrets:
+      - brabustore_database_url
+      - brabustore_nextauth_secret
+      - brabustore_mercadopago_access_token
+      - brabustore_mercadopago_webhook_secret
+      - brabustore_cron_secret
+      - brabustore_integration_api_key_pepper
+    networks:
+      - edge
+      - brabustore_backend
+    volumes:
+      - brabustore_uploads:/app/public/uploads
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail --header 'Host: brabustore.com.br' --header 'X-Forwarded-Proto: https' http://127.0.0.1:3000/api/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 4
+      start_period: 30s
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 10s
+        monitor: 60s
+        failure_action: rollback
+        order: start-first
+      rollback_config:
+        parallelism: 1
+        delay: 10s
+        monitor: 60s
+        order: start-first
+      labels:
+        - traefik.enable=true
+        - traefik.swarm.network=edge
+        - "traefik.http.routers.brabustore.rule=Host(`brabustore.com.br`) || Host(`www.brabustore.com.br`) || Host(`homelab.urbanlive.com.br`)"
+        - traefik.http.routers.brabustore.entrypoints=web
+        - traefik.http.routers.brabustore.middlewares=brabustore-forwarded-https
+        - traefik.http.middlewares.brabustore-forwarded-https.headers.customrequestheaders.X-Forwarded-Proto=https
+        - traefik.http.services.brabustore.loadbalancer.server.port=3000
+
+  migrate:
+    image: ${BRABUS_STORE_IMAGE}
+    command: ["/usr/local/bin/docker-migrate.sh"]
+    environment: *web_environment
+    secrets:
+      - brabustore_database_url
+      - brabustore_nextauth_secret
+      - brabustore_mercadopago_access_token
+      - brabustore_mercadopago_webhook_secret
+      - brabustore_cron_secret
+      - brabustore_integration_api_key_pepper
+    networks:
+      - brabustore_backend
+    deploy:
+      replicas: 0
+      restart_policy:
+        condition: none
+
+  scheduler:
+    image: ${BRABUS_STORE_IMAGE}
+    command: ["node", "/usr/local/bin/expiry-scheduler.mjs"]
+    environment:
+      EXPIRY_ALERTS_ENDPOINT: http://web:3000/api/cron/expiry-alerts
+      EXPIRY_ALERT_INTERVAL_SECONDS: "86400"
+    secrets:
+      - brabustore_cron_secret
+    networks:
+      - brabustore_backend
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: on-failure
+        delay: 30s
+        max_attempts: 0
+
+networks:
+  edge:
+    external: true
+  brabustore_backend:
+    external: true
+
+volumes:
+  brabustore_postgres_data: {}
+  brabustore_uploads: {}
+
+secrets:
+  brabustore_postgres_password:
+    external: true
+  brabustore_database_url:
+    external: true
+  brabustore_nextauth_secret:
+    external: true
+  brabustore_mercadopago_access_token:
+    external: true
+  brabustore_mercadopago_webhook_secret:
+    external: true
+  brabustore_cron_secret:
+    external: true
+  brabustore_integration_api_key_pepper:
+    external: true

@@ -4,6 +4,7 @@ import AddToCartButton from "@/components/AddToCartButton"
 import { getBestSellingProductIds, productWithRelationsInclude, serializeProduct } from "@/lib/catalog-api"
 import prisma from "@/lib/prisma"
 import { getPublicStoreSettings } from "@/lib/store-settings"
+import { isOnlineSalesEnabled } from "@/lib/online-sales"
 
 const OBJECTIVE_CARD_CONTENT: Record<
   string,
@@ -211,6 +212,7 @@ export default async function Home() {
     getObjectiveCategories(),
     getPublicStoreSettings(),
   ])
+  const onlineSalesEnabled = isOnlineSalesEnabled()
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -391,7 +393,12 @@ export default async function Home() {
                       R$ {product.price.toFixed(2).replace(".", ",")}
                     </span>
                   </div>
-                  <AddToCartButton product={product} compact />
+                  <AddToCartButton
+                    product={product}
+                    compact
+                    onlineSalesEnabled={onlineSalesEnabled}
+                    whatsapp={storeSettings.whatsapp}
+                  />
                 </div>
               </div>
             ))}

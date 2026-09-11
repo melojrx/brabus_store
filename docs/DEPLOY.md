@@ -12,9 +12,9 @@ push em main
   -> git fetch + reset --hard origin/main
   -> docker compose build --pull app
   -> docker compose up -d --force-recreate --no-deps app
-  -> scripts/docker-entrypoint.sh
-  -> npx prisma migrate deploy
-  -> node server.js
+  -> scripts/docker-entrypoint.sh (wrapper)
+  -> scripts/docker-migrate.sh
+  -> scripts/docker-start.sh
   -> health check em http://127.0.0.1:3001/api/health
   -> NGINX publica https://brabustore.com.br
 ```
@@ -27,7 +27,9 @@ push em main
 | `deploy.sh` | Script executado na VPS para atualizar codigo, buildar imagem, recriar app e validar health |
 | `docker-compose.vps.yml` | Compose de producao com `app`, `db` e volumes persistentes |
 | `Dockerfile` | Build multi-stage do Next.js standalone |
-| `scripts/docker-entrypoint.sh` | Executa migrations Prisma e inicia o servidor |
+| `scripts/docker-entrypoint.sh` | Wrapper de compatibilidade da VPS: migration + servidor |
+| `scripts/docker-start.sh` | Inicia somente `node server.js` (usado pelo Swarm) |
+| `scripts/docker-migrate.sh` | Executa somente `npx prisma migrate deploy` (job do Swarm) |
 | `infra/nginx/brabustore.conf` | Configuracao de referencia do NGINX |
 
 ## 3. VPS de producao
@@ -80,13 +82,16 @@ FORCE=1 ./deploy.sh
 
 ## 6. Banco e migrations
 
-O container executa automaticamente:
+Na VPS, o wrapper de compatibilidade ainda executa automaticamente:
 
 ```bash
 npx prisma migrate deploy
 ```
 
-Isso acontece no startup do app via `scripts/docker-entrypoint.sh`. Portanto, quando o container e recriado com uma imagem nova, migrations versionadas em `prisma/migrations/` sao aplicadas antes do `node server.js`.
+Isso acontece no startup do app via `scripts/docker-entrypoint.sh`, mantendo o
+fluxo atual da VPS. No Homelab, o serviço web chama apenas
+`scripts/docker-start.sh`; o controlador executa `scripts/docker-migrate.sh`
+como job one-shot antes de atualizar o web.
 
 Validacao em producao:
 
@@ -138,3 +143,54 @@ docker compose -f docker-compose.vps.yml --env-file .env.production exec app npx
 ```
 
 Use apenas em bootstrap inicial ou tarefa operacional explicitamente planejada.
+
+## 10. Homelab (fluxo preparado)
+
+O fluxo alvo usa Docker Swarm no nó `homelab`, a rede externa `edge` do
+Traefik e a rede privada `brabustore_backend`. O PostgreSQL não publica porta;
+uploads e dados usam volumes nomeados próprios da Brabus.
+
+Arquivos versionados:
+
+| Arquivo | Papel |
+|---|---|
+| `deploy/swarm/brabustore.yml` | Serviços web, PostgreSQL, migration e scheduler |
+| `deploy/swarm/brabustore-edge.yml` | Tunnel Cloudflare dedicado |
+| `deploy/swarm/brabustore.env.example` | Configuração não secreta |
+| `scripts/deploy-homelab.sh` | Staging por digest e chamada remota autorizada |
+| `scripts/homelab/deploy-stack.sh` | Validação, migration, health e rollback web |
+| `scripts/expiry-scheduler.mjs` | Disparo diário interno do endpoint de expiração |
+
+O deploy do Homelab recebe apenas uma referência GHCR completa por digest,
+por exemplo `ghcr.io/melojrx/brabus_store@sha256:<digest>`. O controlador não
+faz `git pull`, build ou push. Segredos são externalizados em Docker Swarm
+secrets e não devem ser colocados neste arquivo, no vault ou em argumentos de
+comando.
+
+Antes de qualquer provisionamento, confirmar aprovação separada para criar o
+Tunnel `brabustore-homelab`, a rede `brabustore_backend`, os secrets externos
+e `/srv/brabustore/brabustore.env`. O ensaio usa somente o hostname temporário
+`homelab.urbanlive.com.br`; os hostnames públicos da Brabus não são alterados.
+O corte continua condicionado ao ensaio e às aprovações descritas na
+especificação de migração.
+
+### 10.1 Operação inicial exclusiva por PDV
+
+Enquanto a loja operar somente com vendas presenciais, o arquivo
+`/srv/brabustore/brabustore.env` deve conter:
+
+```env
+ONLINE_SALES_ENABLED=false
+```
+
+Essa variável não é segredo. O valor ausente, vazio ou diferente de `true`
+mantém o modo fechado por segurança. Nesse estado, o catálogo continua público,
+mas carrinho, checkout e Mercado Pago são bloqueados antes de qualquer escrita;
+o cliente é direcionado ao WhatsApp e o PDV continua disponível para usuários
+autorizados.
+
+Para reativar vendas online, é necessário definir conscientemente
+`ONLINE_SALES_ENABLED=true`, configurar credenciais e webhook válidos do
+Mercado Pago e executar novamente a validação completa de checkout, pagamento,
+webhook e reconciliação de estoque. Alterar somente o front-end não reativa a
+operação.

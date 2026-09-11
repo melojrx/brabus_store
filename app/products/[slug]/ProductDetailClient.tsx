@@ -49,7 +49,15 @@ function matchesValue(variantValue: string | null, selectedValue: string | undef
   return variantValue === selectedValue
 }
 
-export default function ProductDetailClient({ product }: { product: Product }) {
+export default function ProductDetailClient({
+  product,
+  onlineSalesEnabled,
+  whatsapp,
+}: {
+  product: Product
+  onlineSalesEnabled: boolean
+  whatsapp: string
+}) {
   const activeVariants = product.variants.filter((variant) => variant.active)
   const sellableVariants = activeVariants.filter((variant) => variant.stock > 0)
   const sizeOptions = getUniqueOptionValues(activeVariants, "size")
@@ -226,6 +234,8 @@ export default function ProductDetailClient({ product }: { product: Product }) {
 
           <AddToCartButton
             product={product}
+            onlineSalesEnabled={onlineSalesEnabled}
+            whatsapp={whatsapp}
             selectedVariant={selectedVariant}
             selectionRequired={hasPendingSelection}
             redirectToCart

@@ -1,11 +1,12 @@
 import type { Metadata, Viewport } from "next"
 import { Inter, Bebas_Neue } from "next/font/google"
 import "./globals.css"
-import Navbar from "@/components/Navbar"
+import NavbarWithSalesMode from "@/components/NavbarWithSalesMode"
 import Footer from "@/components/Footer"
 import WhatsAppButton from "@/components/WhatsAppButton"
 import Providers from "@/components/Providers"
 import PwaRegistration from "@/components/PwaRegistration"
+import { getPublicStoreSettings } from "@/lib/store-settings"
 
 export const dynamic = "force-dynamic"
 
@@ -49,22 +50,24 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const storeSettings = await getPublicStoreSettings()
+
   return (
     <html lang="pt-BR" className={`${inter.variable} ${bebasNeue.variable} dark`}>
       <body suppressHydrationWarning className="font-body bg-background text-foreground min-h-screen flex flex-col">
         <Providers>
           <PwaRegistration />
-          <Navbar />
+          <NavbarWithSalesMode />
           <main className="flex-grow">
             {children}
           </main>
           <Footer />
-          <WhatsAppButton />
+          <WhatsAppButton whatsappNumber={storeSettings.whatsapp} />
         </Providers>
       </body>
     </html>

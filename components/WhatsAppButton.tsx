@@ -1,11 +1,10 @@
-"use client";
+"use client"
 
-import { MessageCircle } from "lucide-react";
+import { MessageCircle } from "lucide-react"
+import { buildWhatsAppUrl } from "@/lib/whatsapp"
 
-export default function WhatsAppButton() {
-  const whatsappNumber = "5585997839040";
-  const message = encodeURIComponent("Olá! Vi o site da Brabu's e tenho interesse em um produto.");
-  const link = `https://wa.me/${whatsappNumber}?text=${message}`;
+export default function WhatsAppButton({ whatsappNumber }: { whatsappNumber: string }) {
+  const link = buildWhatsAppUrl(whatsappNumber, "Olá! Vi o site da Brabu's e tenho interesse em um produto.")
 
   return (
     <a 
@@ -18,5 +17,5 @@ export default function WhatsAppButton() {
       <div className="absolute inset-0 rounded-full bg-green-500 animate-ping opacity-30 group-hover:opacity-0 transition-opacity" />
       <MessageCircle className="w-7 h-7 relative z-10" />
     </a>
-  );
+  )
 }
