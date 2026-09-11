@@ -38,7 +38,9 @@ container_id=$(docker ps \
   --format '{{.ID}}' | sed -n '1p')
 [ -n "$container_id" ] || fail "No running web task found for $WEB_SERVICE"
 
-docker exec "$container_id" npx prisma migrate status >/dev/null
+docker exec "$container_id" sh -c \
+  '. /usr/local/bin/docker-load-secrets.sh; load_brabustore_secrets; npx prisma migrate status' \
+  >/dev/null
 
 if [ -n "${UPLOADS_CHECKSUM_MANIFEST:-}" ]; then
   [ -r "$UPLOADS_CHECKSUM_MANIFEST" ] || fail "Uploads checksum manifest is not readable: $UPLOADS_CHECKSUM_MANIFEST"
