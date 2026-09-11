@@ -93,9 +93,9 @@ jobs:
         run: |
           image="ghcr.io/melojrx/brabus_store@${IMAGE_DIGEST}"
           {
-            echo "### Homelab image"
-            echo
-            echo "- Image: `${image}`"
-            echo "- Commit: `${GITHUB_SHA}`"
-            echo "- Platform: `linux/amd64`"
+            printf '%s\n' "### Homelab image"
+            printf '%s\n' ""
+            printf '%s\n' "- Image: ${image}"
+            printf '%s\n' "- Commit: ${GITHUB_SHA}"
+            printf '%s\n' "- Platform: linux/amd64"
           } >> "$GITHUB_STEP_SUMMARY"
