@@ -74,7 +74,7 @@ services:
       labels:
         - traefik.enable=true
         - traefik.swarm.network=edge
-        - "traefik.http.routers.brabustore.rule=Host(`brabustore.com.br`) || Host(`www.brabustore.com.br`)"
+        - "traefik.http.routers.brabustore.rule=Host(`brabustore.com.br`) || Host(`www.brabustore.com.br`) || Host(`homelab.urbanlive.com.br`)"
         - traefik.http.routers.brabustore.entrypoints=web
         - traefik.http.routers.brabustore.middlewares=brabustore-forwarded-https
         - traefik.http.middlewares.brabustore-forwarded-https.headers.customrequestheaders.X-Forwarded-Proto=https

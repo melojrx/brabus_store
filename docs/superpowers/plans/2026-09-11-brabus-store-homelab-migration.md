@@ -248,7 +248,7 @@ Run: `git add scripts/deploy-homelab.sh scripts/homelab tests/scripts/test-brabu
 
 - [ ] **Step 1: Create the dedicated Cloudflare Tunnel**
 
-Create `brabustore-homelab`. Configure only `brabustore.com.br` and `www.brabustore.com.br` ingress to `http://traefik:80`; retain existing public routing until a later cutover approval. Create its token directly as `brabustore_cloudflared_tunnel_token` via standard input.
+Create `brabustore-homelab`. Configure the temporary rehearsal hostname `homelab.urbanlive.com.br` to `http://traefik:80` because the Cloudflare account currently has `urbanlive.com.br` as its managed zone; retain the existing public `brabustore.com.br` and `www.brabustore.com.br` routing until a later cutover approval. Create its token directly as `brabustore_cloudflared_tunnel_token` via standard input.
 
 - [ ] **Step 2: Provision network, secrets and host config**
 

@@ -169,6 +169,7 @@ comando.
 
 Antes de qualquer provisionamento, confirmar aprovação separada para criar o
 Tunnel `brabustore-homelab`, a rede `brabustore_backend`, os secrets externos
-e `/srv/brabustore/brabustore.env`. Essa etapa não altera DNS público; o corte
-continua condicionado ao ensaio e às aprovações descritas na especificação de
-migração.
+e `/srv/brabustore/brabustore.env`. O ensaio usa somente o hostname temporário
+`homelab.urbanlive.com.br`; os hostnames públicos da Brabus não são alterados.
+O corte continua condicionado ao ensaio e às aprovações descritas na
+especificação de migração.

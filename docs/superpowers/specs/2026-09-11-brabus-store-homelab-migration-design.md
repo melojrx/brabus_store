@@ -67,8 +67,9 @@ rede `edge`.
 - `brabustore_scheduler`: uma réplica interna que chama diariamente
   `POST /api/cron/expiry-alerts` usando o secret `brabustore_cron_secret`; não
   participa da rede `edge`.
-- `brabustore_cloudflared`: usa token de um Tunnel Cloudflare exclusivo e
-  encaminha somente o hostname da Brabus para Traefik.
+- `brabustore_cloudflared`: usa token de um Tunnel Cloudflare exclusivo; no
+  ensaio encaminha `homelab.urbanlive.com.br` para Traefik porque essa é a zona
+  gerenciada disponível, e o corte posterior encaminhará os hostnames públicos.
 - Traefik e a rede `edge` existentes no Homelab são reutilizados; não será
   criado um segundo proxy público.
 
