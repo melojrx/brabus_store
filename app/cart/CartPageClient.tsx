@@ -1,5 +1,6 @@
 "use client"
 
+import { useCartStore } from "@/store/cartStore"
 import Link from "next/link"
 import { Trash2, Plus, Minus, ArrowRight, ShoppingBag } from "lucide-react"
 
@@ -113,4 +114,3 @@ export default function CartPage() {
     </div>
   )
 }
-
