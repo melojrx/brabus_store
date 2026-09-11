@@ -83,8 +83,6 @@ if [ "$#" -ne 2 ]; then
 fi
 
 release_directory=$1
-BRABUS_STORE_IMAGE=$2
-validate_brabustore_image "$BRABUS_STORE_IMAGE" || exit 1
 
 case "$release_directory" in
   "$BRABUSTORE_ROOT"/releases/*) ;;
@@ -96,6 +94,8 @@ stack_file="$release_directory/deploy/swarm/brabustore.yml"
 [ -r "$CONFIGURATION_FILE" ] || fail "Configuration file is not readable: $CONFIGURATION_FILE"
 
 load_env_file "$CONFIGURATION_FILE"
+BRABUS_STORE_IMAGE=$2
+validate_brabustore_image "$BRABUS_STORE_IMAGE" || exit 1
 export BRABUS_STORE_IMAGE
 
 swarm_state=$(docker info --format '{{.Swarm.LocalNodeState}}')
