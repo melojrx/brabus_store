@@ -173,3 +173,24 @@ e `/srv/brabustore/brabustore.env`. O ensaio usa somente o hostname temporário
 `homelab.urbanlive.com.br`; os hostnames públicos da Brabus não são alterados.
 O corte continua condicionado ao ensaio e às aprovações descritas na
 especificação de migração.
+
+### 10.1 Operação inicial exclusiva por PDV
+
+Enquanto a loja operar somente com vendas presenciais, o arquivo
+`/srv/brabustore/brabustore.env` deve conter:
+
+```env
+ONLINE_SALES_ENABLED=false
+```
+
+Essa variável não é segredo. O valor ausente, vazio ou diferente de `true`
+mantém o modo fechado por segurança. Nesse estado, o catálogo continua público,
+mas carrinho, checkout e Mercado Pago são bloqueados antes de qualquer escrita;
+o cliente é direcionado ao WhatsApp e o PDV continua disponível para usuários
+autorizados.
+
+Para reativar vendas online, é necessário definir conscientemente
+`ONLINE_SALES_ENABLED=true`, configurar credenciais e webhook válidos do
+Mercado Pago e executar novamente a validação completa de checkout, pagamento,
+webhook e reconciliação de estoque. Alterar somente o front-end não reativa a
+operação.

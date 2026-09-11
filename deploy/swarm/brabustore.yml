@@ -10,6 +10,7 @@ x-web-environment: &web_environment
   DATABASE_PORT: ${DATABASE_PORT}
   NEXTAUTH_URL: ${NEXTAUTH_URL}
   AUTH_TRUST_HOST: ${AUTH_TRUST_HOST}
+  ONLINE_SALES_ENABLED: ${ONLINE_SALES_ENABLED}
 
 services:
   postgres:
