@@ -35,10 +35,12 @@ COPY --from=builder /app/.next/static ./.next/static
 COPY scripts/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 COPY scripts/docker-start.sh /usr/local/bin/docker-start.sh
 COPY scripts/docker-migrate.sh /usr/local/bin/docker-migrate.sh
+COPY scripts/docker-load-secrets.sh /usr/local/bin/docker-load-secrets.sh
 
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh \
   /usr/local/bin/docker-start.sh \
-  /usr/local/bin/docker-migrate.sh
+  /usr/local/bin/docker-migrate.sh \
+  /usr/local/bin/docker-load-secrets.sh
 
 EXPOSE 3000
 
