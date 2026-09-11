@@ -10,6 +10,9 @@ load_brabustore_secret() {
   fi
 
   value=$(cat "$file")
+  if [ "$name" = 'INTEGRATION_API_KEY_PEPPER' ] && [ "$value" = '__BRABUS_EMPTY__' ]; then
+    value=''
+  fi
   export "$name=$value"
 }
 
