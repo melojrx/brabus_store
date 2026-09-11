@@ -1,5 +1,6 @@
 import { auth } from "./auth"
 import { isStaffRole } from "./lib/auth-guard"
+import { isOnlineSalesEnabled } from "./lib/online-sales"
 
 export default auth((req) => {
   // This application exposes API route handlers, not Server Actions. Reject
@@ -33,7 +34,7 @@ export default auth((req) => {
   }
 
   // Redireciona usuários não autenticados que tentam acessar /checkout
-  if (!isLoggedIn && pathname.startsWith("/checkout")) {
+  if (!isLoggedIn && pathname.startsWith("/checkout") && isOnlineSalesEnabled()) {
     return Response.redirect(new URL("/auth/login?callbackUrl=/checkout", req.nextUrl))
   }
 
