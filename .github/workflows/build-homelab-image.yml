@@ -13,11 +13,29 @@ permissions:
   contents: read
   packages: write
 
+env:
+  DATABASE_URL: postgresql://brabustore:brabustore@127.0.0.1:5432/brabustore_ci?schema=public
+
 jobs:
   image:
     name: Validate and publish image
     runs-on: ubuntu-latest
     timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: brabustore
+          POSTGRES_PASSWORD: brabustore
+          POSTGRES_DB: brabustore_ci
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U brabustore -d brabustore_ci"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 10
 
     steps:
       - name: Check out source
@@ -31,6 +49,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Apply test database migrations
+        run: npx prisma migrate deploy
 
       - name: Lint
         run: npm run lint -- .
