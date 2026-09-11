@@ -4,11 +4,16 @@ import { getMercadoPagoClient } from "@/lib/mercadopago/client"
 import { serializeMercadoPagoPaymentSummary } from "@/lib/mercadopago/checkout-pro"
 import { getMercadoPagoSettings } from "@/lib/mercadopago/settings"
 import prisma from "@/lib/prisma"
+import { isOnlineSalesEnabled, onlineSalesUnavailableResponse } from "@/lib/online-sales"
 
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  if (!isOnlineSalesEnabled()) {
+    return onlineSalesUnavailableResponse()
+  }
+
   try {
     const session = await auth()
     const userId = session?.user?.id

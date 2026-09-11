@@ -3,11 +3,16 @@ import { auth } from "@/auth"
 import { getCheckoutOrderSummary } from "@/lib/manual-orders"
 import prisma from "@/lib/prisma"
 import { getPublicStoreSettings } from "@/lib/store-settings"
+import { isOnlineSalesEnabled, onlineSalesUnavailableResponse } from "@/lib/online-sales"
 
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
+  if (!isOnlineSalesEnabled()) {
+    return onlineSalesUnavailableResponse()
+  }
+
   const session = await auth()
   const userId = session?.user?.id
 
