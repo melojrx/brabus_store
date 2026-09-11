@@ -2,7 +2,7 @@ name: Build Homelab Image
 
 on:
   push:
-    branches: [main]
+    branches: [main, codex/brabus-store-homelab-migration]
   workflow_dispatch:
 
 concurrency:
