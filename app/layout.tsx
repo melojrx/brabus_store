@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next"
 import { Inter, Bebas_Neue } from "next/font/google"
 import "./globals.css"
-import Navbar from "@/components/Navbar"
+import NavbarWithSalesMode from "@/components/NavbarWithSalesMode"
 import Footer from "@/components/Footer"
 import WhatsAppButton from "@/components/WhatsAppButton"
 import Providers from "@/components/Providers"
@@ -62,7 +62,7 @@ export default async function RootLayout({
       <body suppressHydrationWarning className="font-body bg-background text-foreground min-h-screen flex flex-col">
         <Providers>
           <PwaRegistration />
-          <Navbar />
+          <NavbarWithSalesMode />
           <main className="flex-grow">
             {children}
           </main>
