@@ -6,6 +6,7 @@ import Footer from "@/components/Footer"
 import WhatsAppButton from "@/components/WhatsAppButton"
 import Providers from "@/components/Providers"
 import PwaRegistration from "@/components/PwaRegistration"
+import { getPublicStoreSettings } from "@/lib/store-settings"
 
 export const dynamic = "force-dynamic"
 
@@ -49,11 +50,13 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode
 }>) {
+  const storeSettings = await getPublicStoreSettings()
+
   return (
     <html lang="pt-BR" className={`${inter.variable} ${bebasNeue.variable} dark`}>
       <body suppressHydrationWarning className="font-body bg-background text-foreground min-h-screen flex flex-col">
@@ -64,7 +67,7 @@ export default function RootLayout({
             {children}
           </main>
           <Footer />
-          <WhatsAppButton />
+          <WhatsAppButton whatsappNumber={storeSettings.whatsapp} />
         </Providers>
       </body>
     </html>
