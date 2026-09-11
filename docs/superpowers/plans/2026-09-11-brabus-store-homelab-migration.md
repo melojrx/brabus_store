@@ -148,9 +148,10 @@ Run: `git add .github/workflows/build-homelab-image.yml tests/scripts/test-homel
 - Create: `deploy/swarm/brabustore.yml`
 - Create: `deploy/swarm/brabustore-edge.yml`
 - Create: `deploy/swarm/brabustore.env.example`
+- Create: `scripts/expiry-scheduler.mjs`
 - Create: `tests/scripts/test-brabustore-swarm-manifest.sh`
 
-**Interfaces:** `${BRABUS_STORE_IMAGE}` is the digest; non-secrets are loaded from `/srv/brabustore/brabustore.env`; secrets are external Swarm secrets. Services resolve to `brabustore_web`, `brabustore_postgres`, `brabustore_migrate` and `brabustore-edge_cloudflared`.
+**Interfaces:** `${BRABUS_STORE_IMAGE}` is the digest; non-secrets are loaded from `/srv/brabustore/brabustore.env`; secrets are external Swarm secrets. Services resolve to `brabustore_web`, `brabustore_postgres`, `brabustore_migrate`, `brabustore_scheduler` and `brabustore-edge_cloudflared`.
 
 - [ ] **Step 1: Write a failing manifest test**
 
@@ -179,6 +180,8 @@ Expected: non-zero because manifests are absent.
 Define `postgres:16` on only `brabustore_backend`, with named volume `brabustore_postgres_data`, `POSTGRES_PASSWORD_FILE`, `pg_isready` healthcheck and `node.hostname == homelab`. Define `web` from `${BRABUS_STORE_IMAGE}`, on `edge` and `brabustore_backend`, with `brabustore_uploads:/app/public/uploads`, one replica, `start-first` update/rollback, and a health request to `/api/health` with the public Host and forwarded HTTPS headers.
 
 Define `migrate` from the same digest with command `["/usr/local/bin/docker-migrate.sh"]`, only `brabustore_backend`, zero replicas and `restart_policy.condition: none`. Attach Traefik labels to `web` only: Host `brabustore.com.br`, entrypoint `web`, forwarded HTTPS middleware and backend port `3000`.
+
+Define `scheduler` from the same digest with command `["node", "/usr/local/bin/expiry-scheduler.mjs"]`, only `brabustore_backend`, one replica and the external `brabustore_cron_secret`. It calls the internal web endpoint once per day and has no public route.
 
 - [ ] **Step 4: Define the Tunnel and config template**
 

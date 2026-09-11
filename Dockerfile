@@ -36,6 +36,7 @@ COPY scripts/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 COPY scripts/docker-start.sh /usr/local/bin/docker-start.sh
 COPY scripts/docker-migrate.sh /usr/local/bin/docker-migrate.sh
 COPY scripts/docker-load-secrets.sh /usr/local/bin/docker-load-secrets.sh
+COPY scripts/expiry-scheduler.mjs /usr/local/bin/expiry-scheduler.mjs
 
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh \
   /usr/local/bin/docker-start.sh \
@@ -44,4 +45,5 @@ RUN chmod +x /usr/local/bin/docker-entrypoint.sh \
 
 EXPOSE 3000
 
+ENTRYPOINT []
 CMD ["docker-entrypoint.sh"]

@@ -42,9 +42,10 @@ Internet
   -> Tunnel dedicado brabustore-homelab
   -> Traefik na rede overlay edge
   -> brabustore_web (Next.js, 1 réplica)
-       -> brabustore_postgres (PostgreSQL 16, rede interna)
-       -> volume brabustore_uploads
-       -> job brabustore_migrate (one-shot por release)
+  -> brabustore_postgres (PostgreSQL 16, rede interna)
+  -> volume brabustore_uploads
+  -> job brabustore_migrate (one-shot por release)
+  -> brabustore_scheduler (disparo diário interno)
 ```
 
 O Tunnel da Brabus será dedicado, separado do UrbanLive. A aplicação, o
@@ -63,6 +64,9 @@ rede `edge`.
   `brabustore_postgres_data`; sem porta publicada.
 - `brabustore_migrate`: job one-shot que usa a mesma imagem do web e executa
   `npx prisma migrate deploy` antes da atualização do web.
+- `brabustore_scheduler`: uma réplica interna que chama diariamente
+  `POST /api/cron/expiry-alerts` usando o secret `brabustore_cron_secret`; não
+  participa da rede `edge`.
 - `brabustore_cloudflared`: usa token de um Tunnel Cloudflare exclusivo e
   encaminha somente o hostname da Brabus para Traefik.
 - Traefik e a rede `edge` existentes no Homelab são reutilizados; não será
@@ -155,6 +159,8 @@ Os artefatos locais de aplicação do desenho são implementados na branch
 `codex/brabus-store-homelab-migration`, no checkout original do projeto e sem
 worktree separado. Já estão preparados a separação entre startup web e
 migration, a publicação GHCR por digest, os manifestos Swarm isolados e o
-controlador de release. Provisionamento de infraestrutura, publicação da
-imagem e alteração de DNS permanecem pendentes de aprovação operacional
-explícita.
+controlador de release. O probe inválido de Server Actions agora é rejeitado
+antes do dispatcher interno do Next, e o scheduler diário foi adicionado ao
+stack como serviço privado. A validação autenticada, a publicação da imagem,
+o provisionamento de infraestrutura e a alteração de DNS permanecem
+pendentes de aprovação operacional explícita.

@@ -154,11 +154,12 @@ Arquivos versionados:
 
 | Arquivo | Papel |
 |---|---|
-| `deploy/swarm/brabustore.yml` | Serviços web, PostgreSQL e migration |
+| `deploy/swarm/brabustore.yml` | Serviços web, PostgreSQL, migration e scheduler |
 | `deploy/swarm/brabustore-edge.yml` | Tunnel Cloudflare dedicado |
 | `deploy/swarm/brabustore.env.example` | Configuração não secreta |
 | `scripts/deploy-homelab.sh` | Staging por digest e chamada remota autorizada |
 | `scripts/homelab/deploy-stack.sh` | Validação, migration, health e rollback web |
+| `scripts/expiry-scheduler.mjs` | Disparo diário interno do endpoint de expiração |
 
 O deploy do Homelab recebe apenas uma referência GHCR completa por digest,
 por exemplo `ghcr.io/melojrx/brabus_store@sha256:<digest>`. O controlador não
