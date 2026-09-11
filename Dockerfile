@@ -33,8 +33,12 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static
 COPY scripts/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+COPY scripts/docker-start.sh /usr/local/bin/docker-start.sh
+COPY scripts/docker-migrate.sh /usr/local/bin/docker-migrate.sh
 
-RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh \
+  /usr/local/bin/docker-start.sh \
+  /usr/local/bin/docker-migrate.sh
 
 EXPOSE 3000
 
