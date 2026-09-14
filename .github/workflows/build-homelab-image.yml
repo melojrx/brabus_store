@@ -20,6 +20,8 @@ jobs:
   image:
     name: Validate and publish image
     runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.build.outputs.digest }}
     timeout-minutes: 20
 
     services:
@@ -98,4 +100,31 @@ jobs:
             printf '%s\n' "- Image: ${image}"
             printf '%s\n' "- Commit: ${GITHUB_SHA}"
             printf '%s\n' "- Platform: linux/amd64"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  deploy:
+    name: Deploy to Homelab
+    needs: image
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: [self-hosted, homelab-brabustore-deploy]
+    timeout-minutes: 15
+    concurrency:
+      group: deploy-brabustore-production
+      cancel-in-progress: false
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Promote immutable image
+        run: |
+          sudo /usr/local/sbin/deploy-brabustore-release \
+            "$GITHUB_WORKSPACE" \
+            "ghcr.io/melojrx/brabus_store@${{ needs.image.outputs.image }}"
+      - name: Record release
+        run: |
+          {
+            printf '%s\n' '### Homelab deployment'
+            printf '%s\n' "- Commit: $GITHUB_SHA"
+            printf '%s\n' "- Image: ghcr.io/melojrx/brabus_store@${{ needs.image.outputs.image }}"
+            printf '%s\n' '- Controller: deploy-brabustore-release'
           } >> "$GITHUB_STEP_SUMMARY"

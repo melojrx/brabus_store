@@ -155,7 +155,7 @@ checkout=${1:?Usage: deploy-brabustore <checkout> <image-digest>}
 image=${2:?Usage: deploy-brabustore <checkout> <image-digest>}
 
 case "$checkout" in
-  /home/runner-brabustore/actions-runner/_work/brabus_store/brabus_store) ;;
+  /opt/actions-runner-brabustore/_work/brabus_store/brabus_store) ;;
   *) printf '%s\n' 'Invalid Brabus checkout path.' >&2; exit 1 ;;
 esac
 
@@ -343,7 +343,7 @@ checkout=${1:?Usage: deploy-urbanlive <checkout> <image-digest>}
 image=${2:?Usage: deploy-urbanlive <checkout> <image-digest>}
 
 case "$checkout" in
-  /home/runner-urbanlive/actions-runner/_work/engage_hub_django/engage_hub_django) ;;
+  /opt/actions-runner-urbanlive/_work/engage_hub_django/engage_hub_django) ;;
   *) printf '%s\n' 'Invalid UrbanLive checkout path.' >&2; exit 1 ;;
 esac
 
@@ -520,14 +520,14 @@ Write `/etc/sudoers.d/80-runner-brabustore-deploy`:
 
 ```sudoers
 Defaults:runner-brabustore !requiretty
-runner-brabustore ALL=(root) NOPASSWD: /usr/local/sbin/deploy-brabustore-release /home/runner-brabustore/actions-runner/_work/brabus_store/brabus_store *, *
+runner-brabustore ALL=(root) NOPASSWD: /usr/local/sbin/deploy-brabustore-release /opt/actions-runner-brabustore/_work/brabus_store/brabus_store *, *
 ```
 
 Write `/etc/sudoers.d/80-runner-urbanlive-deploy`:
 
 ```sudoers
 Defaults:runner-urbanlive !requiretty
-runner-urbanlive ALL=(root) NOPASSWD: /usr/local/sbin/deploy-urbanlive-release /home/runner-urbanlive/actions-runner/_work/engage_hub_django/engage_hub_django *, *
+runner-urbanlive ALL=(root) NOPASSWD: /usr/local/sbin/deploy-urbanlive-release /opt/actions-runner-urbanlive/_work/engage_hub_django/engage_hub_django *, *
 ```
 
 Run: `sudo visudo -cf /etc/sudoers.d/80-runner-brabustore-deploy && sudo visudo -cf /etc/sudoers.d/80-runner-urbanlive-deploy`
