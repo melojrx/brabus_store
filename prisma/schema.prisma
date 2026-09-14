@@ -327,7 +327,7 @@ model StoreSettings {
   addressState      String  @default("CE")
   addressZip        String  @default("62765-000")
   whatsapp          String  @default("5585997839040")
-  instagram         String  @default("@brabus_pstore")
+  instagram         String  @default("@brabus_performancestore")
   pixKey            String?
   openingHours      String  @default("Seg–Sex: 8h–18h | Sáb: 8h–13h")
   googleMapsUrl     String?

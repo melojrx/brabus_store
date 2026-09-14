@@ -1,7 +1,7 @@
 import prisma from "@/lib/prisma"
 
-export const DEFAULT_STORE_INSTAGRAM_HANDLE = "@brabus_pstore"
-export const DEFAULT_STORE_INSTAGRAM_URL = "https://instagram.com/brabus_pstore"
+export const DEFAULT_STORE_INSTAGRAM_HANDLE = "@brabus_performancestore"
+export const DEFAULT_STORE_INSTAGRAM_URL = "https://instagram.com/brabus_performancestore"
 export const DEFAULT_STORE_ADDRESS_CITY = "Aracoiaba"
 export const DEFAULT_STORE_ADDRESS_STATE = "CE"
 

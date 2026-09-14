@@ -107,7 +107,7 @@ export default function SettingsForm({
         </div>
         <div>
           <label className="label-admin">Instagram</label>
-          <input className="input-admin" value={form.instagram} onChange={(e) => set("instagram", e.target.value)} placeholder="@brabus_pstore" />
+          <input className="input-admin" value={form.instagram} onChange={(e) => set("instagram", e.target.value)} placeholder="@brabus_performancestore" />
         </div>
         <div>
           <label className="label-admin">Chave Pix</label>
