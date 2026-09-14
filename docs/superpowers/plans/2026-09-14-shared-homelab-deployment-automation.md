@@ -1,6 +1,6 @@
 # Shared Homelab Deployment Automation Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan inline, task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Automate independent `main` releases from Brabus Store and UrbanLive to their existing isolated Homelab stacks, then retire the Brabus application runtime on the VPS without deleting recoverable data.
 
@@ -19,6 +19,56 @@
 - No secrets, backup credentials, database dumps, or private keys are committed or printed.
 - Do not stop Brabus on the VPS until all gates in Task 8 pass.
 - External Cloudflare R2 backup automation is a backlog after all three application pipelines are validated.
+- Execute inline in this conversation; do not delegate tasks to subagents.
+- Before Task 1, create `codex/homelab-deployment-automation` in each repository's existing checkout. Do not create a separate Git worktree.
+
+---
+
+## Task 0: Prepare inline working branches in the existing checkouts
+
+**Files:**
+- Modify: Git branch metadata only in `/home/jrmelo/Projetos/brabus_store` and `/home/jrmelo/Projetos/engage_hub_django`.
+
+**Interfaces:**
+- Consumes: clean original checkouts and the two documentation commits already local in Brabus.
+- Produces: one same-named working branch per repository without a new worktree directory.
+
+- [ ] **Step 1: Confirm both original checkouts are clean**
+
+Run:
+
+```bash
+cd /home/jrmelo/Projetos/brabus_store && git status --short
+cd /home/jrmelo/Projetos/engage_hub_django && git status --short
+```
+
+Expected: no uncommitted files. Stop and preserve any user-owned change before switching branches.
+
+- [ ] **Step 2: Create the Brabus working branch in the current checkout**
+
+Run:
+
+```bash
+cd /home/jrmelo/Projetos/brabus_store
+git switch -c codex/homelab-deployment-automation
+```
+
+Expected: the current directory remains `/home/jrmelo/Projetos/brabus_store`; no `git worktree add` command is used.
+
+- [ ] **Step 3: Create the UrbanLive working branch in its current checkout**
+
+Run:
+
+```bash
+cd /home/jrmelo/Projetos/engage_hub_django
+git switch -c codex/homelab-deployment-automation
+```
+
+Expected: the current directory remains `/home/jrmelo/Projetos/engage_hub_django`; no separate worktree exists.
+
+- [ ] **Step 4: Record the execution mode**
+
+Execute all remaining tasks inline in this conversation, review each task's diff and verification output before starting the next task, and do not invoke subagent-driven development.
 
 ---
 
