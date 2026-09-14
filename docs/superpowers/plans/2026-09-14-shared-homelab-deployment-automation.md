@@ -519,15 +519,13 @@ Verify: `sudo sha256sum /usr/local/sbin/deploy-brabustore-release /usr/local/sbi
 Write `/etc/sudoers.d/80-runner-brabustore-deploy`:
 
 ```sudoers
-Defaults:runner-brabustore !requiretty
-runner-brabustore ALL=(root) NOPASSWD: /usr/local/sbin/deploy-brabustore-release /opt/actions-runner-brabustore/_work/brabus_store/brabus_store *, *
+runner-brabustore ALL=(root) NOPASSWD: /usr/local/sbin/deploy-brabustore-release /opt/actions-runner-brabustore/_work/brabus_store/brabus_store *
 ```
 
 Write `/etc/sudoers.d/80-runner-urbanlive-deploy`:
 
 ```sudoers
-Defaults:runner-urbanlive !requiretty
-runner-urbanlive ALL=(root) NOPASSWD: /usr/local/sbin/deploy-urbanlive-release /opt/actions-runner-urbanlive/_work/engage_hub_django/engage_hub_django *, *
+runner-urbanlive ALL=(root) NOPASSWD: /usr/local/sbin/deploy-urbanlive-release /opt/actions-runner-urbanlive/_work/engage_hub_django/engage_hub_django *
 ```
 
 Run: `sudo visudo -cf /etc/sudoers.d/80-runner-brabustore-deploy && sudo visudo -cf /etc/sudoers.d/80-runner-urbanlive-deploy`
