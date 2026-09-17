@@ -48,6 +48,10 @@ export default auth((req) => {
     return Response.redirect(new URL("/", req.nextUrl))
   }
 
+  if (isLoggedIn && pathname === "/admin" && req.auth?.user?.role === "SELLER") {
+    return Response.redirect(new URL("/admin/pdv", req.nextUrl))
+  }
+
   // Força troca de senha para usuários com mustChangePassword
   if (isLoggedIn && pathname.startsWith("/admin") && req.auth?.user?.mustChangePassword) {
     if (pathname !== "/admin/change-password" && !pathname.startsWith("/api/admin/change-password")) {

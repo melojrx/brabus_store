@@ -75,6 +75,8 @@ export default async function AccountPage() {
     redirect("/auth/login")
   }
 
+  const adminLink = session.user.role === "SELLER" ? "/admin/pdv" : "/admin"
+
   return (
     <div className="container mx-auto px-4 py-12 lg:py-20">
       <div className="mb-12 flex flex-col gap-6 border-b border-white/10 pb-8 md:flex-row md:items-end md:justify-between">
@@ -88,7 +90,7 @@ export default async function AccountPage() {
         <div className="flex flex-wrap gap-4">
           {((session.user as { role?: string }).role === "ADMIN" || (session.user as { role?: string }).role === "SELLER") ? (
             <Link
-              href="/admin"
+              href={adminLink}
               className="flex items-center gap-2 rounded-sm bg-[var(--color-primary)] px-6 py-3 text-xs font-bold uppercase tracking-widest text-black"
             >
               <Settings className="h-4 w-4" /> Painel Admin

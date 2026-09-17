@@ -8,6 +8,17 @@ export async function loginAsAdmin(page: Page, callbackPath: string) {
   await page.waitForURL(new RegExp(`${callbackPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`))
 }
 
+export async function loginAsSeller(page: Page, callbackPath?: string) {
+  const loginPath = callbackPath
+    ? `/auth/login?callbackUrl=${encodeURIComponent(callbackPath)}`
+    : "/auth/login"
+
+  await page.goto(loginPath)
+  await page.getByPlaceholder("seu@email.com").fill("seller@brabus.com")
+  await page.getByPlaceholder("••••••••").fill("Seller@123")
+  await page.getByRole("button", { name: "Entrar" }).click()
+}
+
 export async function expectNoAdminHorizontalOverflow(page: Page) {
   const adminMain = page.getByTestId("admin-main")
 
