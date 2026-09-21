@@ -1,6 +1,9 @@
 import { MapPin, Clock, Phone, Navigation } from "lucide-react";
+import { formatStoreWhatsApp, getPublicStoreSettings } from "@/lib/store-settings";
 
-export default function LojaFisica() {
+export default async function LojaFisica() {
+  const settings = await getPublicStoreSettings()
+
   return (
     <div className="container mx-auto px-4 py-12 lg:py-20">
       <div className="text-center max-w-2xl mx-auto mb-16">
@@ -41,7 +44,7 @@ export default function LojaFisica() {
              </div>
              <div>
                <h3 className="text-xl font-heading tracking-wider uppercase mb-2">Contato</h3>
-               <p className="text-gray-400">WhatsApp: (85) 99783-9040</p>
+                <p className="text-gray-400">WhatsApp: {formatStoreWhatsApp(settings.whatsapp)}</p>
              </div>
           </div>
 

@@ -59,12 +59,12 @@ test("uses WhatsApp rather than cart when online sales are disabled", () => {
   assert.deepEqual(
     getProductPurchaseAction({
       onlineSalesEnabled: false,
-      whatsapp: "5585997839040",
+      whatsapp: "5585921002688",
       productName: "Whey Pro",
     }),
     {
       kind: "whatsapp",
-      href: "https://wa.me/5585997839040?text=Ol%C3%A1%21+Tenho+interesse+em+Whey+Pro.",
+      href: "https://wa.me/5585921002688?text=Ol%C3%A1%21+Tenho+interesse+em+Whey+Pro.",
     },
   )
 })

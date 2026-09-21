@@ -1,6 +1,10 @@
 import { Mail, MessageCircle, Send } from "lucide-react";
+import { getPublicStoreSettings } from "@/lib/store-settings";
+import { buildWhatsAppUrl } from "@/lib/whatsapp";
 
-export default function Contato() {
+export default async function Contato() {
+  const settings = await getPublicStoreSettings()
+
   return (
     <div className="container mx-auto px-4 py-12 lg:py-20">
       <div className="text-center max-w-2xl mx-auto mb-16">
@@ -54,7 +58,7 @@ export default function Contato() {
              </div>
              <h3 className="text-xl font-heading tracking-wider uppercase mb-2">Atendimento Rápido</h3>
              <p className="text-gray-400 text-sm mb-6">A forma mais rápida de falar com a nossa equipe de vendas e suporte é pelo WhatsApp.</p>
-             <a href="https://wa.me/5585997839040" target="_blank" rel="noopener noreferrer" className="block w-full text-center bg-green-500 hover:bg-green-600 text-white font-bold uppercase tracking-widest py-4 rounded-sm transition-all">
+              <a href={buildWhatsAppUrl(settings.whatsapp, "Olá! Quero falar com a equipe da Brabus.")} target="_blank" rel="noopener noreferrer" className="block w-full text-center bg-green-500 hover:bg-green-600 text-white font-bold uppercase tracking-widest py-4 rounded-sm transition-all">
                Falar no WhatsApp
              </a>
            </div>

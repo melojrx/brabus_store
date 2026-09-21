@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Instagram, MapPin, Phone } from "lucide-react";
-import { getPublicStoreSettings } from "@/lib/store-settings";
+import { formatStoreWhatsApp, getPublicStoreSettings } from "@/lib/store-settings";
 
 export default async function Footer() {
   const settings = await getPublicStoreSettings()
@@ -29,7 +29,7 @@ export default async function Footer() {
             </li>
             <li className="flex items-center gap-2 pt-2">
               <Phone className="w-5 h-5 text-[var(--color-primary)]" />
-              <span>(85) 99783-9040</span>
+              <span>{formatStoreWhatsApp(settings.whatsapp)}</span>
             </li>
           </ul>
         </div>

@@ -443,7 +443,7 @@ async function main() {
       addressCity: "Aracoiaba",
       addressState: "CE",
       addressZip: "62765-000",
-      whatsapp: "5585997839040",
+      whatsapp: "5585921002688",
       instagram: "@brabus_performancestore",
       openingHours: "Seg-Sex: 8h-18h | Sab: 8h-13h",
     },

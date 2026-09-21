@@ -64,7 +64,7 @@ Rode as **migrations** e o **seed completo**:
 - Categorias de suplementos, moda fitness e acessórios
 - 12+ produtos de exemplo com variações (sabores e tamanhos)
 - Zonas de entrega local (Aracoiaba R$5, Baturité R$10, Capistrano R$10, demais cidades R$15~20)
-- Configurações da loja (endereço: Rua Antônio Lopes, 571 — Aracoiaba-CE | WhatsApp: 5585997839040)
+- Configurações da loja (endereço: Rua Antônio Lopes, 571 — Aracoiaba-CE | WhatsApp: 5585921002688)
 - Usuário admin: `admin@brabus.com` / `Admin@123`
 
 ---
@@ -191,7 +191,7 @@ Rode as **migrations** e o **seed completo**:
 ### 9. Integre o WhatsApp Business em todas as páginas
 
 - **Botão flutuante fixo** (canto inferior direito) com animação pulse verde
-- Link: `https://wa.me/5585997839040?text=Olá!%20Vi%20o%20site%20da%20Brabu%27s%20e%20tenho%20interesse.`
+- Link: `https://wa.me/5585921002688?text=Olá!%20Vi%20o%20site%20da%20Brabu%27s%20e%20tenho%20interesse.`
 - Na `/checkout/success`: botão "Acompanhar pelo WhatsApp" com número do pedido
 - Na `/loja` e `/contato`: QR Code estático do WhatsApp
 

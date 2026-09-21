@@ -44,7 +44,7 @@ Conjunto Cohab — Aracoiaba — CE
 
 #### Contatos Oficiais
 ```
-WhatsApp Business: (85) 99783-9040
+WhatsApp Business: (85) 92100-2688
 Instagram: @brabus.performancestore
 ```
 
@@ -109,9 +109,9 @@ O catálogo é dividido em três grandes linhas:
 - Portal completo com catálogo, carrinho e Mercado Pago Checkout Pro
 - Retirada e Entrega Braba gratuita
 
-#### Canal 2 — WhatsApp Business `(85) 99783-9040`
+#### Canal 2 — WhatsApp Business `(85) 92100-2688`
 - **Botão flutuante fixo** em todas as páginas (canto inferior direito)
-- Link direto: `https://wa.me/5585997839040`
+- Link direto: `https://wa.me/5585921002688`
 - Mensagem pré-preenchida ao clicar: *"Olá! Vi o site da Brabu's e tenho interesse em um produto."*
 - Ao concluir pedido: opção de *"Confirmar e acompanhar pelo WhatsApp"*
 - QR Code do WhatsApp na página de contato, footer e página da loja física
@@ -496,7 +496,7 @@ O catálogo é dividido em três grandes linhas:
 - **Botão flutuante fixo** em todas as páginas (bottom-right, z-index alto)
 - Ícone do WhatsApp com animação de pulso (pulse verde)
 - Tooltip: "Fale conosco no WhatsApp!"
-- Link: `https://wa.me/5585997839040?text=Olá!%20Vi%20o%20site%20da%20Brabu%27s%20e%20tenho%20interesse.`
+- Link: `https://wa.me/5585921002688?text=Olá!%20Vi%20o%20site%20da%20Brabu%27s%20e%20tenho%20interesse.`
 - Na página de confirmação de pedido: botão "Acompanhar pelo WhatsApp" com mensagem pré-preenchida com número do pedido
 - Na página `/contato` e `/loja`: QR Code estático do WhatsApp para uso offline (impressão)
 - No footer: link direto para WhatsApp com ícone
@@ -741,7 +741,7 @@ model StoreSettings {
   addressCity       String  @default("Aracoiaba")
   addressState      String  @default("CE")
   addressZip        String  @default("62765-000")
-  whatsapp          String  @default("5585997839040")
+  whatsapp          String  @default("5585921002688")
   instagram         String  @default("@brabus.performancestore")
   openingHours      String  @default("Seg–Sex: 8h–18h | Sáb: 8h–13h")
   googleMapsUrl     String?
@@ -810,7 +810,7 @@ role: ADMIN
 
 // Configuração da loja seed (StoreSettings)
 endereço: Rua Antônio Lopes, 571 — Conjunto Cohab — Aracoiaba — CE
-whatsapp: 5585997839040
+whatsapp: 5585921002688
 horário: Seg–Sex: 8h–18h | Sáb: 8h–13h
 
 // Zonas de entrega local seed (LocalDeliveryZone)

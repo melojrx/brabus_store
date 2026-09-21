@@ -4,7 +4,7 @@ import { buildWhatsAppUrl } from "../lib/whatsapp"
 
 test("builds a WhatsApp URL from StoreSettings digits and contextual message", () => {
   assert.equal(
-    buildWhatsAppUrl("(85) 99783-9040", "Olá! Tenho interesse em Whey Pro."),
-    "https://wa.me/5585997839040?text=Ol%C3%A1%21+Tenho+interesse+em+Whey+Pro.",
+    buildWhatsAppUrl("(85) 92100-2688", "Olá! Tenho interesse em Whey Pro."),
+    "https://wa.me/5585921002688?text=Ol%C3%A1%21+Tenho+interesse+em+Whey+Pro.",
   )
 })
