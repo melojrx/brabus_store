@@ -30,15 +30,17 @@ rollback_web_only() {
 }
 
 wait_for_migration() {
+  migration_force_update=$(docker service inspect --format '{{.Spec.TaskTemplate.ForceUpdate}}' "$MIGRATE_SERVICE")
   attempt=1
   while [ "$attempt" -le 60 ]; do
-    states=$(docker service ps --no-trunc --format '{{.CurrentState}}|{{.Error}}' "$MIGRATE_SERVICE")
-    if printf '%s\n' "$states" | grep -q '^Complete'; then
-      return 0
-    fi
-    if printf '%s\n' "$states" | grep -Eq '^(Failed|Rejected)'; then
-      return 1
-    fi
+    migration_task_ids=$(docker service ps --no-trunc -q "$MIGRATE_SERVICE")
+    for migration_task_id in $migration_task_ids; do
+      migration_state=$(docker inspect --type task --format '{{.Spec.ForceUpdate}}|{{.Status.State}}' "$migration_task_id")
+      case "$migration_state" in
+        "$migration_force_update|complete") return 0 ;;
+        "$migration_force_update|failed"|"$migration_force_update|rejected") return 1 ;;
+      esac
+    done
     sleep 2
     attempt=$((attempt + 1))
   done

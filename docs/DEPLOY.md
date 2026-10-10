@@ -54,6 +54,12 @@ Confirme que a imagem retornada é exatamente o digest publicado pelo workflow.
 O controlador também executa a migration antes de atualizar o web e restaura a
 imagem anterior do web se o healthcheck falhar.
 
+A espera da migration considera somente tarefas com o `ForceUpdate` da
+tentativa atual. Tarefas antigas rejeitadas ou concluídas não devem interromper
+nem aprovar uma nova promoção. Depois de queda de energia, confirme primeiro a
+saúde dos serviços; retome o job de deploy pelo GitHub Actions quando a execução
+interrompida tiver terminado.
+
 ## Operação somente PDV
 
 Enquanto a loja operar somente com vendas presenciais,
