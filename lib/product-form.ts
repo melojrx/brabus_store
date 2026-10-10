@@ -49,7 +49,7 @@ export type ProductFormProduct = Readonly<{
   slug: string
   description: string
   price: number
-  costPrice: number | null
+  costPrice?: number | null
   stock: number
   images: readonly string[]
   featured: boolean
@@ -88,7 +88,7 @@ export function createEmptyProductForm(): ProductFormState {
 export function mapProductToForm(product: ProductFormProduct): ProductFormState {
   return {
     name: product.name, slug: product.slug, description: product.description,
-    price: formatCurrencyInputValue(product.price), costPrice: formatCurrencyInputValue(product.costPrice),
+    price: formatCurrencyInputValue(product.price), costPrice: formatCurrencyInputValue(product.costPrice ?? null),
     images: [...product.images], featured: product.featured, active: product.active, isNew: product.isNew,
     categoryId: product.subcategory.id, weightLabel: product.weightLabel ?? product.weight ?? "",
     weightKg: product.weightKg == null ? "" : String(product.weightKg), gender: product.gender ?? "",
@@ -113,16 +113,16 @@ export function normalizeVariantsForCategory(variants: readonly ProductFormVaria
   return [{ id: normalized[0]?.id, sku: normalized[0]?.sku ?? "", name: "Default", size: "", color: "", flavor: "", stock: String(getTotalVariantStock(normalized)), expiresAt: category?.trackExpiration ? normalized[0]?.expiresAt ?? "" : "", active: normalized.some((variant) => variant.active) }]
 }
 
-export function validateProductForm(form: ProductFormState, category?: ProductFormCategory) {
-  return Object.values(getProductFormErrors(form, category))[0] ?? null
+export function validateProductForm(form: ProductFormState, category?: ProductFormCategory, canManageCosts = true) {
+  return Object.values(getProductFormErrors(form, category, canManageCosts))[0] ?? null
 }
 
-export function getProductFormErrors(form: ProductFormState, category?: ProductFormCategory) {
+export function getProductFormErrors(form: ProductFormState, category?: ProductFormCategory, canManageCosts = true) {
   const errors: Record<string, string> = {}
   if (!form.name.trim()) errors["product-name"] = "Informe o nome do produto."
   if (!form.categoryId || !category) errors["product-category"] = "Selecione uma subcategoria."
   if (parseCurrencyInputValue(form.price) == null) errors["product-price"] = "Informe o preço de venda."
-  if (parseCurrencyInputValue(form.costPrice) == null) errors["product-cost-price"] = "Informe o preço de custo."
+  if (canManageCosts && parseCurrencyInputValue(form.costPrice) == null) errors["product-cost-price"] = "Informe o preço de custo."
   if (!form.variants.length) errors["product-variants"] = "Cadastre ao menos uma variante."
   if (category) {
     form.variants.forEach((variant, index) => {
@@ -134,11 +134,13 @@ export function getProductFormErrors(form: ProductFormState, category?: ProductF
   return errors
 }
 
-export function buildProductPayload(form: ProductFormState, category: ProductFormCategory) {
+export function buildProductPayload(form: ProductFormState, category: ProductFormCategory, canManageCosts = true) {
   const fashion = category.parent?.slug === "roupas-fitness"
   return {
     name: form.name.trim(), slug: form.slug.trim() || slugifyProductName(form.name), description: form.description.trim(),
-    price: parseCurrencyInputValue(form.price), costPrice: parseCurrencyInputValue(form.costPrice), images: form.images,
+    price: parseCurrencyInputValue(form.price),
+    ...(canManageCosts ? { costPrice: parseCurrencyInputValue(form.costPrice) } : {}),
+    images: form.images,
     featured: form.featured, active: form.active, isNew: form.isNew,
     weight: category.supportsWeight ? form.weightLabel.trim() || null : null,
     weightLabel: category.supportsWeight ? form.weightLabel.trim() || null : null,

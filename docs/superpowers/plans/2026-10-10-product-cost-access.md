@@ -1,6 +1,6 @@
 # Product Cost Access Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task, inline, without subagents or a separate worktree. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task, inline, without subagents or a separate worktree. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Ocultar custos de vendedores e público, preservando a operação de produtos, estoque e PDV e o acesso financeiro de ADMIN.
 
@@ -45,7 +45,7 @@ O runner precisa ter as credenciais de pagamento, e-mail, transportadora e webho
 
 **Interfaces:** `protectProductCost<T extends { costPrice: unknown }>(data: T, body: object, canWriteCosts: boolean)` retorna dados com custo apenas se o corpo original contém o campo e a escrita é autorizada. Lança `ProductCostAccessError` quando há tentativa não autorizada. `serializeProduct(product, options?: { includeCosts?: boolean })` preserva os campos comerciais existentes, omite custo por padrão e inclui custo somente para `includeCosts === true`.
 
-- [ ] Escrever e executar primeiro os testes abaixo; esperar falha por módulo inexistente. Criar fixtures completas de ProductWithRelations no teste de serializer usando Prisma.Decimal e datas sintéticas, sem banco. Verificar ausência de propriedade, custo zero, null autorizado e manutenção de preço, categoria e variantes.
+- [x] Escrever e executar primeiro os testes abaixo; esperar falha por módulo inexistente. Criar fixtures completas de ProductWithRelations no teste de serializer usando Prisma.Decimal e datas sintéticas, sem banco. Verificar ausência de propriedade, custo zero, null autorizado e manutenção de preço, categoria e variantes.
 
 ```ts
 import assert from "node:assert/strict"
@@ -70,7 +70,7 @@ test("allows an explicit administrator zero cost", () => {
 
 Run: `node --import tsx --test tests/product-cost-access.test.ts tests/catalog-cost-serialization.test.ts`.
 
-- [ ] Implementar somente a política testada:
+- [x] Implementar somente a política testada:
 
 ```ts
 export class ProductCostAccessError extends Error {
@@ -104,7 +104,7 @@ price: product.price.toNumber(),
 
 Manter as conversões existentes de datas, categorias e variantes. Converter TODOS os `map(serializeProduct)` para lambdas com uma política explícita; o catálogo público usa `products.map(product => serializeProduct(product))`.
 
-- [ ] Reexecutar os testes focados e existentes; conferir que a falha do teste de serializer antes do ajuste era a presença de custo, e não fixture inválida.
+- [x] Reexecutar os testes focados e existentes; conferir que a falha do teste de serializer antes do ajuste era a presença de custo, e não fixture inválida.
 
 ## Task 2: APIs, páginas e formulário de produtos
 
@@ -112,7 +112,7 @@ Manter as conversões existentes de datas, categorias e variantes. Converter TOD
 
 **Interfaces:** Páginas enviam `canManageCosts: boolean`; tipos Product e ProductFormProduct tornam `costPrice` opcional. Funções `getProductFormErrors`, `validateProductForm` e `buildProductPayload` ganham último argumento `canManageCosts = true` para preservar os consumidores administrativos existentes.
 
-- [ ] Adicionar testes de formulário que validam cadastro sem custo com permissão false e ausência de propriedade no payload, mantendo validação de nome, categoria, preço e variantes. Testar também o comportamento true já existente. Adicionar e2e de resposta API sem custo e campo/coluna/margem ausentes para SELLER; executar e observar falha de segurança antes da mudança.
+- [x] Adicionar testes de formulário que validam cadastro sem custo com permissão false e ausência de propriedade no payload, mantendo validação de nome, categoria, preço e variantes. Testar também o comportamento true já existente. Adicionar e2e de resposta API sem custo e campo/coluna/margem ausentes para SELLER; executar e observar falha de segurança antes da mudança.
 
 ```ts
 test("seller payload omits cost and still validates commercial fields", () => {
@@ -123,7 +123,7 @@ test("seller payload omits cost and still validates commercial fields", () => {
 })
 ```
 
-- [ ] Routes retornam a sessão do guard, mantêm `isStaffRole` para operação de produtos e usam `isAdminRole` para custo. Aplicar no POST e PUT:
+- [x] Routes retornam a sessão do guard, mantêm `isStaffRole` para operação de produtos e usam `isAdminRole` para custo. Aplicar no POST e PUT:
 
 ```ts
 const canManageCosts = isAdminRole(session.user?.role)
@@ -134,9 +134,9 @@ const variants = normalized.variants
 
 Capturar `ProductCostAccessError` como 403 antes do tratamento genérico 500. Não iniciar transação ou alterar variantes se a proteção negar. No GET/POST/PUT serializar com `{ includeCosts: canManageCosts }`. Campo ausente na gravação deve usar omissão Prisma, não recompor custo com leitura antiga que possa sobrescrever uma atualização concorrente.
 
-- [ ] Em cada página consultar `auth()` e calcular o booleano no servidor. Serializar com a mesma política e enviar `canManageCosts` explicitamente. No componente, condicionar coluna, célula, campo e margem a esse booleano. Passá-lo às funções de validação/payload. Mapear custo opcional para formulário vazio com `product.costPrice ?? null`; exibir “Não informado” apenas ao ADMIN quando null.
+- [x] Em cada página consultar `auth()` e calcular o booleano no servidor. Serializar com a mesma política e enviar `canManageCosts` explicitamente. No componente, condicionar coluna, célula, campo e margem a esse booleano. Passá-lo às funções de validação/payload. Mapear custo opcional para formulário vazio com `product.costPrice ?? null`; exibir “Não informado” apenas ao ADMIN quando null.
 
-- [ ] Validar POST/PUT de vendedor com custo sentinela: 403 e leitura Prisma confirma todos os dados intactos. Validar PUT sem custo sobre produto com custo 73.19 e com custo zero: ambos preservados. Validar criação sem custo, resposta sem campo, e ADMIN completando custo depois.
+- [x] Validar POST/PUT de vendedor com custo sentinela: 403 e leitura Prisma confirma todos os dados intactos. Validar PUT sem custo sobre produto com custo 73.19 e com custo zero: ambos preservados. Validar criação sem custo, resposta sem campo, e ADMIN completando custo depois.
 
 ## Task 3: Fechar obtenção de privilégio e atualizar sessão
 
@@ -144,8 +144,8 @@ Capturar `ProductCostAccessError` como 403 antes do tratamento genérico 500. N�
 
 **Interfaces:** Guards das rotas sensíveis aceitam somente ADMIN; JWT lê papel atual por token.id no servidor. `isStaffRole` não muda.
 
-- [ ] Antes de alterar guard, adicionar e2e que tenta GET/POST de usuários e chaves, PATCH de papel, reset de senha e revoke de chave sintética como SELLER. Usar identificadores locais reais e confirmar que a tentativa não altera nada. A execução inicial deve demonstrar o acesso indevido; restaurar apenas as fixtures sintéticas criadas para esse teste.
-- [ ] Separar sessão inexistente (401) de sessão não administrativa (403), com respostas sem dados sensíveis. Padrão a aplicar em cada handler antes de ler/gravar dados:
+- [x] Antes de alterar guard, adicionar e2e que tenta GET/POST de usuários e chaves, PATCH de papel, reset de senha e revoke de chave sintética como SELLER. Usar identificadores locais reais e confirmar que a tentativa não altera nada. A execução inicial deve demonstrar o acesso indevido; restaurar apenas as fixtures sintéticas criadas para esse teste.
+- [x] Separar sessão inexistente (401) de sessão não administrativa (403), com respostas sem dados sensíveis. Padrão a aplicar em cada handler antes de ler/gravar dados:
 
 ```ts
 const session = await auth()
@@ -153,7 +153,7 @@ if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status
 if (!isAdminRole(session.user.role)) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 ```
 
-- [ ] No callback JWT, após preencher token.id no login, consultar o usuário atual. Usar o cliente Prisma já importado em auth.ts. Preservar phone, id e demais campos existentes:
+- [x] No callback JWT, após preencher token.id no login, consultar o usuário atual. Usar o cliente Prisma já importado em auth.ts. Preservar phone, id e demais campos existentes:
 
 ```ts
 if (typeof token.id === "string") {
@@ -168,7 +168,7 @@ if (typeof token.id === "string") {
 
 Não capturar erro para recuperar papel privilegiado antigo. A sessão não deve ganhar ADMIN por campo de payload cliente. O teste e2e cria usuário ADMIN dedicado, autentica, altera papel via Prisma sintético para SELLER e confirma próxima resposta de produtos sem custo e dashboard negado. Não rebaixar o ADMIN compartilhado do seed.
 
-- [ ] Reexecutar os testes de proteção e login, incluindo destino PDV de vendedor e acesso administrativo normal.
+- [x] Reexecutar os testes de proteção e login, incluindo destino PDV de vendedor e acesso administrativo normal.
 
 ## Task 4: Scopes específicos de integração
 
@@ -176,8 +176,8 @@ Não capturar erro para recuperar papel privilegiado antigo. A sessão não deve
 
 **Interfaces:** Usar `hasScope(ctx, "read:costs")`, `hasScope(ctx, "write:costs")`, e os erros de integração existentes. `protectProductCost` recebe o corpo parseado ANTES de fallback com o custo existente. Escrita de custo e leitura de custo são independentes.
 
-- [ ] Criar chaves sintéticas via Prisma/hashApiKey, guardadas só na memória do teste. Testar GET/POST/PATCH de produtos, detalhe de pedido e dashboard com combinações de scopes. Executar antes das mudanças: esperar exposição de custo e acesso financeiro indevidos.
-- [ ] Obter contexto retornado por `requireIntegrationScope` e serializar com:
+- [x] Criar chaves sintéticas via Prisma/hashApiKey, guardadas só na memória do teste. Testar GET/POST/PUT de produtos, detalhe de pedido e dashboard com combinações de scopes. Executar antes das mudanças: esperar exposição de custo e acesso financeiro indevidos.
+- [x] Obter contexto retornado por `requireIntegrationScope` e serializar com:
 
 ```ts
 serializeProduct(product, { includeCosts: hasScope(ctx, "read:costs") })
@@ -189,8 +189,8 @@ No detalhe de pedidos, preservar as propriedades atuais e substituir o campo inc
 ...(hasScope(ctx, "read:costs") ? { unitCost: item.unitCost?.toNumber() ?? null } : {}),
 ```
 
-- [ ] Proteger custo recebido em POST/PATCH usando `protectProductCost(normalized.productData, parsed.data, hasScope(ctx, "write:costs"))`. Converter ProductCostAccessError em integrationError("FORBIDDEN", error.message, 403). Na edição, retirar o fallback de custo dos dados a gravar quando o corpo omite o campo; preservar as demais regras atuais de PATCH.
-- [ ] Antes da consulta do dashboard:
+- [x] Proteger custo recebido em POST/PUT usando `protectProductCost(normalized.productData, parsed.data, hasScope(ctx, "write:costs"))`. Converter ProductCostAccessError em integrationError("FORBIDDEN", error.message, 403). Na edição, retirar o fallback de custo dos dados a gravar quando o corpo omite o campo; preservar as demais regras atuais de PUT.
+- [x] Antes da consulta do dashboard:
 
 ```ts
 const ctx = await requireIntegrationScope(req, "read:dashboard")
@@ -206,7 +206,7 @@ Adicionar à lista de scopes da tela administrativa:
 { value: "write:costs", label: "Custos (escrita)" },
 ```
 
-- [ ] Reexecutar e2e: chaves sem novo scope mantêm preço/estoque e operações comuns; write:costs sem read:costs permite alterar mas resposta omite custo; read:costs sem write:costs permite ler mas alteração financeira retorna 403. Registrar no documento a mudança de contrato; não modificar chaves existentes automaticamente.
+- [x] Reexecutar e2e: chaves sem novo scope mantêm preço/estoque e operações comuns; write:costs sem read:costs permite alterar mas resposta omite custo; read:costs sem write:costs permite ler mas alteração financeira retorna 403. Registrar no documento a mudança de contrato; não modificar chaves existentes automaticamente.
 
 ## Task 5: Aviso de custo ausente e regressão completa
 
@@ -214,7 +214,7 @@ Adicionar à lista de scopes da tela administrativa:
 
 **Interfaces:** `financial.missingCostItemCount` conta linhas de itens vendidos no período com unitCost null; zero explícito não entra na contagem. Pode extrair `countItemsMissingCost(items: readonly { unitCost: unknown }[]): number` para teste puro. Não alterar os cálculos financeiros ou snapshots históricos.
 
-- [ ] Escrever teste e observar falha antes de extrair contador:
+- [x] Escrever teste e observar falha antes de extrair contador:
 
 ```ts
 test("distinguishes missing cost from zero cost", () => {
@@ -222,7 +222,7 @@ test("distinguishes missing cost from zero cost", () => {
 })
 ```
 
-- [ ] Implementar contador com `items.filter(item => item.unitCost == null).length`, adicioná-lo à resposta financial e renderizar aviso somente quando maior que zero na aba financeira:
+- [x] Implementar contador com `items.filter(item => item.unitCost == null).length`, adicioná-lo à resposta financial e renderizar aviso somente quando maior que zero na aba financeira:
 
 ```tsx
 {dashboard.financial.missingCostItemCount > 0 ? (
@@ -232,8 +232,8 @@ test("distinguishes missing cost from zero cost", () => {
 ) : null}
 ```
 
-- [ ] Completar testes de navegador: custo sentinela ausente no HTML inicial público, páginas de detalhe, payloads de navegação Next.js e páginas/edição do vendedor. Verificar presença do campo para ADMIN. Verificar edição/cadastro pela tela, margem do ADMIN e ausência para SELLER. Conferir variantes, quantidade e preço após salvar. Testar PDV com venda sintética e snapshot interno preservado; manter execução dos testes existentes de fiado/desconto.
-- [ ] Executar os gates abaixo com ambiente sintético explícito. Cada execução deve retornar zero; registrar contagem de testes, alertas existentes e duração. Um teste que falhou por setup deve ser repetido após corrigir setup, sem apresentar essa falha como comportamento da funcionalidade.
+- [x] Completar testes de navegador: custo sentinela ausente no HTML inicial público, páginas de detalhe, payloads de navegação Next.js e páginas/edição do vendedor. Verificar presença do campo para ADMIN. Verificar edição/cadastro pela tela, margem do ADMIN e ausência para SELLER. Conferir variantes, quantidade e preço após salvar. Testar PDV com venda sintética e snapshot interno preservado; manter execução dos testes existentes de fiado/desconto.
+- [x] Executar os gates abaixo com ambiente sintético explícito. Cada execução deve retornar zero; registrar contagem de testes, alertas existentes e duração. Um teste que falhou por setup deve ser repetido após corrigir setup, sem apresentar essa falha como comportamento da funcionalidade.
 
 ```sh
 npm test
@@ -245,8 +245,8 @@ git diff --check
 
 Verificar que tests/scripts/test-ci-test-environment.sh e demais scripts de autorização relevantes não foram quebrados; registrar scripts executados. Não promover ajuste enquanto algum gate obrigatório falhar. Ausência de regressão significa aprovação da cobertura executada, não garantia para fluxos não testados.
 
-- [ ] Fazer revisão inline do diff contra os 11 critérios da spec; confirmar cada callsite de serializeProduct e todas as respostas que contêm unitCost. Documentar ausência de exportadores e a regra para futuros exportadores. Atualizar CLAUDE.md, removendo afirmação de acesso equivalente ADMIN/SELLER para áreas financeiras/usuários/chaves.
-- [ ] Criar resumo de validação em outputs do chat; copiar spec/plano atualizados para outputs. Deixar branch local e relatar arquivos, evidências e mudanças de contrato. Commits locais seguem Conventional Commits com autor `Junior Melo <jrmeloafrf@gmail.com>`; não realizar push ou merge. Container e banco descartáveis podem ser removidos após guardar evidências, sem tocar os containers preexistentes.
+- [x] Fazer revisão inline do diff contra os 11 critérios da spec; confirmar cada callsite de serializeProduct e todas as respostas que contêm unitCost. Documentar ausência de exportadores e a regra para futuros exportadores. Atualizar CLAUDE.md, removendo afirmação de acesso equivalente ADMIN/SELLER para áreas financeiras/usuários/chaves.
+- [x] Criar resumo de validação em outputs do chat; copiar spec/plano atualizados para outputs. Deixar branch local e relatar arquivos, evidências e mudanças de contrato. Commits locais seguem Conventional Commits com autor `Junior Melo <jrmeloafrf@gmail.com>`; não realizar push ou merge. Container e banco descartáveis podem ser removidos após guardar evidências, sem tocar os containers preexistentes.
 
 ## Estado inicial e andamento
 
@@ -255,6 +255,22 @@ Verificar que tests/scripts/test-ci-test-environment.sh e demais scripts de auto
 - [x] Banco descartável local criado; 21 migrações existentes aplicadas e seed sintético carregado.
 - [x] Lint inicial: zero erros, um aviso preexistente de useEffect em DeliveriesManager.tsx.
 - [x] Suite inicial com seed sintético: 88/88 testes; build passou; navegador: 11/11 testes (19,7 s).
-- [ ] Revisão escrita da especificação pelo usuário, conforme brainstorming.
-- [ ] Implementação das tasks 1–5 com ciclos vermelho/verde.
-- [ ] Revisão final e entrega local.
+- [x] Revisão escrita da especificação pelo usuário, conforme brainstorming.
+- [x] Implementação das tasks 1–5 com ciclos vermelho/verde.
+- [x] Revisão final e entrega local.
+
+
+## Execução concluída — 2026-10-10
+
+- Revisão escrita aprovada pelo usuário: “ok, implemente”.
+- Execução inline no checkout atual, sem subagents/worktree separado.
+- Vermelho de navegador: 14 falhas de segurança/contrato esperadas e 1 cenário existente de PDV aprovado; execução corrigida após um erro de tipagem na fixture de limpeza, antes de alterações de produção.
+- Vermelho unitário: catálogo com custo, formulário exigindo custo, política de escrita inexistente e contador inexistente.
+- Verde focado: 16 testes unitários e 15 cenários de navegador passaram.
+- Verde final: 95 testes unitários e 29 cenários de navegador passaram; build e lint aprovados, com um aviso de lint preexistente.
+- Scripts de proteção de Server Actions e ambiente de CI passaram.
+- Revisão inline dos 11 critérios da especificação concluída; nenhuma migração, dependência, nova função de exportação ou mudança de cálculo financeiro.
+- Ajuste ao plano: a edição de produto na integração usa PUT, que é o método existente no projeto. PATCH continua apenas alternando active; não alterar esse contrato. O texto anterior de PATCH para edição foi corrigido na documentação.
+- tests/auth-guard.test.ts foi preservado: os helpers existentes já tinham a regra ADMIN/SELLER desejada. Os guards dos handlers e a atualização de papel da sessão foram verificados pelos novos testes reais de navegador/API.
+- Os três cenários adicionais finais verificam cadastro/edição pela tela, operações administrativas permitidas e negação a visitante/CUSTOMER. Complementam os cenários escritos e executados antes das correções.
+- Relatório versionado: docs/superpowers/validation/2026-10-10-product-cost-access.md.

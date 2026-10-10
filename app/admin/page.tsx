@@ -751,6 +751,11 @@ export default async function AdminDashboard({
 
       {currentTab === "financial" ? (
         <div className="space-y-10">
+          {dashboard.financial.missingCostItemCount > 0 ? (
+            <p role="status" className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-amber-200">
+              Custos incompletos em {dashboard.financial.missingCostItemCount} itens de venda neste período. Lucro e margem podem estar superestimados.
+            </p>
+          ) : null}
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
             <MetricCard
               title="Recebido"

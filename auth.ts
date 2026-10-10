@@ -46,6 +46,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.phone = user.phone
         token.mustChangePassword = user.mustChangePassword
       }
+      if (typeof token.id === "string") {
+        const currentUser = await prisma.user.findUnique({
+          where: { id: token.id },
+          select: { role: true, mustChangePassword: true },
+        })
+        token.role = currentUser?.role ?? "CUSTOMER"
+        token.mustChangePassword = currentUser?.mustChangePassword ?? false
+      }
       return token
     },
     async session({ session, token }) {

@@ -1,24 +1,25 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/auth"
-import { isStaffRole } from "@/lib/auth-guard"
+import { isAdminRole, isStaffRole } from "@/lib/auth-guard"
 import {
   normalizeProductPayload,
   productWithRelationsInclude,
   serializeProduct,
 } from "@/lib/catalog-api"
 import prisma from "@/lib/prisma"
+import { protectProductCost, ProductCostAccessError } from "@/lib/product-cost-access"
 
-// Middleware manual para checar Admin
-async function checkAdmin() {
+async function checkStaff() {
   const session = await auth()
   if (!session || !isStaffRole(session.user?.role)) {
-    return false
+    return null
   }
-  return true
+  return session
 }
 
 export async function GET() {
-  if (!(await checkAdmin())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  const session = await checkStaff()
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   try {
     const products = await prisma.product.findMany({
@@ -26,19 +27,22 @@ export async function GET() {
       orderBy: { createdAt: "desc" },
     })
 
-    return NextResponse.json(products.map(serializeProduct))
+    return NextResponse.json(products.map(product => serializeProduct(product, { includeCosts: isAdminRole(session.user?.role) })))
   } catch (error) {
     return NextResponse.json({ error: "Server Error" }, { status: 500 })
   }
 }
 
 export async function POST(req: Request) {
-  if (!(await checkAdmin())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  const session = await checkStaff()
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   try {
     const body = await req.json()
 
-    const { productData, variants } = normalizeProductPayload(body)
+    const normalized = normalizeProductPayload(body)
+    const productData = protectProductCost(normalized.productData, body, isAdminRole(session.user?.role))
+    const variants = normalized.variants
     if (!productData.name || !productData.slug || !productData.categoryId) {
       return NextResponse.json({ error: "Nome, slug e subcategoria são obrigatórios." }, { status: 400 })
     }
@@ -75,8 +79,11 @@ export async function POST(req: Request) {
       include: productWithRelationsInclude,
     })
 
-    return NextResponse.json(serializeProduct(product), { status: 201 })
+    return NextResponse.json(serializeProduct(product, { includeCosts: isAdminRole(session.user?.role) }), { status: 201 })
   } catch (error) {
+    if (error instanceof ProductCostAccessError) {
+      return NextResponse.json({ error: error.message }, { status: 403 })
+    }
     console.error(error)
     return NextResponse.json({ error: "Server Error" }, { status: 500 })
   }

@@ -13,6 +13,10 @@ export const DASHBOARD_ORDERS_PAGE_SIZE = 8
 export const LOW_STOCK_THRESHOLD = 10
 
 const paidStatuses: OrderStatus[] = [OrderStatus.PAID, OrderStatus.SHIPPED, OrderStatus.DELIVERED]
+
+export function countItemsMissingCost(items: readonly { unitCost: unknown }[]) {
+  return items.filter(item => item.unitCost == null).length
+}
 const dayLabelFormatter = new Intl.DateTimeFormat("pt-BR", {
   day: "2-digit",
   month: "2-digit",
@@ -728,6 +732,7 @@ export async function getAdminDashboardData(
       paymentMethodSales: aggregateCurrencyMap(paymentMethodSales),
     },
     financial: {
+      missingCostItemCount: countItemsMissingCost(paidItems),
       cards: {
         revenue: currencyValue(grossRevenue),
         receivedRevenue: currencyValue(decimalToNumber(receivedPayments._sum.amount)),

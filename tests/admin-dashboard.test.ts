@@ -1,7 +1,12 @@
 import assert from "node:assert/strict"
 import test from "node:test"
 import { OrderChannel, OrderStatus } from "@prisma/client"
-import { aggregatePdvSalesBySeller } from "../lib/admin-dashboard"
+import { aggregatePdvSalesBySeller, countItemsMissingCost } from "../lib/admin-dashboard"
+
+test("distinguishes missing historical cost from explicit zero", () => {
+  assert.equal(countItemsMissingCost([{ unitCost: null }, { unitCost: 0 }, { unitCost: 73.19 }]), 1)
+  assert.equal(countItemsMissingCost([]), 0)
+})
 
 test("aggregates only eligible PDV sales by seller", () => {
   const result = aggregatePdvSalesBySeller([

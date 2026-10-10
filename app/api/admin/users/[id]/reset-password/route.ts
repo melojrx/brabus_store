@@ -2,14 +2,8 @@ import { NextResponse } from "next/server"
 import { hash } from "bcryptjs"
 import crypto from "crypto"
 import { auth } from "@/auth"
-import { isStaffRole } from "@/lib/auth-guard"
+import { isAdminRole } from "@/lib/auth-guard"
 import prisma from "@/lib/prisma"
-
-async function checkAdmin() {
-  const session = await auth()
-  if (!session || !isStaffRole(session.user?.role)) return null
-  return session
-}
 
 function generateTemporaryPassword(): string {
   return crypto.randomBytes(9).toString("base64url").slice(0, 12)
@@ -19,8 +13,12 @@ export async function POST(
   _req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  if (!(await checkAdmin())) {
+  const session = await auth()
+  if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+  if (!isAdminRole(session.user.role)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
   const { id } = await params

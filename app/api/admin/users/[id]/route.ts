@@ -1,20 +1,18 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/auth"
-import { isStaffRole } from "@/lib/auth-guard"
+import { isAdminRole } from "@/lib/auth-guard"
 import prisma from "@/lib/prisma"
-
-async function checkAdmin() {
-  const session = await auth()
-  if (!session || !isStaffRole(session.user?.role)) return null
-  return session
-}
 
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  if (!(await checkAdmin())) {
+  const session = await auth()
+  if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+  if (!isAdminRole(session.user.role)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
   const { id } = await params
@@ -78,9 +76,12 @@ export async function DELETE(
   _req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const session = await checkAdmin()
-  if (!session) {
+  const session = await auth()
+  if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+  if (!isAdminRole(session.user.role)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
   const { id } = await params

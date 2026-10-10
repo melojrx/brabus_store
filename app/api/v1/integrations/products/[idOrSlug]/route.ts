@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { requireIntegrationScope, IntegrationAuthError } from "@/lib/integrations/auth"
+import { requireIntegrationScope, IntegrationAuthError, hasScope } from "@/lib/integrations/auth"
 import { integrationSuccess, integrationError } from "@/lib/integrations/response"
 import {
   normalizeProductPayload,
@@ -7,6 +7,7 @@ import {
   serializeProduct,
 } from "@/lib/catalog-api"
 import prisma from "@/lib/prisma"
+import { protectProductCost, ProductCostAccessError } from "@/lib/product-cost-access"
 import { Prisma } from "@prisma/client"
 
 const variantSchema = z.object({
@@ -55,7 +56,7 @@ export async function GET(
   { params }: { params: Promise<{ idOrSlug: string }> },
 ) {
   try {
-    await requireIntegrationScope(req, "read:products")
+    const ctx = await requireIntegrationScope(req, "read:products")
 
     const { idOrSlug } = await params
     const product = await findProduct(idOrSlug)
@@ -64,7 +65,7 @@ export async function GET(
       return integrationError("NOT_FOUND", "Produto não encontrado.", 404)
     }
 
-    return integrationSuccess(serializeProduct(product))
+    return integrationSuccess(serializeProduct(product, { includeCosts: hasScope(ctx, "read:costs") }))
   } catch (error) {
     if (error instanceof IntegrationAuthError) {
       return integrationError(error.code, error.message, error.status)
@@ -78,7 +79,7 @@ export async function PUT(
   { params }: { params: Promise<{ idOrSlug: string }> },
 ) {
   try {
-    await requireIntegrationScope(req, "write:products")
+    const ctx = await requireIntegrationScope(req, "write:products")
 
     const { idOrSlug } = await params
     const existing = await findProduct(idOrSlug)
@@ -100,7 +101,7 @@ export async function PUT(
       slug: parsed.data.slug ?? existing.slug,
       description: parsed.data.description ?? existing.description,
       price: parsed.data.price ?? existing.price.toNumber(),
-      costPrice: parsed.data.costPrice !== undefined ? parsed.data.costPrice : existing.costPrice?.toNumber() ?? null,
+      costPrice: parsed.data.costPrice,
       images: parsed.data.images ?? existing.images,
       featured: parsed.data.featured ?? existing.featured,
       active: parsed.data.active ?? existing.active,
@@ -113,7 +114,9 @@ export async function PUT(
       variants: parsed.data.variants,
     }
 
-    const { productData, variants } = normalizeProductPayload(payload)
+    const normalized = normalizeProductPayload(payload)
+    const productData = protectProductCost(normalized.productData, parsed.data, hasScope(ctx, "write:costs"))
+    const variants = normalized.variants
 
     if (productData.categoryId !== existing.categoryId) {
       const category = await prisma.category.findUnique({
@@ -169,8 +172,11 @@ export async function PUT(
       return tx.product.findUniqueOrThrow({ where: { id: existing.id }, include: productWithRelationsInclude })
     })
 
-    return integrationSuccess(serializeProduct(product))
+    return integrationSuccess(serializeProduct(product, { includeCosts: hasScope(ctx, "read:costs") }))
   } catch (error) {
+    if (error instanceof ProductCostAccessError) {
+      return integrationError("FORBIDDEN", error.message, 403)
+    }
     if (error instanceof IntegrationAuthError) {
       return integrationError(error.code, error.message, error.status)
     }

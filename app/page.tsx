@@ -78,7 +78,7 @@ async function getBestSellingProducts() {
         ? topIds.map((id) => productsById.get(id)).filter((product) => product != null)
         : products
 
-    return orderedProducts.map(serializeProduct)
+    return orderedProducts.map(product => serializeProduct(product))
   } catch {
     return []
   }

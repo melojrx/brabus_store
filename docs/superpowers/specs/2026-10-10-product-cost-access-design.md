@@ -3,7 +3,7 @@
 Data: 2026-10-10. Repositório: `/home/jrmelo/Projetos/brabus_store`.
 Base inspecionada: `main`, commit `9cbb1ba5fce930240faf1de01da974f03f1ddc0d`.
 Branch de trabalho: `codex/restrict-product-costs`, criada da `main` no checkout atual.
-Estado: especificação escrita; aguardando revisão do usuário antes de alterar comportamento.
+Estado: aprovada pelo usuário e implementada localmente em 2026-10-10; validação sintética concluída. Publicação não realizada.
 
 ## Objetivo e decisão
 
@@ -111,4 +111,4 @@ Checkout limpo na main antes da criação da branch. Primeiro teste sem ambiente
 
 ## Revisão e entrega
 
-Especificação e plano ficam versionados na branch e têm cópias em outputs deste chat. A revisão escrita exigida pela skill brainstorming antecede mudanças de comportamento. Após revisão, executar o plano inline com TDD e verificação local; registrar evidências e deixar a branch disponível para revisão, sem publicação automática.
+Especificação e plano ficam versionados na branch e têm cópias em outputs deste chat. A revisão escrita foi aprovada pelo usuário antes das alterações. O plano foi executado inline com TDD e verificação local. Evidências em docs/superpowers/validation/2026-10-10-product-cost-access.md; branch preservada para revisão, sem publicação automática.

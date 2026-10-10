@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server"
 import { auth } from "@/auth"
-import { isStaffRole } from "@/lib/auth-guard"
+import { isAdminRole, isStaffRole } from "@/lib/auth-guard"
 import { cleanupOrphanedManagedProductImages } from "@/lib/admin-product-images"
 import {
   normalizeProductPayload,
@@ -8,19 +8,23 @@ import {
   serializeProduct,
 } from "@/lib/catalog-api"
 import prisma from "@/lib/prisma"
+import { protectProductCost, ProductCostAccessError } from "@/lib/product-cost-access"
 
-async function checkAdmin() {
+async function checkStaff() {
   const session = await auth()
-  return isStaffRole(session?.user?.role)
+  return session && isStaffRole(session.user?.role) ? session : null
 }
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  if (!(await checkAdmin())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  const session = await checkStaff()
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   try {
     const { id } = await params
     const body = await req.json()
-    const { productData, variants } = normalizeProductPayload(body)
+    const normalized = normalizeProductPayload(body)
+    const productData = protectProductCost(normalized.productData, body, isAdminRole(session.user?.role))
+    const variants = normalized.variants
     const existingProduct = await prisma.product.findUnique({
       where: { id },
       select: {
@@ -125,15 +129,19 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     const removedImages = existingProduct.images.filter((image) => !productData.images.includes(image))
     await cleanupOrphanedManagedProductImages(prisma, removedImages)
 
-    return NextResponse.json(serializeProduct(product))
+    return NextResponse.json(serializeProduct(product, { includeCosts: isAdminRole(session.user?.role) }))
   } catch (error) {
+    if (error instanceof ProductCostAccessError) {
+      return NextResponse.json({ error: error.message }, { status: 403 })
+    }
     console.error(error)
     return NextResponse.json({ error: "Server Error" }, { status: 500 })
   }
 }
 
 export async function DELETE(_req: Request, { params }: { params: Promise<{ id: string }> }) {
-  if (!(await checkAdmin())) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  const session = await checkStaff()
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
 
   try {
     const { id } = await params

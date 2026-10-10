@@ -16,6 +16,8 @@ type ApiKeyRecord = {
 }
 
 const AVAILABLE_SCOPES = [
+  { value: "read:costs", label: "Custos (leitura)" },
+  { value: "write:costs", label: "Custos (escrita)" },
   { value: "read:dashboard", label: "Dashboard (leitura)" },
   { value: "read:orders", label: "Pedidos (leitura)" },
   { value: "read:products", label: "Produtos (leitura)" },

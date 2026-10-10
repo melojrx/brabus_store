@@ -31,11 +31,11 @@ Next.js 16 App Router, TypeScript, React 19, Tailwind CSS, PostgreSQL via Prisma
 ### Auth
 - NextAuth v5 (beta) with credentials provider only (`auth.ts` at root)
 - Roles: `ADMIN`, `CUSTOMER`, `SELLER`
-- SELLER has same access as ADMIN (staff-level)
-- Session carries `id`, `role`, `phone`, `mustChangePassword` via JWT callbacks
+- SELLER retains operational access to products, stock and PDV; only ADMIN may view/edit costs or manage users/API keys. Public catalog responses always omit costs.
+- Session carries `id`, `role`, `phone`, `mustChangePassword` via JWT callbacks; role and password-change status are refreshed from the database on each session evaluation.
 - `proxy.ts` handles auth redirects and forced password change
 - Admin routes additionally protected by `isStaffRole()` guard in layout/route handlers
-- `lib/auth-guard.ts` — centralized `isStaffRole()` helper
+- `lib/auth-guard.ts` — `isStaffRole()` for operations and `isAdminRole()` for sensitive access; `lib/product-cost-access.ts` protects explicit cost writes and preserves omitted costs.
 
 ### Data Layer
 - Prisma schema at `prisma/schema.prisma`
@@ -53,7 +53,7 @@ Next.js 16 App Router, TypeScript, React 19, Tailwind CSS, PostgreSQL via Prisma
 ### Route Structure
 - `/app/` — public store (loja, products, cart, checkout, account)
 - `/app/admin/` — admin panel (protected by layout auth check)
-- `/app/api/admin/` — admin API routes (each checks `session.user.role === "ADMIN"`)
+- `/app/api/admin/` — staff operational routes plus ADMIN-only dashboard, users and API keys; each handler enforces its authorization.
 - `/app/api/v1/integrations/` — external API (Bearer token auth via `IntegrationApiKey`)
 - `/app/api/auth/` — NextAuth handlers + register/forgot/reset
 
@@ -70,9 +70,11 @@ Next.js 16 App Router, TypeScript, React 19, Tailwind CSS, PostgreSQL via Prisma
 - Auth: `lib/integrations/auth.ts` — Bearer token, SHA-256 hash lookup, scope validation
 - Response: `lib/integrations/response.ts` — `integrationSuccess()` / `integrationError()`
 - Keys prefixed `brb_live_` / `brb_test_`
+- Product/order costs require `read:costs`; product cost writes additionally require `write:costs`. Financial dashboard requires `read:dashboard` and `read:costs`. Existing keys are not upgraded automatically.
+- `serializeProduct()` omits costs by default; include them only after server authorization. New exports must use the same authorized projection.
 
 ### Admin API Pattern
-All admin routes follow:
+Operational staff routes follow this pattern; dashboard/users/API keys require `isAdminRole()` instead:
 ```typescript
 import { isStaffRole } from "@/lib/auth-guard"
 

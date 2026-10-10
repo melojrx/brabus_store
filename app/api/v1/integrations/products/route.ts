@@ -1,5 +1,5 @@
 import { z } from "zod"
-import { requireIntegrationScope, IntegrationAuthError } from "@/lib/integrations/auth"
+import { requireIntegrationScope, IntegrationAuthError, hasScope } from "@/lib/integrations/auth"
 import { integrationSuccess, integrationError } from "@/lib/integrations/response"
 import {
   normalizeProductPayload,
@@ -7,6 +7,7 @@ import {
   serializeProduct,
 } from "@/lib/catalog-api"
 import prisma from "@/lib/prisma"
+import { protectProductCost, ProductCostAccessError } from "@/lib/product-cost-access"
 import { Prisma } from "@prisma/client"
 
 const variantSchema = z.object({
@@ -48,7 +49,7 @@ function parsePageParam(value: string | null, defaultValue: number, max: number)
 
 export async function GET(req: Request) {
   try {
-    await requireIntegrationScope(req, "read:products")
+    const ctx = await requireIntegrationScope(req, "read:products")
 
     const { searchParams } = new URL(req.url)
     const page = parsePageParam(searchParams.get("page"), 1, 1000)
@@ -90,7 +91,7 @@ export async function GET(req: Request) {
       }),
     ])
 
-    return integrationSuccess(products.map(serializeProduct), {
+    return integrationSuccess(products.map(product => serializeProduct(product, { includeCosts: hasScope(ctx, "read:costs") })), {
       page,
       pageSize,
       totalItems,
@@ -106,7 +107,7 @@ export async function GET(req: Request) {
 
 export async function POST(req: Request) {
   try {
-    await requireIntegrationScope(req, "write:products")
+    const ctx = await requireIntegrationScope(req, "write:products")
 
     const body = await req.json()
     const parsed = createProductSchema.safeParse(body)
@@ -116,7 +117,9 @@ export async function POST(req: Request) {
       return integrationError("VALIDATION_ERROR", message, 400)
     }
 
-    const { productData, variants } = normalizeProductPayload(parsed.data)
+    const normalized = normalizeProductPayload(parsed.data)
+    const productData = protectProductCost(normalized.productData, parsed.data, hasScope(ctx, "write:costs"))
+    const variants = normalized.variants
 
     if (!productData.name || !productData.slug || !productData.categoryId) {
       return integrationError("VALIDATION_ERROR", "name, slug e categoryId são obrigatórios.", 400)
@@ -162,8 +165,11 @@ export async function POST(req: Request) {
       include: productWithRelationsInclude,
     })
 
-    return integrationSuccess(serializeProduct(product), null, { status: 201 })
+    return integrationSuccess(serializeProduct(product, { includeCosts: hasScope(ctx, "read:costs") }), null, { status: 201 })
   } catch (error) {
+    if (error instanceof ProductCostAccessError) {
+      return integrationError("FORBIDDEN", error.message, 403)
+    }
     if (error instanceof IntegrationAuthError) {
       return integrationError(error.code, error.message, error.status)
     }

@@ -1,3 +1,5 @@
+import { auth } from "@/auth"
+import { isAdminRole } from "@/lib/auth-guard"
 import ProductsManager from "./ProductsManager"
 import { Prisma } from "@prisma/client"
 import { productWithRelationsInclude, serializeProduct } from "@/lib/catalog-api"
@@ -112,6 +114,8 @@ export default async function AdminProducts({
 }: {
   searchParams?: AdminProductsSearchParams
 }) {
+  const session = await auth()
+  const canManageCosts = isAdminRole(session?.user?.role)
   const resolvedSearchParams = (await searchParams) ?? {}
   const saved = readSearchParam(resolvedSearchParams.saved)
   const filters = parseAdminProductsFilters(resolvedSearchParams)
@@ -140,7 +144,7 @@ export default async function AdminProducts({
     take: ADMIN_PRODUCTS_PAGE_SIZE,
   })
 
-  const products = rawProducts.map(serializeProduct)
+  const products = rawProducts.map(product => serializeProduct(product, { includeCosts: canManageCosts }))
   const serializedCategories = categories.map((category) => ({
     ...category,
     createdAt: category.createdAt.toISOString(),
@@ -155,7 +159,7 @@ export default async function AdminProducts({
   }))
 
   return (
-    <ProductsManager
+    <ProductsManager canManageCosts={canManageCosts}
       initialProducts={products}
       categories={serializedCategories}
       filters={filters}

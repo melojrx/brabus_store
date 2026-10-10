@@ -1,4 +1,4 @@
-import { requireIntegrationScope, IntegrationAuthError } from "@/lib/integrations/auth"
+import { requireIntegrationScope, IntegrationAuthError, hasScope } from "@/lib/integrations/auth"
 import { integrationSuccess, integrationError } from "@/lib/integrations/response"
 import prisma from "@/lib/prisma"
 
@@ -63,7 +63,7 @@ export async function GET(
   { params }: { params: Promise<{ idOrNumber: string }> },
 ) {
   try {
-    await requireIntegrationScope(req, "read:orders")
+    const ctx = await requireIntegrationScope(req, "read:orders")
 
     const { idOrNumber } = await params
     const decoded = decodeURIComponent(idOrNumber)
@@ -89,12 +89,15 @@ export async function GET(
       createdAt: order.createdAt.toISOString(),
       updatedAt: order.updatedAt.toISOString(),
       paidAt: order.paidAt?.toISOString() ?? null,
-      items: order.items.map((item) => ({
-        ...item,
-        price: item.price.toNumber(),
-        unitPrice: item.unitPrice?.toNumber() ?? null,
-        unitCost: item.unitCost?.toNumber() ?? null,
-      })),
+      items: order.items.map((item) => {
+        const { unitCost, ...publicItem } = item
+        return {
+          ...publicItem,
+          price: item.price.toNumber(),
+          unitPrice: item.unitPrice?.toNumber() ?? null,
+          ...(hasScope(ctx, "read:costs") ? { unitCost: unitCost?.toNumber() ?? null } : {}),
+        }
+      }),
     }
 
     return integrationSuccess(serialized)

@@ -11,3 +11,13 @@ test("validates required product and variant fields", () => { const form = { ...
 test("maps validation errors to the rendered field ids", () => { const errors = getProductFormErrors(createEmptyProductForm(), category); assert.equal(errors["product-name"], "Informe o nome do produto."); assert.equal(errors["product-price"], "Informe o preço de venda."); assert.equal(errors["variant-size-0"], "Informe o tamanho da variante 1.") })
 test("calculates total stock and gross margin", () => { assert.equal(getTotalVariantStock([{ ...createEmptyProductForm().variants[0], stock: "2" }, { ...createEmptyProductForm().variants[0], stock: "5" }]), 7); assert.equal(getGrossMargin("R$ 100,00", "R$ 60,00"), 40) })
 test("builds the existing API payload semantics", () => { const form = { ...createEmptyProductForm(), name: " Camiseta ", price: "R$ 100,00", costPrice: "R$ 60,00", categoryId: category.id, gender: "unissex", variants: [{ ...createEmptyProductForm().variants[0], size: "M", color: "Preto", stock: "8" }] }; const payload = buildProductPayload(form, category); assert.equal(payload.slug, "camiseta"); assert.equal(payload.price, 100); assert.equal(payload.costPrice, 60); assert.equal(payload.gender, "unissex"); assert.equal(payload.variants[0].stock, 8); assert.equal(payload.variants[0].flavor, null) })
+
+test("seller validates without cost and never includes it in the payload", () => {
+  const form = { ...createEmptyProductForm(), name: "Synthetic", price: "R$ 100,00", categoryId: category.id, variants: [{ ...createEmptyProductForm().variants[0], size: "M", color: "Preto" }] }
+  assert.equal(validateProductForm(form, category, false), null)
+  assert.equal(Object.hasOwn(buildProductPayload(form, category, false), "costPrice"), false)
+  assert.equal(validateProductForm(form, category, true), "Informe o preço de custo.")
+  assert.equal(getProductFormErrors({ ...form, name: "", price: "" }, category, false)["product-name"], "Informe o nome do produto.")
+  assert.equal(getProductFormErrors({ ...form, price: "" }, category, false)["product-price"], "Informe o preço de venda.")
+  assert.equal(Object.hasOwn(buildProductPayload({ ...form, costPrice: "R$ 80,00" }, category, false), "costPrice"), false)
+})

@@ -11,7 +11,7 @@ export async function GET() {
       orderBy: { createdAt: "desc" },
     })
 
-    return NextResponse.json(products.map(serializeProduct))
+    return NextResponse.json(products.map(product => serializeProduct(product)))
   } catch (error) {
     return NextResponse.json({ error: "Erro interno no servidor" }, { status: 500 })
   }

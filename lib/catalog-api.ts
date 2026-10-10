@@ -519,7 +519,7 @@ export async function getCatalogProducts(searchParams: URLSearchParams): Promise
   }
 
   return {
-    items: products.map(serializeProduct),
+    items: products.map(product => serializeProduct(product)),
     pagination: {
       page: currentPage,
       pageSize: CATALOG_PAGE_SIZE,
@@ -539,13 +539,14 @@ export async function getCatalogProducts(searchParams: URLSearchParams): Promise
   }
 }
 
-export function serializeProduct(product: ProductWithRelations) {
+export function serializeProduct(product: ProductWithRelations, options: { includeCosts?: boolean } = {}) {
   const variantStock = getPublicAvailableStock(product.variants)
+  const { costPrice, ...publicProduct } = product
 
   return {
-    ...product,
+    ...publicProduct,
     price: product.price.toNumber(),
-    costPrice: product.costPrice?.toNumber() ?? null,
+    ...(options.includeCosts === true ? { costPrice: costPrice?.toNumber() ?? null } : {}),
     stock: variantStock,
     createdAt: product.createdAt.toISOString(),
     updatedAt: product.updatedAt.toISOString(),

@@ -3,19 +3,15 @@ import { auth } from "@/auth"
 import prisma from "@/lib/prisma"
 import { generateApiKey, hashApiKey } from "@/lib/integrations/auth"
 import { logIntegrationAudit } from "@/lib/integrations/audit"
-import { isStaffRole } from "@/lib/auth-guard"
-
-async function checkAdmin() {
-  const session = await auth()
-  if (!session || !isStaffRole(session.user?.role)) {
-    return null
-  }
-  return session
-}
+import { isAdminRole } from "@/lib/auth-guard"
 
 export async function GET() {
-  if (!(await checkAdmin())) {
+  const session = await auth()
+  if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+  if (!isAdminRole(session.user.role)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
   const keys = await prisma.integrationApiKey.findMany({
@@ -36,9 +32,12 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const session = await checkAdmin()
-  if (!session) {
+  const session = await auth()
+  if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  }
+  if (!isAdminRole(session.user.role)) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }
 
   try {

@@ -83,7 +83,7 @@ type Product = Readonly<{
   slug: string
   description: string
   price: number
-  costPrice: number | null
+  costPrice?: number | null
   stock: number
   images: readonly string[]
   featured: boolean
@@ -111,6 +111,7 @@ type FieldProps = Readonly<{
 }>
 
 type ProductsManagerProps = Readonly<{
+  canManageCosts: boolean
   initialProducts: readonly Product[]
   categories: readonly Subcategory[]
   filters: Readonly<{
@@ -476,6 +477,7 @@ function IconActionButton({
 }
 
 export default function ProductsManager({
+  canManageCosts,
   initialProducts,
   categories,
   filters,
@@ -517,7 +519,7 @@ export default function ProductsManager({
 
   const selectedCategory = categories.find((category) => category.id === form.categoryId)
   const totalVariantStock = getTotalVariantStock(form.variants)
-  const marginPreview = getGrossMargin(form.price, form.costPrice)
+  const marginPreview = canManageCosts ? getGrossMargin(form.price, form.costPrice) : null
   const showFashionFields = selectedCategory?.parent?.slug === "roupas-fitness"
   const isDrawerBusy = saving || uploadingImages || isPending
   const visibleRangeStart = pagination.totalItems === 0 ? 0 : (pagination.page - 1) * pagination.pageSize + 1
@@ -829,7 +831,7 @@ export default function ProductsManager({
 
   async function handleSave() {
     setFormError("")
-    const errors = getProductFormErrors(form, selectedCategory)
+    const errors = getProductFormErrors(form, selectedCategory, canManageCosts)
     setFieldErrors(errors)
     const firstErrorId = Object.keys(errors)[0]
     if (firstErrorId) {
@@ -843,7 +845,7 @@ export default function ProductsManager({
     setSaving(true)
     try {
       if (!selectedCategory) return
-      const payload = buildProductPayload(form, selectedCategory)
+      const payload = buildProductPayload(form, selectedCategory, canManageCosts)
 
       const url = editingProduct ? `/api/admin/products/${editingProduct.id}` : "/api/admin/products"
       const response = await fetch(url, {
@@ -1144,7 +1146,7 @@ export default function ProductsManager({
                 <th className="px-6 py-4 whitespace-nowrap">Subcategoria</th>
                 <th className="px-6 py-4 whitespace-nowrap">Categoria</th>
                 <th className="px-6 py-4 text-right whitespace-nowrap">Venda</th>
-                <th className="px-6 py-4 text-right whitespace-nowrap">Custo</th>
+                {canManageCosts ? <th className="px-6 py-4 text-right whitespace-nowrap">Custo</th> : null}
                 <th className="px-6 py-4 text-right whitespace-nowrap">Estoque</th>
                 <th className="px-6 py-4 text-right whitespace-nowrap">Variantes</th>
                 <th className="px-6 py-4 whitespace-nowrap">Validade</th>
@@ -1174,9 +1176,11 @@ export default function ProductsManager({
                   <td className="px-6 py-4 text-gray-300 whitespace-nowrap">{product.subcategory.name}</td>
                   <td className="px-6 py-4 text-gray-500 whitespace-nowrap">{product.parentCategory?.name ?? "Sem pai"}</td>
                   <td className="px-6 py-4 text-right font-medium tabular-nums whitespace-nowrap">R$ {formatCurrency(product.price)}</td>
-                  <td className="px-6 py-4 text-right text-zinc-400 tabular-nums whitespace-nowrap">
-                    {product.costPrice != null ? `R$ ${formatCurrency(product.costPrice)}` : "—"}
-                  </td>
+                  {canManageCosts ? (
+                    <td className="px-6 py-4 text-right text-zinc-400 tabular-nums whitespace-nowrap">
+                      {product.costPrice != null ? `R$ ${formatCurrency(product.costPrice)}` : "Não informado"}
+                    </td>
+                  ) : null}
                   <td className="px-6 py-4 text-right whitespace-nowrap">
                     <span className={`rounded-sm px-2 py-1 text-xs font-bold ${getStockBadgeClass(product.stock)}`}>
                       {product.stock}
@@ -1397,17 +1401,19 @@ export default function ProductsManager({
                   />
                 </Field>
 
-                <Field label="Preço de Custo *" htmlFor="product-cost-price" error={fieldErrors["product-cost-price"]}>
-                  <input
-                    id="product-cost-price"
-                    className={inputCls}
-                    type="text"
-                    inputMode="numeric"
-                    value={form.costPrice}
-                    onChange={(event) => setField("costPrice", maskCurrencyInput(event.target.value))}
-                    placeholder="R$ 0,00"
-                  />
-                </Field>
+                {canManageCosts ? (
+                  <Field label="Preço de Custo *" htmlFor="product-cost-price" error={fieldErrors["product-cost-price"]}>
+                    <input
+                      id="product-cost-price"
+                      className={inputCls}
+                      type="text"
+                      inputMode="numeric"
+                      value={form.costPrice}
+                      onChange={(event) => setField("costPrice", maskCurrencyInput(event.target.value))}
+                      placeholder="R$ 0,00"
+                    />
+                  </Field>
+                ) : null}
 
                 <div className="rounded-sm border border-zinc-800 bg-black/30 p-3" aria-label="Estoque total">
                   <p className="text-xs text-zinc-500">Estoque total</p>
@@ -1415,11 +1421,13 @@ export default function ProductsManager({
                   <p className="text-[10px] text-zinc-600">Soma das variantes</p>
                 </div>
 
-                <div className="rounded-sm border border-zinc-800 bg-black/30 p-3" aria-label="Margem bruta">
-                  <p className="text-xs text-zinc-500">Margem bruta</p>
-                  <p className="mt-1 text-xl font-semibold tabular-nums text-white">{marginPreview != null && Number.isFinite(marginPreview) ? `${marginPreview.toFixed(1)}%` : "—"}</p>
-                  <p className="text-[10px] text-zinc-600">Prévia sobre o preço de venda</p>
-                </div>
+                {canManageCosts ? (
+                  <div className="rounded-sm border border-zinc-800 bg-black/30 p-3" aria-label="Margem bruta">
+                    <p className="text-xs text-zinc-500">Margem bruta</p>
+                    <p className="mt-1 text-xl font-semibold tabular-nums text-white">{marginPreview != null && Number.isFinite(marginPreview) ? `${marginPreview.toFixed(1)}%` : "—"}</p>
+                    <p className="text-[10px] text-zinc-600">Prévia sobre o preço de venda</p>
+                  </div>
+                ) : null}
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
