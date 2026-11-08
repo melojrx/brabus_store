@@ -197,3 +197,9 @@ Verificação final pré-merge G7: build aprovado, 39 E2E passaram e uma captura
 - Revisão independente do diff sem bloqueadores: rotas com fronteiras corretas, compartilhamento do componente de acesso, admin/PDV e fluxos preservados. Inspeção visual de outputs/vitrine-identidade-brabus/g8-login-375.png, g8-account-1440.png e capturas de checkout. Imagens/campos das capturas são dados sintéticos do teste, não dados de produção.
 - CUA abriu http://localhost:3100/account com admin de fixture; sessão local antiga foi encerrada pelo signout normal antes de autenticar novamente, resolvendo redirecionamento por cookie de fixture anterior. Logo e rodapé novos observados em acesso e conta. Prévia mantida no banco brabus_brand_e2e e ONLINE_SALES_ENABLED=false no processo, sem alteração de .env. Produção não foi modificada nesta rodada.
 - G8 aguardando aprovação visual, sem merge/push/deploy.
+
+### G8 — autorização e preparação de release
+
+Usuário aprovou a prévia G8 e autorizou merge/publicação com testes e conferência pós-deploy de conta/acesso/bloqueio de vendas online. Código2c7a5a5, revisão independente já concluída sem bloqueadores e diff revisado novamente. Testes frescos118/118 passaram; lint sem erros com aviso anterior. Logs /tmp/brabus-g8-release-tests.log e /tmp/brabus-g8-release-lint.log. Suite E2E/build em execução com flag false no processo e banco isolado. Sem alteração de produção nesta preparação.
+
+Verificação final pré-merge G8: build aprovado,43 E2E passaram e um baseline PDV intencionalmente ignorado. Log /tmp/brabus-g8-release-e2e.log. Inclui acesso/conta/perfil/pedidos e API503 sem criação de pedido, além de regressões admin/PDV/vitrine.

@@ -342,3 +342,7 @@ Autorizado pelo usuário após levantamento de inconsistências: conta, pedidos,
 - [x] G8.4: inspeção das capturas, atualizar validação e apresentar prévia local autenticada/entrada/bloqueio. Aguardar aceite visual antes de publicar.
 
 G8 tecnicamente verificado e aguardando aceite visual:118 testes,43 E2E aprovados (baseline PDV ignorado), build aprovado, lint sem erros/aviso anterior. Revisão independente sem bloqueadores. Prévia http://localhost:3100/account autenticada em banco isolado; acesso e bloqueio de checkout na mesma porta. Sem merge/push/publicação.
+
+### Aceite e autorização de produção G8
+
+Usuário aprovou o G8 e autorizou merge em main e publicação após testes, com conferência de conta, acesso e bloqueio de vendas online em produção. A restrição de entrega apenas local fica superada por este aceite. Código aprovado2c7a5a5; revisão independente prévia sem bloqueadores. Nenhuma alteração de dados/env/schema nesta promoção.
