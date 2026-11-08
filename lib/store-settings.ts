@@ -70,7 +70,7 @@ export async function getPublicStoreSettings() {
     addressComplement: settings?.addressComplement ?? "Conjunto Cohab",
     addressCity: settings?.addressCity ?? DEFAULT_STORE_ADDRESS_CITY,
     addressState: settings?.addressState ?? DEFAULT_STORE_ADDRESS_STATE,
-    addressZip: settings?.addressZip ?? "62765-000",
+    addressZip: settings?.addressZip ?? "62750-000",
     googleMapsUrl: settings?.googleMapsUrl ?? null,
     googleMapsEmbed: settings?.googleMapsEmbed ?? null,
   }

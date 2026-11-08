@@ -1,5 +1,6 @@
 import { PrismaClient, Role } from "@prisma/client"
 import bcrypt from "bcryptjs"
+import storeLocationMap from "../docs/brand/store-location-map.json"
 
 const prisma = new PrismaClient()
 
@@ -442,7 +443,9 @@ async function main() {
       addressComplement: "Conjunto Cohab",
       addressCity: "Aracoiaba",
       addressState: "CE",
-      addressZip: "62765-000",
+      addressZip: "62750-000",
+      googleMapsUrl: storeLocationMap.open,
+      googleMapsEmbed: storeLocationMap.embed,
       whatsapp: "5585921002688",
       instagram: "@brabus_performancestore",
       openingHours: "Seg-Sex: 8h-18h | Sab: 8h-13h",

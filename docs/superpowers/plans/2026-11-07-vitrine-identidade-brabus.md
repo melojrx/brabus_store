@@ -11,7 +11,7 @@
 ## Global Constraints
 
 - Checkout atual, sem worktree; branch `codex/vitrine-identidade-brabus` da `main` local em `2c5cecb`.
-- Spec e plano aprovados explicitamente pelo usuário. G2 e G3 aprovados visualmente; execução do G4 autorizada, com apresentação local antes do novo G5. Preparação dos ativos também autorizada.
+- Spec e plano aprovados explicitamente pelo usuário. G2, G3 e G4 aprovados visualmente; G5 autorizado com apresentação local antes do G6. Preparação dos ativos também autorizada.
 - Sem push, merge, deploy, migrations, seed ou alteração de produtos na base de trabalho.
 - Textos em português; código/commits em inglês; 2 espaços, sem ponto e vírgula, strings duplas e alias `@/`.
 - Bebas Neue e Inter existentes; nenhuma nova dependência ou fonte externa.
@@ -215,7 +215,7 @@ await expect.poll(() => page.evaluate(() =>
 
 ## Task 4 / G4 — PDV com extensão visual limitada
 
-Estado: implementação autorizada e tecnicamente verificada em 08/11/2026; aguardando avaliação visual. Banco local separado `brabus_brand_e2e` criado para fixtures e testes. Baseline autenticado anterior à mudança capturado em 1280×800 e 1366×768, nos dois estados de sidebar. 112 testes e 14 testes de navegador aprovados; build e lint sem erros. Prévia autenticada na porta 3100, base sintética. G5 não iniciado.
+Estado: implementação verificada e aprovada visualmente pelo usuário em 08/11/2026. Banco local separado `brabus_brand_e2e` criado para fixtures e testes. Baseline autenticado anterior à mudança capturado em 1280×800 e 1366×768, nos dois estados de sidebar. 112 testes e 14 testes de navegador aprovados; build e lint sem erros. Prévia autenticada na porta 3100, base sintética. G5 não iniciado.
 
 **Files:**
 - Modify: `app/globals.css`, `components/Navbar.tsx`, `components/BrandTheme.tsx`, `components/brand/BrandLogo.tsx`. Política exata existente em `lib/storefront-theme.ts` preservada.
@@ -236,16 +236,16 @@ Estado: implementação autorizada e tecnicamente verificada em 08/11/2026; agua
 
 ## Task 5 / G5 — Footer, Loja Física e Contato
 
-Estado: escopo solicitado e aprovado pelo usuário; executar somente após avaliação do PDV/G4. Sem alterações nestas telas durante o G4.
+Estado: implementação autorizada após aceite do PDV/G4. Footer público, Loja Física e Contato implementados; CEP corrigido no cadastro local e fallback/seed. Verificações: 116 testes, build e lint sem erros (aviso preexistente), seis testes de navegador aprovados. A busca por endereço aproximava outra rua. Após reconfirmação do endereço pelo usuário, localizado o cadastro Google “Brabus Conveniência”, Av. Antônio Lopes da Silva, 571, CEP 62750-000, e configurada a incorporação oficial desse ponto. Correspondência do ponto aguarda conferência visual no gate. G6 não iniciado.
 
-**Files:** `components/Footer.tsx`, `app/loja/page.tsx`, `app/contato/page.tsx`, `lib/store-settings.ts`, `app/globals.css`, testes de apresentação e E2E pertinentes.
+**Files:** `components/Footer.tsx`, `components/FooterTheme.tsx`, `components/LegacyFooter.tsx`, `components/storefront/StorefrontFooter.tsx`, `components/storefront/StoreLocation.tsx`, `components/storefront/StoreContact.tsx`, `app/loja/page.tsx`, `app/contato/page.tsx`, `lib/store-settings.ts`, `lib/store-location.ts`, `prisma/seed.ts`, `app/globals.css`, testes de apresentação e E2E pertinentes.
 
-- [ ] Revisar identidade dos três componentes com tokens e logo existentes, mantendo legibilidade, responsividade, foco e informações comerciais configuradas.
-- [ ] Corrigir o CEP da loja para **62750-000** em footer e páginas públicas; identificar a fonte compartilhada e valores antigos hardcoded para evitar divergências. Se o valor estiver persistido, tratar a atualização comercial explicitamente sem seed/migration da base de trabalho.
-- [ ] Loja Física: retirar a fotografia atual de academia/fachada; não gerar uma foto fictícia da loja. Compor bloco de endereço à esquerda e mapa integrado à direita no desktop, empilhados no celular, conforme referência enviada em 08/11. Manter botão “Abrir no Google Maps”, endereço e contatos reais, iframe com título acessível e carregamento lazy. Usar localização configurada, sem inventar coordenadas ou marcador personalizado. Não aplicar filtro visual que prejudique rótulos do mapa.
-- [ ] Contato: alinhar cartões, ícones e ações à marca, preservando canais reais e sem envio de mensagens nos testes.
-- [ ] Escrever testes antes da implementação para CEP, ausência da foto fictícia, mapa/URL e contatos configurados. Conferir 375/768/1440 px, ausência de overflow, teclado e links.
-- [ ] Executar testes, lint e build; registrar screenshots e apresentar no site local.
+- [x] Revisar identidade dos três componentes com tokens e logo existentes, mantendo legibilidade, responsividade, foco e informações comerciais configuradas.
+- [x] Corrigir o CEP da loja para **62750-000** em footer e páginas públicas; identificar a fonte compartilhada e valores antigos hardcoded para evitar divergências. Se o valor estiver persistido, tratar a atualização comercial explicitamente sem seed/migration da base de trabalho.
+- [x] Loja Física: retirar a fotografia atual de academia/fachada; não gerar uma foto fictícia da loja. Compor bloco de endereço à esquerda e mapa integrado à direita no desktop, empilhados no celular, conforme referência enviada em 08/11. Manter botão “Abrir no Google Maps”, endereço e contatos reais, iframe com título acessível e carregamento lazy. Usar localização configurada, sem inventar coordenadas ou marcador personalizado. Não aplicar filtro visual que prejudique rótulos do mapa.
+- [x] Contato: alinhar cartões, ícones e ações à marca, preservando canais reais e sem envio de mensagens nos testes.
+- [x] Escrever testes antes da implementação para CEP, ausência da foto fictícia, mapa/URL e contatos configurados. Conferir 375/768/1440 px, ausência de overflow, teclado e links.
+- [x] Executar testes, lint e build; registrar screenshots e apresentar no site local.
 
 **Gate G5 — parar para avaliação:** usuário aprova footer, Loja Física e Contato, incluindo endereço/mapa e CEP. Não concluir a entrega final antes deste aceite.
 
