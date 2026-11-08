@@ -175,3 +175,11 @@ MapLibre requer worker explícito com o bundler atual: scripts/prepare-map-worke
 Usuário aprovou o visual local e autorizou merge/publicação com testes e verificação pós-deploy. Revisão independente de d9b23c8..59d792e sem bloqueadores: nav isolado, tema do corpo e fluxos preservados. Verificação fresca: 117 testes passaram, lint sem erros com aviso preexistente. Logs /tmp/brabus-g7-release-tests.log e /tmp/brabus-g7-release-lint.log. E2E completo/build em execução no banco isolado após a suite unitária, sem seed em produção/base de trabalho.
 
 Verificação final pré-merge G7: build aprovado, 39 E2E passaram e uma captura de baseline PDV intencionalmente ignorada. Log /tmp/brabus-g7-release-e2e.log; banco isolado. Navegador autenticado em produção localizado para conferência pós-deploy: baseline headerHeight74px/mainTop74px/conteúdo #C9A84C. Nenhuma nova credencial criada.
+
+### G7 — merge e publicação concluídos
+
+- Merge fast-forward para main, candidato `6d4815ae1a6185fe57823a505c3ced3d125a25ac` (implementação59d792e). Suite repetida no resultado: 117/117 passaram, log /tmp/brabus-g7-merged-tests.log. Push autorizado para origin/main.
+- Workflow [42500635560](https://github.com/melojrx/brabus_store/actions/runs/42500635560) concluiu validação/imagem/deploy com sucesso. Digest publicado e conferido no serviço: `ghcr.io/melojrx/brabus_store@sha256:f3b779a7e04770b9de6905d7ee87e62e73507973aa22fa0ba5864960c0ea8252`. Swarm `completed` após janela de monitoramento60s; health público HTTP200/status ok. Log /tmp/brabus-g7-release.log.
+- Verificação visual autenticada no navegador existente do usuário em https://brabustore.com.br/admin, sem nova credencial/usuário: logo-horizontal.webp carregada, nav background rgb(0,0,0), primary #D4A346, altura74px. Antes/depois: mainTop74px e primary do conteúdo #C9A84C preservados.
+- Captura pós-deploy em outputs/vitrine-identidade-brabus/g7-production-header.jpg mostra cabeçalho e contexto da dashboard. Somente leitura em produção; não houve seed, alteração de configurações, pedidos, estoque ou usuários nesta extensão. Nenhuma nova dependência, env ou migration.
+- G7 aprovado visualmente e publicado. Evidência documental posterior em commit [skip ci] para não promover novamente código inalterado. Branch de trabalho local removida após merge/verificação.

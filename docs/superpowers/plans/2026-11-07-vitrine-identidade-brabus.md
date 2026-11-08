@@ -317,3 +317,7 @@ G7 tecnicamente verificado: 117 testes/39 E2E (baseline PDV ignorado), build apr
 ### Aceite e autorização de produção G7
 
 Usuário aprovou explicitamente o novo cabeçalho administrativo e autorizou merge em main e publicação, condicionados aos testes e conferência após deploy. Revisão independente de d9b23c8..59d792e sem bloqueadores. Release segue o workflow existente; nenhuma alteração de banco nesta extensão.
+
+### Fechamento G7 — produção
+
+Visual aprovado pelo usuário, merge/push autorizados e concluídos. 117 testes e 39 E2E aprovados (baseline ignorado), build aprovado, lint sem erros/aviso anterior. Release `6d4815a`, workflow [42500635560](https://github.com/melojrx/brabus_store/actions/runs/42500635560) aprovado, digest em execução confirmado e Swarm completed. Conferência autenticada em produção confirmou assinatura nova, nav preto/dourado, altura74px e conteúdo legado preservado. Sem alteração de banco nesta extensão. G7 concluído.

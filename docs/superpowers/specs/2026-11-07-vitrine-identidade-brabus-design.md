@@ -147,3 +147,5 @@ Commits convencionais pequenos por fase, autor `Junior Melo <jrmeloafrf@gmail.co
 ## Extensão aprovada G7 — cabeçalho administrativo
 
 Após publicação G6, usuário autorizou uniformizar logo e paleta do cabeçalho em toda `/admin` e descendentes, preservando layout/fluxos e tema do conteúdo. Usar assinatura compacta na linha existente, preto/dourado/off-white restritos ao nav e menus internos. A política de tema do corpo permanece igual; rotas não administrativas não recebem esse cabeçalho. Avaliação local antes de nova publicação, conforme plano G7.
+
+G7 aprovado visualmente e publicado em 2026-11-08 após revisão/testes: candidato6d4815a, workflow42500635560. Verificação autenticada confirmou o cabeçalho novo e isolamento da paleta, conforme registro de validação.
