@@ -236,3 +236,19 @@ Pré-merge G9: revisão independente sem bloqueadores, manifesto de aceite atual
 - Smoke público3/3 passou em375/768/1440: asset carregado, href da categoria abre /products?category=suplementos, catálogo real visível e navegação para detalhe de produto funcionando. Log /tmp/brabus-g9-production-smoke.log. Somente leitura em produção; não criado produto/pedido nem alterados estoque, flags ou configurações.
 - CUA confirmou composição completa no card público. Captura outputs/vitrine-identidade-brabus/g9-categorias-producao.jpg; aba de produção mantida para o usuário. G9 aprovado e publicado.
 - Fechamento documental em commit [skip ci] para evitar nova promoção de runtime inalterado; branch local removida após merge/verificações.
+
+
+## G10 — Ícones, prévia local
+
+- Baseline118/118 em /tmp/brabus-g10-baseline.log.
+- Dois novos testes falharam antes da alteração (manifest/URLs antigas e namespace v1), /tmp/brabus-g10-red.log; ambos passaram após implementação.
+-120/120 testes em /tmp/brabus-g10-tests.log; lint0 erros/1 aviso anterior em /tmp/brabus-g10-lint.log.
+- Build aprovado no runner padrão;45 E2E passaram/1 baseline ignorado, /tmp/brabus-g10-e2e.log. Inclui metadata, dimensões/MIME dos PNG servidos, ativação real do service worker, remoção do cache v1, preservação de cache alheio e pré-cache dos novos ícones; demais fluxos e bloqueio de vendas online mantidos.
+- Confirmados alpha real em mestre/16/32, maskable opaco512. Margem conservadora mantém toda a caveira no círculo seguro80%.
+- Inspeção visual no Chrome local: comparação16/32, Apple/PWA, máscara circular/arredondada e mestre. Captura outputs/vitrine-identidade-brabus/g10-icons-local.jpg. Prévia http://localhost:3200/g10-icons.html; site http://localhost:3100/ em banco_e2e isolado. Automação Codex sobrepõe um badge ao favicon da aba controlada; referências reais verificadas também pelo E2E sem extensão.
+- Nenhuma instalação em iPhone/Android físico foi realizada; imagens/recortes e manifest verificados no navegador. Atualização de atalho já instalado depende do SO/navegador.
+- Branch codex/g10-brand-icons; sem merge/push/deploy; aguardando aceite visual.
+
+### G10 — Aceite e preparação da publicação
+
+Usuário aprovou G10 e autorizou merge/publicação em2026-11-08. Revisão final inline confirmou escopo limitado a arte, metadata/manifest e cache; aliases antigos correspondem aos PNG versionados. Nova execução:120/120 testes,45 E2E aprovados/1 baseline ignorado, build aprovado; lint0 erros/aviso anterior. Logs /tmp/brabus-g10-release-{tests,lint,e2e}.log. Publicação pela esteira Homelab existente, sem alterar env/dados/vendas online.

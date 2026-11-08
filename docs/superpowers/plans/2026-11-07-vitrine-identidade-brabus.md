@@ -370,3 +370,18 @@ Usuário aprovou a composição de cinco embalagens e autorizou merge em main e 
 ### Fechamento G9 — produção
 
 Arte aprovada pelo usuário e publicada. Candidato3276176, workflow [42526800281](https://github.com/melojrx/brabus_store/actions/runs/42526800281) aprovado e Swarm completed.118 testes/43 E2E locais, build/lint sem erros (aviso anterior). Três E2E públicos confirmaram imagem carregada e clique para catálogo/produto real em375/768/1440. Hash da arte pública idêntico ao aprovado. Nenhum dado de produto/estoque/flag alterado; G9 concluído.
+
+## G10 — Favicon e ícones instaláveis
+
+Design aprovado pelo usuário: caveira da nova identidade da hero, boné preto e olhos vermelhos, enquadramento compacto sem textos. Ícones de aba transparentes; Apple/PWA com fundo preto e versão maskable com conteúdo essencial dentro do círculo central de 80%. Nenhuma alteração de layout, fluxo, dados ou vendas online.
+
+- [x] G10.1: baseline de testes, derivar mestre sem textos e salvar proveniência; branch da main no checkout atual.
+- [x] G10.2: gerar PNG16/32/180/192/512 e maskable512; atualizar metadata/manifest com URLs versionadas e fallback favicon.png. Atualizar namespace do cache, sem mudar a estratégia offline.
+- [x] G10.3: testes de arquivos/metadata e migração do cache em navegador; lint, build, suíte e conferência local em tamanhos reais.
+- [x] G10.4: apresentar prévia local e capturas; aguardar aprovação visual antes de merge/push/deploy.
+
+G10 tecnicamente validado: baseline118;120 testes após implementação;45 E2E aprovados/1 baseline ignorado; build aprovado e lint0 erros/aviso anterior. Prévia http://localhost:3200/g10-icons.html e site http://localhost:3100/. Captura outputs/vitrine-identidade-brabus/g10-icons-local.jpg. Aguardando aceite visual; sem merge/push/deploy.
+
+### Aceite e autorização de produção G10
+
+Usuário aprovou os ícones e autorizou merge em main/publicação, com testes e conferência do favicon, ícones do app e atualização do cache após o deploy. Sem alterações de dados/env/fluxos. A restrição anterior de entrega apenas local está superada por este aceite.

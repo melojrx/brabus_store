@@ -36,12 +36,13 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/favicon-32x32.png", sizes: "32x32", type: "image/png" },
-      { url: "/pwa-192x192.png", sizes: "192x192", type: "image/png" },
-      { url: "/pwa-512x512.png", sizes: "512x512", type: "image/png" },
+      { url: "/brand/icons/brabus-g10-16.png", sizes: "16x16", type: "image/png" },
+      { url: "/brand/icons/brabus-g10-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/brand/icons/brabus-g10-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/brand/icons/brabus-g10-512.png", sizes: "512x512", type: "image/png" },
     ],
-    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
-    shortcut: [{ url: "/favicon-32x32.png", type: "image/png" }],
+    apple: [{ url: "/brand/icons/brabus-g10-180.png", sizes: "180x180", type: "image/png" }],
+    shortcut: [{ url: "/brand/icons/brabus-g10-32.png", type: "image/png" }],
   },
   openGraph: {
     type: "website",

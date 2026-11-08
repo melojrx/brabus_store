@@ -1,13 +1,14 @@
-const CACHE_NAME = "brabus-store-pwa-v1"
+const CACHE_NAME = "brabus-store-pwa-g10"
 const OFFLINE_URL = "/offline.html"
 const STATIC_ASSETS = [
   OFFLINE_URL,
   "/manifest.webmanifest",
-  "/favicon-32x32.png",
-  "/apple-touch-icon.png",
-  "/pwa-192x192.png",
-  "/pwa-512x512.png",
-  "/pwa-maskable-512x512.png",
+  "/brand/icons/brabus-g10-16.png",
+  "/brand/icons/brabus-g10-32.png",
+  "/brand/icons/brabus-g10-180.png",
+  "/brand/icons/brabus-g10-192.png",
+  "/brand/icons/brabus-g10-512.png",
+  "/brand/icons/brabus-g10-maskable-512.png",
 ]
 
 self.addEventListener("install", (event) => {
@@ -21,7 +22,7 @@ self.addEventListener("activate", (event) => {
     caches
       .keys()
       .then((keys) =>
-        Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key)))
+        Promise.all(keys.filter((key) => key.startsWith("brabus-store-pwa-") && key !== CACHE_NAME).map((key) => caches.delete(key)))
       )
       .then(() => self.clients.claim())
   )

@@ -159,3 +159,7 @@ G8 aprovado visualmente e publicado após verificações:118 testes/43 E2E, buil
 ## Extensão G9 — arte da categoria Suplementos
 
 Usuário aprovou mockups com identidade Brabu’s na composição de cinco embalagens em pedestais. Arte apenas editorial, sem criar SKU/alterar produtos; href preservado para catálogo real. Implementado, testado e publicado após aprovação; evidências no plano/validação G9 e briefing docs/brand/2026-11-08-suplementos-mockups.md.
+
+## G10 — Favicon e aplicativo
+
+Autorizado em2026-11-08: derivar caveira da nova hero sem textos, enquadramento compacto; favicon16/32, Apple180, PWA192/512 e maskable512 com fundo opaco e área segura. Versionar URLs/namespace do cache e preservar comportamento offline e fluxos. Prévia local obrigatória antes de publicar. Implementação na branch codex/g10-brand-icons, checkout atual; detalhes/proveniência em docs/brand/2026-11-08-brand-icons.md. Execução local testada; aceite visual/publicação pendentes.
