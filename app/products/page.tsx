@@ -1,4 +1,5 @@
 import Link from "next/link"
+import ProductCard from "@/components/storefront/ProductCard"
 import { headers } from "next/headers"
 import prisma from "@/lib/prisma"
 import type { CatalogSort } from "@/lib/catalog-api"
@@ -250,41 +251,7 @@ export default async function Products({
           ) : (
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
               {catalog.items.map((product) => (
-                <div
-                  key={product.id}
-                  className="group relative aspect-[3/4] rounded-sm overflow-hidden border border-white/10 hover:border-[var(--color-primary)]/50 transition-all hover:-translate-y-1 bg-zinc-900"
-                >
-                  <Link href={`/products/${product.slug}`} className="absolute inset-0">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={product.images[0] || "/placeholder.jpg"}
-                      alt={product.name}
-                      className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500"
-                    />
-                  </Link>
-
-                  <div className="absolute top-3 left-3 z-10">
-                    {product.stock === 0 ? (
-                      <span className="bg-[var(--color-secondary)] text-white text-[10px] uppercase font-bold px-2 py-1 tracking-wider rounded-sm block">
-                        Esgotado
-                      </span>
-                    ) : product.stock < 10 ? (
-                      <span className="bg-yellow-600 text-white text-[10px] uppercase font-bold px-2 py-1 tracking-wider rounded-sm block">
-                        Últimas Unidades
-                      </span>
-                    ) : null}
-                  </div>
-
-                  <div className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black via-black/60 to-transparent pt-10 px-3 pb-3">
-                    <span className="text-[10px] text-gray-300 uppercase tracking-widest font-bold block truncate">
-                      {product.category.name}
-                    </span>
-                    <h3 className="text-sm font-medium text-white truncate leading-tight">{product.name}</h3>
-                    <span className="text-base font-heading tracking-wider text-[var(--color-primary)]">
-                      R$ {product.price.toFixed(2).replace(".", ",")}
-                    </span>
-                  </div>
-                </div>
+                <ProductCard key={product.id} product={product} />
               ))}
             </div>
           )}

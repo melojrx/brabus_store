@@ -69,3 +69,19 @@ Não usar credenciais de fixtures em banco real por suposição. O runner existe
 - Decodificação e dimensões dos seis pares PNG/WebP conferidas; alpha preservado nos dois logos transparentes.
 - Após preparar ativos: `npm test` com 102/102 aprovados; `npm run lint -- .` com zero erros e mesmo aviso preexistente; `npm run build` com exit code 0; `git diff --check` sem problemas.
 - Nenhum consumidor/layout/fluxo da aplicação foi alterado. Preparação de imagens não conclui G1–G5.
+
+
+## G3 — Categorias e cards (08/11/2026)
+
+- Usuário aprovou a hero integrada/G2 e autorizou G3 com parada antes do PDV.
+- Baseline: 107/107 testes (`/tmp/brabus-g3-baseline.log`). Cinco contratos de renderização adicionados antes dos componentes; falha inicial por módulo ausente (`/tmp/brabus-g3-red.log`), depois 4/4 aprovados. Caso adicional para o caminho legado `/placeholder.jpg` falhou por ausência do fallback textual e passou após correção (`/tmp/brabus-g3-placeholder-red.log`).
+- Resultado final: `npm test` 112/112; `npm run lint -- .` zero erros, aviso preexistente em DeliveriesManager.tsx:42; `npm run build` exit 0. Logs `/tmp/brabus-g3-tests.log`, `/tmp/brabus-g3-lint.log`, `/tmp/brabus-g3-build.log`. `git diff --check` sem erros.
+- Novos componentes servidor ObjectiveCategories e ProductCard. Mapa de imagens em lib/brand-assets.ts; consultas e dados comerciais preservados. CSS de apresentação só consumido na vitrine; nenhuma alteração no PDV.
+- Categorias: fotos locais 4:3 de roupas masculinas, bonés e suplementos. Título e descrição abaixo da foto, sempre visíveis. Categorias não curadas mantêm nome e descrição próprios com ícone neutro. Suplementos continuam composição editorial genérica provisória, sem alegação de SKU real.
+- Cards: mídia quadrada com `object-fit: contain`, nome em até duas linhas abaixo da mídia, preço separado e ação fora dos links. Badges de estoque têm prioridade sobre Novo. Foto ausente ou caminho legado placeholder.jpg recebe texto “Imagem indisponível”. Imagens existentes do catálogo não foram substituídas por composição editorial.
+- Navegador local: home sem overflow em CSS 375, 768 e 1440 px; catálogo sem overflow em 375 px. Em 375 px, ações de produto medem 44 px e nomes ficam abaixo da mídia. Em 1440 px, categorias medem ~408,7 × 306,5 px e fotos dos cards usam contain. Três imagens de categoria carregadas.
+- Fluxos read-only: link Moda masculina mantém roupas-fitness; páginas 1/2 do catálogo; busca Regata com ordenação por menor preço mostra R$ 36,90 e R$ 59,90; busca zz-sem-resultado-g3 mostra estado vazio; nome do card abre Regata Marchão Brabu’s com R$ 36,90, estoque 7 e link WhatsApp do produto, sem enviar mensagem. Durante emulação CDP, cliques tiveram coordenadas inconsistentes; verificações de interação foram concluídas após limpar a emulação e usar viewport normal. Overrides temporários removidos ao final.
+- Sem DATABASE_URL_E2E: runner Playwright e testes transacionais não executados; nenhum seed, migration ou compra no banco local.
+- O catálogo local contém itens femininos de demonstração e muitos produtos sem foto cadastrada. Esses dados foram preservados, não representam aprovação editorial da linha de produtos.
+- Screenshots locais não versionados: outputs/vitrine-identidade-brabus/g3-desktop.jpg, g3-categorias-mobile.jpg e g3-cards-mobile.jpg. Home mantida aberta em http://localhost:3000/ para avaliação.
+- Gate: implementação tecnicamente verificada, composição e imagens aguardam aceite visual. G4/PDV não iniciado; sem merge, push ou deploy.

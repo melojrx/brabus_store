@@ -1,43 +1,14 @@
 import Link from "next/link"
 import { ArrowRight, Instagram } from "lucide-react"
 import AddToCartButton from "@/components/AddToCartButton"
+import ObjectiveCategories from "@/components/storefront/ObjectiveCategories"
+import ProductCard from "@/components/storefront/ProductCard"
 import StorefrontHero from "@/components/storefront/StorefrontHero"
 import StorefrontInfoStrip from "@/components/storefront/StorefrontInfoStrip"
 import { getBestSellingProductIds, productWithRelationsInclude, serializeProduct } from "@/lib/catalog-api"
 import prisma from "@/lib/prisma"
 import { getPublicStoreSettings } from "@/lib/store-settings"
 import { isOnlineSalesEnabled } from "@/lib/online-sales"
-
-const OBJECTIVE_CARD_CONTENT: Record<
-  string,
-  {
-    image: string
-    description: string
-  }
-> = {
-  suplementos: {
-    image: "https://images.unsplash.com/photo-1593095948071-474c5cc2989d?q=80&w=800&auto=format&fit=crop",
-    description: "Suplementos para força, recuperação e evolução consistente.",
-  },
-  "roupas-fitness": {
-    image: "https://images.unsplash.com/photo-1571731956672-f2b94d7dd0cb?q=80&w=800&auto=format&fit=crop",
-    description: "Peças para treino com caimento, mobilidade e presença visual.",
-  },
-  acessorios: {
-    image: "https://images.unsplash.com/photo-1518611012118-696072aa579a?q=80&w=800&auto=format&fit=crop",
-    description: "Acessórios para complementar a rotina de treino e performance.",
-  },
-  "alimentacao-fitness": {
-    image: "https://images.unsplash.com/photo-1490645935967-10de6ba17061?q=80&w=800&auto=format&fit=crop",
-    description: "Opções práticas para rotina saudável, energia e conveniência.",
-  },
-}
-
-const OBJECTIVE_CARD_FALLBACK_IMAGES = [
-  "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=800&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1549060279-7e168fcee0c2?q=80&w=800&auto=format&fit=crop",
-  "https://images.unsplash.com/photo-1518310383802-640c2de311b2?q=80&w=800&auto=format&fit=crop",
-]
 
 async function getBestSellingProducts() {
   try {
@@ -139,19 +110,15 @@ async function getObjectiveCategories() {
     },
   })
 
-  const cards = parentCategories.map((category, index) => {
-    const curatedContent = OBJECTIVE_CARD_CONTENT[category.slug]
+  const cards = parentCategories.map((category) => {
     const childNames = category.children.map((child) => child.name).filter(Boolean)
 
     return {
       id: category.id,
+      slug: category.slug,
       title: category.name,
       href: `/products?category=${category.slug}`,
-      image:
-        curatedContent?.image ??
-        OBJECTIVE_CARD_FALLBACK_IMAGES[index % OBJECTIVE_CARD_FALLBACK_IMAGES.length],
       description:
-        curatedContent?.description ??
         (childNames.length > 0
           ? `Explore ${childNames.join(", ").toLowerCase()} e outras opções da categoria.`
           : "Veja os produtos disponíveis desta categoria no catálogo."),
@@ -194,13 +161,11 @@ async function getObjectiveCategories() {
 
   return [
     ...cards,
-    ...fallbackSubcategories.map((category, index) => ({
+    ...fallbackSubcategories.map((category) => ({
       id: category.id,
+      slug: category.slug,
       title: category.name,
       href: `/products?subcategory=${category.slug}`,
-      image:
-        OBJECTIVE_CARD_CONTENT[category.parent?.slug ?? ""]?.image ??
-        OBJECTIVE_CARD_FALLBACK_IMAGES[(cards.length + index) % OBJECTIVE_CARD_FALLBACK_IMAGES.length],
       description: category.parent
         ? `Veja os produtos de ${category.name.toLowerCase()} dentro de ${category.parent.name.toLowerCase()}.`
         : "Veja os produtos disponíveis desta categoria no catálogo.",
@@ -226,57 +191,17 @@ export default async function Home() {
         instagramUrl={storeSettings.instagramUrl}
       />
 
-      {/* ──── CATEGORIAS ──── */}
-      <section className="py-20 bg-background border-t border-white/5">
-        <div className="container mx-auto px-4">
-          <div className="mb-12">
-            <h2 className="text-3xl md:text-5xl font-heading tracking-wider uppercase">
-              Encontre seu <span className="text-[var(--color-primary)]">Objetivo</span>
-            </h2>
-            <div className="h-1 w-20 bg-[var(--color-primary)] mt-4" />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {objectiveCategories.map((category) => (
-              <Link
-                key={category.id}
-                href={category.href}
-                className="group relative h-80 overflow-hidden rounded-sm bg-zinc-900 border border-white/10 hover:border-[var(--color-primary)]/50 transition-all"
-              >
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent z-10" />
-                <div
-                  className="absolute inset-0 bg-cover bg-center opacity-50 group-hover:scale-105 group-hover:opacity-70 transition-all duration-700"
-                  style={{ backgroundImage: `url("${category.image}")` }}
-                />
-                <div className="absolute bottom-0 left-0 right-0 z-20 p-6">
-                  <h3 className="text-3xl font-heading tracking-wider uppercase text-white group-hover:text-[var(--color-primary)] transition-colors">
-                    {category.title}
-                  </h3>
-                  <p className="text-gray-400 text-sm mt-1 translate-y-2 opacity-0 group-hover:opacity-100 group-hover:translate-y-0 transition-all duration-300">
-                    {category.description}
-                  </p>
-                </div>
-              </Link>
-            ))}
-          </div>
-
-          {objectiveCategories.length === 0 && (
-            <div className="rounded-sm border border-dashed border-white/10 px-6 py-16 text-center text-sm text-gray-500">
-              Nenhuma categoria disponível no momento.
-            </div>
-          )}
-        </div>
-      </section>
+      <ObjectiveCategories categories={objectiveCategories} />
 
       {/* ──── PRODUTOS EM DESTAQUE ──── */}
       <section className="py-20 bg-zinc-950 border-t border-white/5">
-        <div className="container mx-auto px-4">
+        <div className="storefront-container">
           <div className="flex items-end justify-between mb-12">
             <div>
               <h2 className="text-3xl md:text-5xl font-heading tracking-wider uppercase">
-                Mais <span className="text-[var(--color-secondary)]">Vendidos</span>
+                Mais <span className="text-[var(--color-primary)]">Vendidos</span>
               </h2>
-              <div className="h-1 w-20 bg-[var(--color-secondary)] mt-4" />
+              <div className="h-1 w-20 bg-[var(--color-primary)] mt-4" />
             </div>
             <Link
               href="/products"
@@ -288,54 +213,9 @@ export default async function Home() {
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
             {bestSellingProducts.map((product) => (
-              <div
-                key={product.id}
-                className="group relative aspect-[3/4] rounded-sm overflow-hidden border border-white/10 hover:border-[var(--color-primary)]/50 transition-all hover:-translate-y-1 bg-zinc-900"
-              >
-                <Link href={`/products/${product.slug}`} className="absolute inset-0">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={product.images[0] || "/placeholder.jpg"}
-                    alt={product.name}
-                    className="object-cover w-full h-full group-hover:scale-105 transition-transform duration-500"
-                  />
-                </Link>
-
-                {/* Badge topo */}
-                <div className="absolute top-3 left-3 z-10">
-                  {product.stock === 0 ? (
-                    <span className="bg-[var(--color-secondary)] text-white text-[10px] uppercase font-bold px-2 py-1 tracking-wider rounded-sm block">
-                      Esgotado
-                    </span>
-                  ) : product.stock < 10 ? (
-                    <span className="bg-yellow-600 text-white text-[10px] uppercase font-bold px-2 py-1 tracking-wider rounded-sm block">
-                      Últimas Unidades
-                    </span>
-                  ) : product.isNew ? (
-                    <span className="bg-[var(--color-primary)] text-black text-[10px] uppercase font-bold px-2 py-1 tracking-wider rounded-sm block">
-                      Novo
-                    </span>
-                  ) : null}
-                </div>
-
-                {/* Overlay de info na base */}
-                <div className="absolute inset-x-0 bottom-0 z-10 bg-gradient-to-t from-black via-black/60 to-transparent pt-10 px-3 pb-3 flex items-end justify-between gap-2">
-                  <div className="min-w-0">
-                    <h3 className="text-sm font-medium text-white truncate leading-tight">
-                      {product.name}
-                    </h3>
-                    <span className="text-base font-heading tracking-wider text-[var(--color-primary)]">
-                      R$ {product.price.toFixed(2).replace(".", ",")}
-                    </span>
-                  </div>
-                  <AddToCartButton
-                    product={product}
-                    compact
-                    onlineSalesEnabled={onlineSalesEnabled}
-                    whatsapp={storeSettings.whatsapp}
-                  />
-                </div>
-              </div>
+              <ProductCard key={product.id} product={product} action={
+                <AddToCartButton product={product} compact onlineSalesEnabled={onlineSalesEnabled} whatsapp={storeSettings.whatsapp} />
+              } />
             ))}
 
             {bestSellingProducts.length === 0 && (
@@ -358,7 +238,7 @@ export default async function Home() {
 
       {/* ──── INSTAGRAM ──── */}
       <section className="py-20 bg-black border-t border-white/5">
-        <div className="container mx-auto px-4">
+        <div className="storefront-container">
           <div className="text-center max-w-2xl mx-auto">
             <Instagram className="w-10 h-10 mx-auto text-[var(--color-primary)] mb-4" />
             <h2 className="text-3xl md:text-4xl font-heading tracking-wider uppercase mb-2">

@@ -11,7 +11,7 @@
 ## Global Constraints
 
 - Checkout atual, sem worktree; branch `codex/vitrine-identidade-brabus` da `main` local em `2c5cecb`.
-- Spec e plano aprovados explicitamente pelo usuário. Autorizada execução até G2, com apresentação local antes de avançar; G3/G4 dependem do gate visual. Preparação dos ativos também autorizada.
+- Spec e plano aprovados explicitamente pelo usuário. G2 aprovado visualmente; autorizada execução do G3 com nova apresentação local antes do PDV/G4. Preparação dos ativos também autorizada.
 - Sem push, merge, deploy, migrations, seed ou alteração de produtos na base de trabalho.
 - Textos em português; código/commits em inglês; 2 espaços, sem ponto e vírgula, strings duplas e alias `@/`.
 - Bebas Neue e Inter existentes; nenhuma nova dependência ou fonte externa.
@@ -110,7 +110,7 @@ Run: `node --import tsx --test tests/storefront-theme.test.ts`. Confirmar falha 
 
 ## Task 2 / G2 — Cabeçalho, hero e faixa
 
-Estado: implementado e tecnicamente verificado, aguardando avaliação visual. 107 testes aprovados, lint sem erros e build aprovado. Sem `DATABASE_URL_E2E`, os novos contratos foram testados por renderização automatizada antes/depois e interações no navegador local; o runner Playwright não foi executado. Não avançar a Task 3 antes do aceite visual.
+Estado: aprovado visualmente pelo usuário em 08/11/2026, incluindo a hero integrada com fumaça e brasas estáticas. 107 testes aprovados, lint sem erros e build aprovado. Sem `DATABASE_URL_E2E`, os novos contratos foram testados por renderização automatizada antes/depois e interações no navegador local; o runner Playwright não foi executado. Não avançar a Task 3 antes do aceite visual.
 
 **Files:**
 - Create: `components/brand/BrandLogo.tsx`, `components/storefront/StorefrontHero.tsx`, `components/storefront/StorefrontInfoStrip.tsx`.
@@ -156,6 +156,8 @@ Run: `npm run test:e2e -- tests/e2e/storefront-brand.spec.ts` somente com `DATAB
 **Gate G2 — parar para avaliação:** mostrar screenshots e página local. Informar se logos ainda são os originais com fundo incorporado. Usuário avalia cabeçalho, escala do emblema, hero e faixa antes da próxima fase. Não apresentar arte provisória como final.
 
 ## Task 3 / G3 — Categorias corretas e cards compartilhados
+
+Estado: implementação autorizada após aprovação do G2 e concluída para avaliação local em 08/11/2026. Categorias usam os três ativos preparados; home e catálogo compartilham ProductCard. 112 testes aprovados, lint sem erros (um aviso preexistente) e build aprovado. Verificação de UI local em 375/768/1440 px; testes de renderização substituem E2E nesta fase, pois DATABASE_URL_E2E permanece indisponível. Aguardando aceite visual do G3; PDV não iniciado.
 
 **Files:**
 - Create: `components/storefront/ObjectiveCategories.tsx`, `components/storefront/ProductCard.tsx`.
