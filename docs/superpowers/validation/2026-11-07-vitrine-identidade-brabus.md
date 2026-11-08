@@ -18,8 +18,8 @@ Base: `main` local, `2c5cecb`.
 
 | Gate | Estado | Evidência necessária |
 | --- | --- | --- |
-| G0 | Spec aprovada; plano sem aceite separado explícito | Revisão do plano pelo usuário antes de implementar a aplicação |
-| G1 | Não iniciado | Testes de política de tema + isolamento + navegação |
+| G0 | Spec e plano aprovados | Usuário autorizou implementar até G2 e mostrar antes de avançar |
+| G1 | Verificado | 104 testes, lint sem erros, build aprovado; tema público isolado |
 | G2 | Não iniciado | Cabeçalho/hero/faixa testados e aceitos visualmente |
 | G3 | Não iniciado | Categorias/cards testados e aceitos visualmente |
 | G4 | Não iniciado | PDV: marca/paleta, regressões e comparação antes/depois |
@@ -28,6 +28,13 @@ Base: `main` local, `2c5cecb`.
 ## Registro de execução por fase
 
 Ao executar, acrescentar comandos, resultado, commit e caminhos das screenshots. Registrar falhas novas separadamente das preexistentes e manter o gate aberto enquanto houver falha atribuível à alteração.
+
+### G1 — tema e ativos
+
+- Teste novo executado antes da implementação: falha por módulo de política inexistente. Depois: dois casos aprovados, incluindo exclusão de rotas administrativas e prefixos parecidos.
+- `npm test`: 104/104; lint: zero erros e aviso preexistente; build: exit code 0.
+- Browser local: home com `--color-primary: #D4A346` e Bebas Neue resolvida por next/font. Navegação para login com `#C9A84C`, sem `.theme-storefront`, e retorno para home. Demais rotas administrativas cobertas pela política, sem validação autenticada nesta fase.
+- PDV classificado separadamente, mas classe/paleta nova não ativada. Dados/queries permanecem no servidor; Providers e children mantidos sob boundary estável.
 
 ## Restrições de teste
 

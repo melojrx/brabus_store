@@ -7,6 +7,7 @@ import WhatsAppButton from "@/components/WhatsAppButton"
 import Providers from "@/components/Providers"
 import PwaRegistration from "@/components/PwaRegistration"
 import { getPublicStoreSettings } from "@/lib/store-settings"
+import BrandTheme from "@/components/BrandTheme"
 
 export const dynamic = "force-dynamic"
 
@@ -62,12 +63,14 @@ export default async function RootLayout({
       <body suppressHydrationWarning className="font-body bg-background text-foreground min-h-screen flex flex-col">
         <Providers>
           <PwaRegistration />
-          <NavbarWithSalesMode />
-          <main className="flex-grow">
-            {children}
-          </main>
-          <Footer />
-          <WhatsAppButton whatsappNumber={storeSettings.whatsapp} />
+          <BrandTheme>
+            <NavbarWithSalesMode />
+            <main className="flex-grow">
+              {children}
+            </main>
+            <Footer />
+            <WhatsAppButton whatsappNumber={storeSettings.whatsapp} />
+          </BrandTheme>
         </Providers>
       </body>
     </html>
