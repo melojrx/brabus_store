@@ -11,7 +11,7 @@
 ## Global Constraints
 
 - Checkout atual, sem worktree; branch `codex/vitrine-identidade-brabus` da `main` local em `2c5cecb`.
-- Implementação aguarda revisão da spec `docs/superpowers/specs/2026-11-07-vitrine-identidade-brabus-design.md` pelo usuário. Este plano é a proposta de execução do G0.
+- Spec `docs/superpowers/specs/2026-11-07-vitrine-identidade-brabus-design.md` aprovada. Após esclarecimento em conversa, este plano permanece sem aceite separado explícito; implementação da aplicação aguarda essa revisão. Preparação dos ativos foi autorizada separadamente depois.
 - Sem push, merge, deploy, migrations, seed ou alteração de produtos na base de trabalho.
 - Textos em português; código/commits em inglês; 2 espaços, sem ponto e vírgula, strings duplas e alias `@/`.
 - Bebas Neue e Inter existentes; nenhuma nova dependência ou fonte externa.
@@ -19,7 +19,7 @@
 - PDV: somente paleta e assinatura; sem mudança de layout, densidade, fonte ou fluxo de venda. Demais rotas administrativas com tema legado.
 - Preservar `onlineSalesEnabled`, papéis, acesso a custos, slugs, seleção dinâmica de categorias e fontes de `StoreSettings`.
 - Roupas fitness representadas por linha masculina; acessórios por bonés/coqueteleiras; suplementos por variedade de embalagens reais.
-- Ativos finais são entregues pelo usuário; usar originais sobre preto/fallback neutro apenas como prévia declarada. Nenhuma geração de arte implícita.
+- Produção de ativos pelo Codex foi autorizada posteriormente. Arquivos em `public/brand/`, com fontes, prompts e limitações em `docs/brand/2026-11-07-vitrine-assets-production.md`. Derivações aguardam aceite visual; suplementos são editoriais genéricos provisórios; compacto mantém fundo preto.
 - Comandos de gate: `npm test`, `npm run lint -- .`, `npm run build`; evidências em `docs/superpowers/validation/2026-11-07-vitrine-identidade-brabus.md`.
 - Screenshots em `outputs/vitrine-identidade-brabus/`, sem dados pessoais ou credenciais, fora dos commits. Preservar `outputs/` preexistente.
 - Commits por fase com autor `Junior Melo <jrmeloafrf@gmail.com>`. Não usar `git add .`.
@@ -33,9 +33,10 @@
 - [x] Executar baseline: 102/102 testes, lint sem erros com um aviso preexistente, build concluído.
 - [x] Escrever spec, briefing de ativos e registro de validação.
 - [x] Incorporar autorização posterior para PDV limitado.
-- [ ] Usuário revisar spec e este plano. Ausência de resposta não libera implementação.
+- [x] Usuário aprovar a especificação.
+- [ ] Usuário revisar/aprovar separadamente este plano, conforme esclarecimento posterior. Ausência de resposta não libera implementação da aplicação.
 
-O briefing de produção está em `docs/brand/2026-11-07-vitrine-assets.md`. O G0 não depende da entrega dos PNGs; a aprovação final do visual depende.
+O briefing de produção está em `docs/brand/2026-11-07-vitrine-assets.md`. A produção foi depois autorizada e executada pelo Codex; os ativos aguardam avaliação. O G0 não depende da entrega dos PNGs; a aprovação final do visual depende.
 
 ## Task 1 / G1 — Isolar tema e mapa de ativos
 

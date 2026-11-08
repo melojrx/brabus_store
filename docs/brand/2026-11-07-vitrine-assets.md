@@ -1,6 +1,6 @@
 # Ativos para a nova vitrine Brabu’s
 
-Data: 2026-11-07. Solicitação de produção para o usuário no ChatGPT web; nenhum arquivo novo foi gerado nesta etapa.
+Data: 2026-11-07. Briefing inicial de produção. Atualização: o usuário autorizou o Codex a gerar/preparar os ativos; ver `2026-11-07-vitrine-assets-production.md` e `vitrine-assets-manifest.json` para os arquivos efetivamente produzidos, limitações e prompts. O símbolo compacto selecionado mantém o fundo preto original.
 
 ## Entregas
 

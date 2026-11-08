@@ -1,0 +1,68 @@
+{
+  "logo-horizontal": {
+    "src": "/brand/logo-horizontal.webp",
+    "png": "/brand/logo-horizontal.png",
+    "width": 768,
+    "height": 309,
+    "hasTransparency": true,
+    "kind": "derived-logo",
+    "reviewStatus": "pending-visual-acceptance",
+    "objectPosition": "center center",
+    "sourceWidth": 1976,
+    "sourceHeight": 796
+  },
+  "emblema-principal": {
+    "src": "/brand/emblema-principal.webp",
+    "png": "/brand/emblema-principal.png",
+    "width": 960,
+    "height": 960,
+    "hasTransparency": true,
+    "kind": "derived-logo",
+    "reviewStatus": "pending-visual-acceptance",
+    "objectPosition": "center center",
+    "sourceWidth": 1254,
+    "sourceHeight": 1254
+  },
+  "categoria-masculina": {
+    "src": "/brand/categoria-masculina.webp",
+    "png": "/brand/categoria-masculina.png",
+    "width": 1448,
+    "height": 1086,
+    "hasTransparency": false,
+    "kind": "reference-based-editorial",
+    "reviewStatus": "pending-visual-acceptance",
+    "objectPosition": "center center"
+  },
+  "categoria-acessorios": {
+    "src": "/brand/categoria-acessorios.webp",
+    "png": "/brand/categoria-acessorios.png",
+    "width": 1448,
+    "height": 1086,
+    "hasTransparency": false,
+    "kind": "reference-based-editorial",
+    "reviewStatus": "pending-visual-acceptance",
+    "objectPosition": "center center"
+  },
+  "categoria-suplementos": {
+    "src": "/brand/categoria-suplementos.webp",
+    "png": "/brand/categoria-suplementos.png",
+    "width": 1448,
+    "height": 1086,
+    "hasTransparency": false,
+    "kind": "provisional-generic-editorial",
+    "reviewStatus": "pending-visual-acceptance",
+    "objectPosition": "center center"
+  },
+  "simbolo-compacto": {
+    "src": "/brand/simbolo-compacto.webp",
+    "png": "/brand/simbolo-compacto.png",
+    "width": 512,
+    "height": 486,
+    "hasTransparency": false,
+    "kind": "unchanged-official-source",
+    "reviewStatus": "pending-visual-acceptance",
+    "objectPosition": "center center",
+    "sourceWidth": 512,
+    "sourceHeight": 486
+  }
+}

@@ -1,7 +1,7 @@
 # Redesenho da vitrine Brabu’s
 
 Data: 2026-11-07 (America/Fortaleza).
-Status: proposta concreta para revisão; direção da opção 2 aprovada em conversa; implementação ainda não iniciada.
+Status: especificação aprovada pelo usuário; plano apresentado sem aceite separado explícito; implementação da aplicação ainda não iniciada. Posteriormente o usuário autorizou a produção dos ativos pelo Codex, já registrada em `docs/brand/2026-11-07-vitrine-assets-production.md`.
 Branch: `codex/vitrine-identidade-brabus`, criada da `main` local em `2c5cecb`.
 Execução: checkout atual, sem worktree; trabalho sequencial, sem subagentes por padrão.
 
@@ -115,7 +115,7 @@ Verificar também dashboard e cadastro de produtos, que devem continuar com o te
 
 Briefing detalhado em `docs/brand/2026-11-07-vitrine-assets.md`.
 
-A prévia pode usar logo horizontal e emblema atuais sobre preto, claramente registrados como provisórios e preservados sem transformação. Para categorias, aguardar artes corretas ou usar fallback neutro explicitamente provisório; não manter fotos femininas/acadêmicas inadequadas como aceite final. Não chamar fallback de arte aprovada. Sem usar geração de imagens nesta execução; usuário produzirá os arquivos no ChatGPT web.
+A orientação inicial era aguardar arquivos do ChatGPT web. O usuário depois autorizou a geração/preparação pelo Codex usando as referências locais. Derivações agora estão em `public/brand/`, aguardando aceite visual, conforme registro de produção. O compacto selecionado é o original opaco; extrações ruins foram rejeitadas. Suplementos usam composição editorial genérica provisória autorizada, sem rótulos ou marcas inventadas. Não usar essa composição para ilustrar um SKU nem como prova de estoque.
 
 Gate de ativos finais: transparência real nos três PNGs de marca; fidelidade de letras e símbolo; categoria masculina; acessórios corretos; variedade de suplementos com embalagens reconhecíveis e reais. Otimizar cópias para web, preservando fontes fornecidas. SVG opcional deve ser fiel ao original e não conter scripts ou recursos externos.
 
