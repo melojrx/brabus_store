@@ -20,7 +20,7 @@ Base: `main` local, `2c5cecb`.
 | --- | --- | --- |
 | G0 | Spec e plano aprovados | Usuário autorizou implementar até G2 e mostrar antes de avançar |
 | G1 | Verificado | 104 testes, lint sem erros, build aprovado; tema público isolado |
-| G2 | Não iniciado | Cabeçalho/hero/faixa testados e aceitos visualmente |
+| G2 | Implementado e tecnicamente verificado; aguardando aceite visual | Cabeçalho/hero/faixa disponíveis no localhost |
 | G3 | Não iniciado | Categorias/cards testados e aceitos visualmente |
 | G4 | Não iniciado | PDV: marca/paleta, regressões e comparação antes/depois |
 | G5 | Não iniciado | Ativos finais, checks e aceite local completo |
@@ -35,6 +35,20 @@ Ao executar, acrescentar comandos, resultado, commit e caminhos das screenshots.
 - `npm test`: 104/104; lint: zero erros e aviso preexistente; build: exit code 0.
 - Browser local: home com `--color-primary: #D4A346` e Bebas Neue resolvida por next/font. Navegação para login com `#C9A84C`, sem `.theme-storefront`, e retorno para home. Demais rotas administrativas cobertas pela política, sem validação autenticada nesta fase.
 - PDV classificado separadamente, mas classe/paleta nova não ativada. Dados/queries permanecem no servidor; Providers e children mantidos sob boundary estável.
+- Commit G1: `a8ef177`.
+
+### G2 — cabeçalho, hero e faixa
+
+- Componentes criados: `BrandLogo`, `StorefrontHero`, `StorefrontInfoStrip`. Dados de endereço e Instagram vêm de `StoreSettings`. Assinatura horizontal e emblema servidos dos WebP locais; rotas de categoria e regras de compra preservadas.
+- Novos testes de renderização executados antes dos componentes: falha esperada por módulos inexistentes; após implementar, três testes aprovados (assinatura acessível, rotas/arte do hero e settings dinâmicos da faixa).
+- `npm test`: 107/107; `npm run lint -- .`: zero erros e mesmo aviso preexistente; `npm run build`: exit code 0; `git diff --check`: sem problemas.
+- Ajuste do plano de testes: `DATABASE_URL_E2E` não está configurada. Não executar o runner que faz migrations/seed na base de trabalho. Nesta fase, validação por testes automatizados de renderização reais e interações read-only no navegador local. Suite Playwright `_e2e` e testes autenticados/transacionais não executados e não declarados aprovados.
+- Navegador: 375 × 812, 768 × 1024 e 1440 × 900, sem overflow horizontal e com imagens carregadas. Menu móvel abre e fecha por Escape, foco visível, CTAs com 52 px de altura; destino de Moda masculina confirmado em `/products?category=roupas-fitness`, com catálogo filtrado carregado.
+- `prefers-reduced-motion: reduce` emulado no navegador: media query ativa, transições com duração 0s, sem overflow; emulação restaurada depois.
+- Modo de vendas local continua sem carrinho e com ações de WhatsApp nos produtos. Não enviar mensagens. Login e rotas fora da vitrine continuam com tema legado; menus de conta autenticada não exercitados nesta fase.
+- Capturas: `outputs/vitrine-identidade-brabus/g2-desktop.jpg`, `g2-tablet.jpg`, `g2-mobile.jpg`. Baseline anterior: `antes-desktop.jpg`. Capturas fora do commit.
+- Sem mudança de queries, cadastro de produtos, categorias, cards, PDV ou banco. A herança de cores/fontes nas páginas públicas é parte do tema aprovado; componentes das fases posteriores continuam os anteriores.
+- Gate visual G2 aberto. Não iniciar G3/G4 antes da avaliação do usuário.
 
 ## Restrições de teste
 

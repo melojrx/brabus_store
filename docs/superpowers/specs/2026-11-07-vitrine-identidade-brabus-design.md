@@ -1,7 +1,7 @@
 # Redesenho da vitrine Brabu’s
 
 Data: 2026-11-07 (America/Fortaleza).
-Status: especificação aprovada pelo usuário; plano apresentado sem aceite separado explícito; implementação da aplicação ainda não iniciada. Posteriormente o usuário autorizou a produção dos ativos pelo Codex, já registrada em `docs/brand/2026-11-07-vitrine-assets-production.md`.
+Status: especificação e plano aprovados pelo usuário. G1 implementado e verificado; G2 implementado, com verificação técnica concluída e aguardando avaliação visual. Categorias/cards e PDV não iniciados. Ativos preparados conforme `docs/brand/2026-11-07-vitrine-assets-production.md`.
 Branch: `codex/vitrine-identidade-brabus`, criada da `main` local em `2c5cecb`.
 Execução: checkout atual, sem worktree; trabalho sequencial, sem subagentes por padrão.
 

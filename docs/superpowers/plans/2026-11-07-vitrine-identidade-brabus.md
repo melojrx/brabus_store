@@ -11,7 +11,7 @@
 ## Global Constraints
 
 - Checkout atual, sem worktree; branch `codex/vitrine-identidade-brabus` da `main` local em `2c5cecb`.
-- Spec `docs/superpowers/specs/2026-11-07-vitrine-identidade-brabus-design.md` aprovada. Após esclarecimento em conversa, este plano permanece sem aceite separado explícito; implementação da aplicação aguarda essa revisão. Preparação dos ativos foi autorizada separadamente depois.
+- Spec e plano aprovados explicitamente pelo usuário. Autorizada execução até G2, com apresentação local antes de avançar; G3/G4 dependem do gate visual. Preparação dos ativos também autorizada.
 - Sem push, merge, deploy, migrations, seed ou alteração de produtos na base de trabalho.
 - Textos em português; código/commits em inglês; 2 espaços, sem ponto e vírgula, strings duplas e alias `@/`.
 - Bebas Neue e Inter existentes; nenhuma nova dependência ou fonte externa.
@@ -34,11 +34,13 @@
 - [x] Escrever spec, briefing de ativos e registro de validação.
 - [x] Incorporar autorização posterior para PDV limitado.
 - [x] Usuário aprovar a especificação.
-- [ ] Usuário revisar/aprovar separadamente este plano, conforme esclarecimento posterior. Ausência de resposta não libera implementação da aplicação.
+- [x] Usuário revisar/aprovar separadamente este plano e autorizar implementação até G2.
 
 O briefing de produção está em `docs/brand/2026-11-07-vitrine-assets.md`. A produção foi depois autorizada e executada pelo Codex; os ativos aguardam avaliação. O G0 não depende da entrega dos PNGs; a aprovação final do visual depende.
 
 ## Task 1 / G1 — Isolar tema e mapa de ativos
+
+Estado: implementado e verificado no commit `a8ef177`. 104 testes aprovados, lint sem erros e build aprovado. O mapa agora usa os ativos preparados em vez de copiar provisórios; PDV permanece desativado conforme plano. Evidências no registro de validação.
 
 **Files:**
 - Create: `lib/storefront-theme.ts`, `lib/brand-assets.ts`, `components/BrandTheme.tsx`.
@@ -107,6 +109,8 @@ Run: `node --import tsx --test tests/storefront-theme.test.ts`. Confirmar falha 
 **Gate G1:** política testada, resto do admin sem tokens novos e nenhum remount que esvazie estado de sessão/carrinho. Não declarar aceite do PDV sem comparação autenticada.
 
 ## Task 2 / G2 — Cabeçalho, hero e faixa
+
+Estado: implementado e tecnicamente verificado, aguardando avaliação visual. 107 testes aprovados, lint sem erros e build aprovado. Sem `DATABASE_URL_E2E`, os novos contratos foram testados por renderização automatizada antes/depois e interações no navegador local; o runner Playwright não foi executado. Não avançar a Task 3 antes do aceite visual.
 
 **Files:**
 - Create: `components/brand/BrandLogo.tsx`, `components/storefront/StorefrontHero.tsx`, `components/storefront/StorefrontInfoStrip.tsx`.

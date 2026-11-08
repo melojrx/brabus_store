@@ -1,6 +1,8 @@
 import Link from "next/link"
-import { ArrowRight, Instagram, MapPin, Zap } from "lucide-react"
+import { ArrowRight, Instagram } from "lucide-react"
 import AddToCartButton from "@/components/AddToCartButton"
+import StorefrontHero from "@/components/storefront/StorefrontHero"
+import StorefrontInfoStrip from "@/components/storefront/StorefrontInfoStrip"
 import { getBestSellingProductIds, productWithRelationsInclude, serializeProduct } from "@/lib/catalog-api"
 import prisma from "@/lib/prisma"
 import { getPublicStoreSettings } from "@/lib/store-settings"
@@ -217,79 +219,12 @@ export default async function Home() {
   return (
     <div className="flex flex-col min-h-screen">
 
-      {/* ──── HERO ──── */}
-      <section className="relative min-h-[85vh] flex items-center bg-zinc-950 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-r from-black via-black/80 to-transparent z-10" />
-        <div
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-40 grayscale"
-          style={{ backgroundImage: 'url("https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=2070&auto=format&fit=crop")' }}
-        />
-        {/* Accent line */}
-        <div className="absolute left-0 top-0 bottom-0 w-1 bg-[var(--color-primary)] z-20" />
-
-        <div className="container mx-auto px-4 relative z-20 py-20">
-          <div className="max-w-2xl">
-            <span className="text-[var(--color-primary)] text-xs uppercase tracking-[0.3em] font-bold mb-6 block">
-              ⚡ Aracoiaba · Ceará · Est. 2023
-            </span>
-            <h1 className="text-6xl md:text-8xl font-heading tracking-wider text-white mb-6 uppercase leading-none">
-              Para quem treina{" "}
-              <span className="text-[var(--color-primary)]">de verdade</span>
-            </h1>
-            <p className="text-lg md:text-xl text-gray-300 mb-10 max-w-lg leading-relaxed">
-              Suplementação de alta performance e moda fitness premium. Entrega rápida para todo o Maciço de Baturité.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Link
-                href="/products?category=suplementos"
-                className="bg-[var(--color-primary)] hover:bg-[var(--color-primary-dark)] text-black font-bold uppercase tracking-widest py-5 px-10 rounded-sm transition-all text-center flex items-center justify-center gap-2 shadow-lg shadow-[var(--color-primary)]/20"
-              >
-                Ver Suplementos <ArrowRight className="w-5 h-5" />
-              </Link>
-              <Link
-                href="/products?category=roupas-fitness"
-                className="glass hover:bg-white/10 border border-white/20 text-white font-bold uppercase tracking-widest py-5 px-10 rounded-sm transition-all text-center"
-              >
-                Moda Fitness
-              </Link>
-            </div>
-          </div>
-        </div>
-
-        {/* Scroll indicator */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2 text-gray-500">
-          <div className="w-px h-10 bg-gradient-to-b from-transparent to-gray-500 animate-pulse" />
-        </div>
-      </section>
-
-      {/* ──── DIFERENCIAIS ──── */}
-      <section className="py-10 bg-[var(--color-primary)] border-t-0">
-        <div className="container mx-auto px-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 text-black">
-            <div className="flex items-center gap-4">
-              <Zap className="w-8 h-8 shrink-0 font-bold" />
-              <div>
-                <h3 className="font-bold uppercase tracking-widest text-sm">Entrega Rápida</h3>
-                <p className="text-black/70 text-xs">Maciço de Baturité em até 24h</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <MapPin className="w-8 h-8 shrink-0" />
-              <div>
-                <h3 className="font-bold uppercase tracking-widest text-sm">Loja Física</h3>
-                <p className="text-black/70 text-xs">R. Antônio Lopes, 571 · Aracoiaba</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <Instagram className="w-8 h-8 shrink-0" />
-              <div>
-                <h3 className="font-bold uppercase tracking-widest text-sm">{storeSettings.instagram}</h3>
-                <p className="text-black/70 text-xs">Siga no Instagram</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      <StorefrontHero />
+      <StorefrontInfoStrip
+        address={`${storeSettings.addressStreet} · ${storeSettings.addressCity}`}
+        instagram={storeSettings.instagram}
+        instagramUrl={storeSettings.instagramUrl}
+      />
 
       {/* ──── CATEGORIAS ──── */}
       <section className="py-20 bg-background border-t border-white/5">

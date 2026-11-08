@@ -5,8 +5,12 @@ import { ShoppingCart, LogIn, User, Menu, X, Settings, LogOut } from "lucide-rea
 import { useCartStore } from "@/store/cartStore"
 import { useSession } from "next-auth/react"
 import { useEffect, useRef, useState } from "react"
+import { usePathname } from "next/navigation"
+import { getBrandTheme } from "@/lib/storefront-theme"
+import BrandLogo from "@/components/brand/BrandLogo"
 
 export default function Navbar({ onlineSalesEnabled = true }: { onlineSalesEnabled?: boolean }) {
+  const storefront = getBrandTheme(usePathname()) === "storefront"
   const { getItemCount, hasHydrated } = useCartStore()
   const { data: session } = useSession()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -56,13 +60,13 @@ export default function Navbar({ onlineSalesEnabled = true }: { onlineSalesEnabl
   }, [accountMenuOpen, menuOpen])
 
   return (
-    <nav className="sticky top-0 z-50 glass border-b border-white/5 py-4">
-      <div className="container mx-auto px-4 flex justify-between items-center">
+    <nav className={storefront ? "sticky top-0 z-50 storefront-navbar" : "sticky top-0 z-50 glass border-b border-white/5 py-4"}>
+      <div className={`${storefront ? "storefront-container" : "container mx-auto px-4"} flex justify-between items-center`}>
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 group shrink-0">
-          <span className="text-2xl font-heading tracking-wider uppercase text-white group-hover:text-[var(--color-primary)] transition-colors">
+          {storefront ? <BrandLogo /> : <span className="text-2xl font-heading tracking-wider uppercase text-white group-hover:text-[var(--color-primary)] transition-colors">
             Brabu&apos;s <span className="text-[var(--color-primary)]">Store</span>
-          </span>
+          </span>}
         </Link>
 
         {/* Nav Links - Desktop */}
