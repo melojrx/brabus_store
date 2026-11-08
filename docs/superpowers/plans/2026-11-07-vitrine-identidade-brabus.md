@@ -350,3 +350,15 @@ Usuário aprovou o G8 e autorizou merge em main e publicação após testes, com
 ### Fechamento G8 — produção
 
 G8 aprovado visualmente pelo usuário e publicado. Candidato893eeb2, workflow [42502717474](https://github.com/melojrx/brabus_store/actions/runs/42502717474) aprovado; digest em execução confirmado e Swarm completed.118 testes/43 E2E locais, build/lint sem erros (aviso anterior), três E2E públicos aprovados. Conta autenticada/identidade e acesso conferidos; cart/checkout e APIs de compra permanecem bloqueados. Sem alteração de dados/env em produção. Evidências no registro de validação.
+
+## G9 — Arte de suplementos com mockups Brabu’s
+
+Usuário solicitou substituir a ilustração genérica por composição de mockups na identidade Brabu’s, com pote e pouch conforme os dois anexos. Manter card4:3, fundo preto/grafite, luz dourada e link atual para o catálogo real; sem criar produtos, claims ou alterar estoque. Geração autorizada, com avaliação local antes de publicação.
+
+- [x] Gerar composição pela ferramenta integrada usando referências fornecidas, conferir marca e enquadramento e salvar versão otimizada em public/brand sem perder a arte anterior.
+- [x] Atualizar mapa/manifesto e alt para mockup ilustrativo; preservar href /products?category=suplementos e dados reais.
+- [x] Rodar testes/lint/build e verificar em navegador local a imagem e o clique da categoria; registrar captura e aguardar aceite.
+
+Ajuste do usuário no G9: manter a composição original de cinco embalagens em pedestais (três potes, um frasco pequeno e um pouch) e aplicar a identidade Brabu’s a todas. Proposta de dois objetos descartada; adotada composição conforme nova referência.
+
+G9:118 testes passaram, lint sem erros/aviso preexistente, build aprovado e3 E2E em375/768/1440 confirmaram a imagem carregada e o clique para o catálogo real. Contrato de apresentação usa apenas dados visuais, independente de data de aprovação. Prévia local apresentada; aguardar aceite, sem merge/push/deploy.

@@ -13,7 +13,7 @@ export const objectiveArtwork: Record<string, {
   title: string
   description: string
   alt: string
-  image: typeof manifest["categoria-masculina"]
+  image: Pick<typeof manifest["categoria-masculina"], "src" | "width" | "height" | "objectPosition">
 }> = {
   "roupas-fitness": {
     title: "Moda masculina",
@@ -30,7 +30,7 @@ export const objectiveArtwork: Record<string, {
   suplementos: {
     title: "Suplementos",
     description: "Explore os suplementos disponíveis no catálogo.",
-    alt: "Composição ilustrativa de suplementos em diferentes formatos de embalagem",
+    alt: "Mockups ilustrativos de três potes, frasco e pouch de suplementos com a identidade Brabu’s",
     image: manifest["categoria-suplementos"],
   },
 }

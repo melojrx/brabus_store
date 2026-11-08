@@ -14,8 +14,9 @@ test("categories use curated male, cap and supplement assets while preserving ca
     { id: "3", slug: "suplementos", title: "Suplementos", href: "/products?category=suplementos", description: "" },
   ] }))
   assert.match(html, /Moda masculina/)
-  for (const name of ["masculina", "acessorios", "suplementos"]) assert.match(html, new RegExp(`categoria-${name}\\.webp`))
+  for (const name of ["masculina", "acessorios", "suplementos-mockups"]) assert.match(html, new RegExp(`categoria-${name}\\.webp`))
   assert.match(html, /href="\/products\?category=roupas-fitness"/)
+  assert.match(html, /href="\/products\?category=suplementos"/)
   assert.match(html, /Bonés/)
   assert.doesNotMatch(html, /unsplash|group-hover:opacity/)
 })

@@ -52,15 +52,14 @@
     "provisional": false
   },
   "categoria-suplementos": {
-    "src": "/brand/categoria-suplementos.webp",
-    "png": "/brand/categoria-suplementos.png",
+    "src": "/brand/categoria-suplementos-mockups.webp",
+    "png": "/brand/categoria-suplementos-mockups.png",
     "width": 1448,
     "height": 1086,
     "hasTransparency": false,
-    "kind": "provisional-generic-editorial",
-    "reviewStatus": "approved-provisional-editorial",
+    "kind": "branded-editorial-mockup",
+    "reviewStatus": "pending-visual-acceptance",
     "objectPosition": "center center",
-    "approvedOn": "2026-11-08",
     "provisional": true
   },
   "simbolo-compacto": {
