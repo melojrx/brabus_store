@@ -366,3 +366,7 @@ G9:118 testes passaram, lint sem erros/aviso preexistente, build aprovado e3 E2E
 ### Aceite e autorização de produção G9
 
 Usuário aprovou a composição de cinco embalagens e autorizou merge em main e publicação após testes e conferência da imagem/clique em produção. Arte aprovada para uso editorial; permanece classificada como mockup, sem representar fotografia de SKU. Atualizar manifesto para aprovado, mantendo href e catálogo reais.
+
+### Fechamento G9 — produção
+
+Arte aprovada pelo usuário e publicada. Candidato3276176, workflow [42526800281](https://github.com/melojrx/brabus_store/actions/runs/42526800281) aprovado e Swarm completed.118 testes/43 E2E locais, build/lint sem erros (aviso anterior). Três E2E públicos confirmaram imagem carregada e clique para catálogo/produto real em375/768/1440. Hash da arte pública idêntico ao aprovado. Nenhum dado de produto/estoque/flag alterado; G9 concluído.

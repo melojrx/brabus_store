@@ -21,3 +21,5 @@ Apenas manifesto da categoria e descrição alternativa atualizados. href /produ
 ## Aceite e promoção
 
 Usuário aprovou a versão de cinco embalagens e autorizou merge/publicação com testes e conferência em produção. Status aprovado no manifesto; continua sendo mockup editorial. Release final registrada na validação Superpowers.
+
+Publicação concluída: release3276176, workflow42526800281. Imagem pública e clique para catálogo real verificados; hash e screenshot no registro de validação G9.

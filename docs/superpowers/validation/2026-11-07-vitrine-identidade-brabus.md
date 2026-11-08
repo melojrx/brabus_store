@@ -227,3 +227,12 @@ Verificação final pré-merge G8: build aprovado,43 E2E passaram e um baseline 
 Usuário aprovou a composição final de cinco embalagens e autorizou merge/publicação com testes e conferência de imagem/clique. Manifesto marcado approved-editorial-mockup; natureza editorial preservada. Verificações frescas em execução no banco isolado; não executar seed nem alterar configurações/dados de produção.
 
 Pré-merge G9: revisão independente sem bloqueadores, manifesto de aceite atualizado.118 testes passaram; lint sem erros/aviso anterior e build aprovado. Suite completa43 E2E passou (um baseline PDV ignorado). Logs /tmp/brabus-g9-release-tests.log, /tmp/brabus-g9-release-lint.log e /tmp/brabus-g9-release-e2e.log. Sem alteração de banco de trabalho/produção, seed somente no banco descartável.
+
+### G9 — merge e publicação concluídos
+
+- Merge fast-forward para main, candidato `3276176afa164d785ead2ca8596bf68e3c0caa2a` (implementação d064825). Suite repetida no resultado:118/118 passaram, log /tmp/brabus-g9-merged-tests.log. Push autorizado.
+- Workflow [42526800281](https://github.com/melojrx/brabus_store/actions/runs/42526800281) concluiu validação/imagem/deploy com sucesso. Digest publicado e confirmado no serviço: `ghcr.io/melojrx/brabus_store@sha256:3babb50b188c97eba3fb4282966cb91dc1f375e01c31cb615c92259ec30a5b6a`. Swarm completed após monitoramento; health público HTTP200/status ok. Log /tmp/brabus-g9-release.log.
+- Arte pública HTTP200,140882bytes; SHA256 faa13f743c2b42968faeac514e0ad913b4bcf403873ad1c8afdfdd7f25a903a7 idêntico ao arquivo aprovado. Evidência outputs/vitrine-identidade-brabus/g9-production-image-check.json.
+- Smoke público3/3 passou em375/768/1440: asset carregado, href da categoria abre /products?category=suplementos, catálogo real visível e navegação para detalhe de produto funcionando. Log /tmp/brabus-g9-production-smoke.log. Somente leitura em produção; não criado produto/pedido nem alterados estoque, flags ou configurações.
+- CUA confirmou composição completa no card público. Captura outputs/vitrine-identidade-brabus/g9-categorias-producao.jpg; aba de produção mantida para o usuário. G9 aprovado e publicado.
+- Fechamento documental em commit [skip ci] para evitar nova promoção de runtime inalterado; branch local removida após merge/verificações.
