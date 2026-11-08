@@ -3,5 +3,7 @@
   "embed": "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3978.2121778160326!2d-38.81107572533067!3d-4.371297395602757!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x7bf2f0026e0d701%3A0xc47f41c790e0c1cd!2sBrabus%20Conveni%C3%AAncia!5e0!3m2!1spt-BR!2sbr!4v1794109755010!5m2!1spt-BR!2sbr",
   "sourceName": "Brabus Conveniência",
   "sourceAddress": "Av. Antônio Lopes da Silva, 571 - Aracoiaba, CE, 62750-000",
-  "reviewStatus": "pending-visual-location-confirmation"
+  "reviewStatus": "pending-visual-location-confirmation",
+  "latitude": -4.3712974,
+  "longitude": -38.8085008
 }

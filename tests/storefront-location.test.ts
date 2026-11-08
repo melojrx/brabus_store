@@ -13,15 +13,15 @@ const settings = {
   googleMapsUrl: null, googleMapsEmbed: null,
 }
 
-test("location presents configured address, correct zip and an accessible embedded map without a fake store photo", () => {
+test("location presents configured address, correct zip and an accessible branded map without a fake store photo", () => {
   const html = renderToStaticMarkup(createElement(StoreLocation, { settings }))
   assert.match(html, /62750-000/)
   assert.match(html, /Rua de teste, 123/)
   assert.match(html, /Horário configurado/)
-  assert.match(html, /<iframe[^>]*title="Localização da Brabu’s Performance Store"/)
-  assert.match(html, /loading="lazy"/)
+  assert.match(html, /aria-label="Localização da Brabu’s Performance Store"/)
+  assert.match(html, /storefront-interactive-map/)
   assert.match(html, /Abrir no Google Maps/)
-  assert.doesNotMatch(html, /unsplash|Fachada|<img/)
+  assert.doesNotMatch(html, /unsplash|Fachada|<iframe/)
 })
 
 test("map uses configured links and falls back to an encoded full address", () => {

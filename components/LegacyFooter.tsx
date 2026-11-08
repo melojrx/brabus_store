@@ -46,7 +46,7 @@ export default function LegacyFooter({ settings }: { settings: StoreContactSetti
            </ul>
         </div>
       </div>
-      
+
       <div className="container mx-auto px-4 mt-8 pt-8 border-t border-white/10 text-center text-xs text-gray-500">
         <p>© {new Date().getFullYear()} Brabu's Performance Store. Todos os direitos reservados.</p>
       </div>

@@ -280,3 +280,7 @@ Estado: implementação autorizada após aceite do PDV/G4. Footer público, Loja
 ## Revisão do plano
 
 Contratos de props e responsabilidade por consultas definidos. Gate de PDV impede ativar cores antes de seu baseline. Arquivos novos de apresentação não recebem custos. Ativos finais e `_e2e` são dependências explícitas; ausência não deve ser registrada como teste/aceite concluído. Rever esta proposta se o usuário alterar fontes, escopo de PDV ou estrutura visual nos gates.
+
+### Ajuste aprovado do G5 — mapa com identidade
+
+Após solicitação do marcador com emblema, usuário escolheu OpenStreetMap interativo em vez do iframe Google. Implementado StoreMap com Leaflet, marcador oficial e coordenadas verificadas no JSON de localização; link Google Maps preservado. 116 testes e quatro E2E aprovados, build aprovado, lint com aviso preexistente. Sem avanço ao G6; aguardar avaliação do marcador e das páginas.
