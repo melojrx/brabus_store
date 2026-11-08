@@ -17,3 +17,7 @@ Use case: compositing / precise-object-edit. EDIT IMAGE 1, keeping its exact com
 ## Integração
 
 Apenas manifesto da categoria e descrição alternativa atualizados. href /products?category=suplementos, consultas, produtos, fotos dos SKUs, estoque e bloqueio de venda online preservados. Sem publicação nesta etapa; mostrar site local para avaliação.
+
+## Aceite e promoção
+
+Usuário aprovou a versão de cinco embalagens e autorizou merge/publicação com testes e conferência em produção. Status aprovado no manifesto; continua sendo mockup editorial. Release final registrada na validação Superpowers.

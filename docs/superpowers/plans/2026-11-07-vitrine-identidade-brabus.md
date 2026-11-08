@@ -362,3 +362,7 @@ Usuário solicitou substituir a ilustração genérica por composição de mocku
 Ajuste do usuário no G9: manter a composição original de cinco embalagens em pedestais (três potes, um frasco pequeno e um pouch) e aplicar a identidade Brabu’s a todas. Proposta de dois objetos descartada; adotada composição conforme nova referência.
 
 G9:118 testes passaram, lint sem erros/aviso preexistente, build aprovado e3 E2E em375/768/1440 confirmaram a imagem carregada e o clique para o catálogo real. Contrato de apresentação usa apenas dados visuais, independente de data de aprovação. Prévia local apresentada; aguardar aceite, sem merge/push/deploy.
+
+### Aceite e autorização de produção G9
+
+Usuário aprovou a composição de cinco embalagens e autorizou merge em main e publicação após testes e conferência da imagem/clique em produção. Arte aprovada para uso editorial; permanece classificada como mockup, sem representar fotografia de SKU. Atualizar manifesto para aprovado, mantendo href e catálogo reais.

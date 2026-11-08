@@ -221,3 +221,9 @@ Verificação final pré-merge G8: build aprovado,43 E2E passaram e um baseline 
 - Primeiro build detectou acoplamento indevido ao campo approvedOn obrigatório herdado da categoria masculina. Corrigido tipo do contrato de imagem para Pick dos dados realmente consumidos pelo card; não foi fabricada data de aprovação para nova arte. Nova rodada build aprovada e3 E2E passaram em375/768/1440, validando asset, clique da categoria para /products?category=suplementos e produtos reais visíveis. Logs /tmp/brabus-g9-e2e.log e /tmp/brabus-g9-e2e-final.log.
 - Verificação final118/118 testes, lint sem erros com aviso anterior fetchDeliveries. Logs /tmp/brabus-g9-tests-verified.log e /tmp/brabus-g9-lint-verified.log. Nenhuma query, dado de produto, estoque, handler, flag online ou schema alterado. Seed somente no banco descartável brabus_brand_e2e do runner.
 - CUA inspecionou composição completa no card; screenshot outputs/vitrine-identidade-brabus/g9-categorias-local.jpg. Prévia mantida em http://localhost:3100/#objectives-heading. Apenas local, sem merge/push/deploy; aguardando avaliação visual.
+
+### G9 — autorização de release
+
+Usuário aprovou a composição final de cinco embalagens e autorizou merge/publicação com testes e conferência de imagem/clique. Manifesto marcado approved-editorial-mockup; natureza editorial preservada. Verificações frescas em execução no banco isolado; não executar seed nem alterar configurações/dados de produção.
+
+Pré-merge G9: revisão independente sem bloqueadores, manifesto de aceite atualizado.118 testes passaram; lint sem erros/aviso anterior e build aprovado. Suite completa43 E2E passou (um baseline PDV ignorado). Logs /tmp/brabus-g9-release-tests.log, /tmp/brabus-g9-release-lint.log e /tmp/brabus-g9-release-e2e.log. Sem alteração de banco de trabalho/produção, seed somente no banco descartável.
