@@ -24,7 +24,7 @@ Base: `main` local, `2c5cecb`.
 | G3 | Aprovado pelo usuário | Categorias masculinas/bonés/suplementos e cards compartilhados |
 | G4 | Aprovado pelo usuário | PDV restrito a marca/paleta; fluxos e layout preservados |
 | G5 | Aprovado pelo usuário em 2026-11-08 | Footer, Loja Física, Contato, mapa escuro/pino e CEP |
-| G6 | Em revisão/testes finais | Merge e produção autorizados se verificações aprovadas |
+| G6 | Concluído e publicado em 2026-11-08 | Revisão sem bloqueadores, 116 testes, 38 E2E, build/lint e smoke público aprovados |
 
 ## Registro de execução por fase
 
@@ -146,3 +146,14 @@ MapLibre requer worker explícito com o bundler atual: scripts/prepare-map-worke
 - Novo E2E verifica assets carregados, teclado/menu/Escape, navegação hero→catálogo→produto, reduced-motion e ausência de overflow em 375/768/1440. Suite completa concluída: build aprovado, 38 E2E passaram, um caso de captura de baseline intencionalmente ignorado. Banco isolado brabus_brand_e2e; log /tmp/brabus-g6-e2e.log. Inclui permissões/custos, integração, dashboard vendedor, responsividade PDV e mapa carregado após zoom.
 
 - Gate técnico G6 aprovado antes do merge: sem bloqueadores na revisão, 116 testes/38 E2E, build e lint sem erros. Única limitação visual aceita: suplementos genéricos provisórios. Release e verificação pública registrados após execução.
+
+### Release de produção — G6 concluído
+
+- Merge fast-forward de codex/vitrine-identidade-brabus para main, commit de aplicação `e3f28cd5b65c6f2632a24da02d9773d730e4f08d`. Testes repetidos após merge: 116/116, log /tmp/brabus-g6-merged-tests.log. Push autorizado para origin/main.
+- Workflow [42497779216](https://github.com/melojrx/brabus_store/actions/runs/42497779216) concluído com sucesso em validação/imagem e deploy homelab. Digest publicado e conferido no serviço: `ghcr.io/melojrx/brabus_store@sha256:a0768c237d538af358748961e985e89bc48274eeecace60311b15908174fb44f`. Swarm UpdateStatus `completed`; health público HTTP200/status ok. Log /tmp/brabus-g6-release.log.
+- Atualização restrita em produção às 16:02:19 UTC: uma linha StoreSettings, CEP 62765-000→62750-000, googleMapsUrl/googleMapsEmbed vazios→ponto aprovado. Update transacional com guarda de identidade/valores anteriores; sem seed, sem alteração de produtos, usuários, vendas ou estoque. Registro antes/depois em outputs/vitrine-identidade-brabus/g6-production-location-update.json (somente campos públicos).
+- Três E2E somente leitura em https://brabustore.com.br passaram (375/768/1440): footer/Contato/Loja Física/CEP, responsividade sem overflow, pino com emblema e carregamento real do mapa após zoom. Sem login, pedido, pagamento ou mensagem em produção. Log /tmp/brabus-g6-production-smoke.log.
+- CUA confirmou mapLoaded=true, pin=true, ausência de erro e CEP correto. Captura pública completa em outputs/vitrine-identidade-brabus/g5-openfreemap-escuro.png, inspecionada visualmente.
+- HTTP200 para home, catálogo, Loja Física, Contato, login, health, worker e os sete WebP consumidos. Hash SHA256 dos WebP/worker públicos idêntico ao checkout da release. Auditoria em outputs/vitrine-identidade-brabus/g6-production-http.json. Uma tentativa inicial via urllib recebeu403; curl e navegador normais passaram, sem alteração de proteção.
+- Sem novos secrets/env vars, sem migração de schema neste redesenho. O controlador de release executou seu fluxo padrão de migrations compatíveis. Aviso lint preexistente permanece fora do escopo. Suplementos seguem ilustração editorial genérica provisória aprovada.
+- Registro de fechamento documental separado, sem mudança de runtime; marcador [skip ci] evita repetir a promoção da mesma aplicação.

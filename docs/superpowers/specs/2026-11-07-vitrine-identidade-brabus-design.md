@@ -1,7 +1,7 @@
 # Redesenho da vitrine Brabu’s
 
 Data: 2026-11-07 (America/Fortaleza).
-Status: spec/plano e visuais G2–G5 aprovados. G6 autorizado em 2026-11-08 para revisão final, merge e produção condicionados aos testes.
+Status: G0–G6 concluídos. Spec/plano e visuais aprovados; revisão/testes finais, merge e publicação em produção concluídos em 2026-11-08. Release de aplicação e3f28cd, workflow 42497779216.
 Branch: `codex/vitrine-identidade-brabus`, criada da `main` local em `2c5cecb`.
 Execução: checkout atual, sem worktree; trabalho sequencial, sem subagentes por padrão.
 

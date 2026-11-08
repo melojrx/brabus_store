@@ -294,3 +294,7 @@ Alternativa sem cadastro/chave autorizada e integrada no G5: OpenFreeMap Dark + 
 Usuário aprovou explicitamente mapa escuro/pino, footer, Loja Física e Contato e autorizou merge e promoção para produção se a revisão final e os testes passarem. Essa decisão substitui a restrição anterior de entrega apenas local. A ilustração de suplementos continua genérica/provisória; aprovação visual não a transforma em fotografia de estoque. Compacto preservado opaco, sem consumidor no site.
 
 G6: revisão independente sem bloqueadores; 116 testes e 38 E2E aprovados (baseline ignorado), lint sem erros/aviso preexistente e build aprovado. Ativos consumidos aprovados, incluindo editorial provisório de suplementos. Merge/promoção autorizados; confirmação remota na validação.
+
+### Fechamento G6 — 2026-11-08
+
+Merge/push concluídos em main (`e3f28cd`). Release homelab [42497779216](https://github.com/melojrx/brabus_store/actions/runs/42497779216) aprovada, digest confirmado e Swarm completed. CEP/links de produção atualizados de forma restrita, sem seed. Smoke público: três E2E passaram e assets/worker HTTP200 com hashes conferidos. G0–G6 concluídos; detalhes e limitações no registro de validação.
