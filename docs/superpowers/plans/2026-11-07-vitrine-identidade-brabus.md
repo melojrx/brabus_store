@@ -298,3 +298,18 @@ G6: revisão independente sem bloqueadores; 116 testes e 38 E2E aprovados (basel
 ### Fechamento G6 — 2026-11-08
 
 Merge/push concluídos em main (`e3f28cd`). Release homelab [42497779216](https://github.com/melojrx/brabus_store/actions/runs/42497779216) aprovada, digest confirmado e Swarm completed. CEP/links de produção atualizados de forma restrita, sem seed. Smoke público: três E2E passaram e assets/worker HTTP200 com hashes conferidos. G0–G6 concluídos; detalhes e limitações no registro de validação.
+
+## G7 — Cabeçalho de toda a área administrativa (2026-11-08)
+
+Extensão explicitamente aprovada pelo usuário após G6: aplicar logo/paleta somente ao cabeçalho em `/admin` e descendentes. As restrições anteriores sobre manter toda a área administrativa legada passam a permitir essa exceção no cabeçalho. Entrega somente local, sem merge/push/publicação até novo aceite.
+
+**Design aprovado:** assinatura horizontal compacta (128×40, linha de navegação de 74px), fundo preto #000000, dourado #D4A346 e texto #F4F4F4. Tokens CSS no próprio nav, sem herança para conteúdo/sidebar/footer. Menus desktop/mobile e conta recebem esses tokens dentro do nav. Preservar medidas, fontes, links, autenticação, logout, carrinho condicional e fluxos. PDV mantém seu tema anterior aprovado; demais conteúdos admin continuam legados. Não alterar login/account/cart nem tema da vitrine.
+
+**Arquivos:** `lib/storefront-theme.ts` (predicado exato de rota administrativa, independente do tema do corpo), `components/Navbar.tsx`, `components/brand/BrandLogo.tsx`, `app/globals.css`; testes `tests/storefront-theme.test.ts`, `tests/e2e/admin-header.spec.ts` e expectativas de cabeçalho em `tests/e2e/pdv-brand.spec.ts`.
+
+- [x] G7.1: baseline de testes e screenshot autenticada da dashboard em banco `_e2e` isolado, antes do código; branch da main no checkout atual, sem worktree.
+- [x] G7.2: teste novo falha no estado anterior (rotas admin exatas/descendentes, logo/cores do header, corpo legado). Implementar somente escopo autorizado; preservar `/administrator` e `/admin-other` como não administrativos.
+- [x] G7.3: teste completo, lint, build e E2E de dashboard, menu da conta, teclado/mobile, PDV/permissões. Conferir logo carregada, header 74px e conteúdo com paleta anterior. Inspecionar screenshot final.
+- [x] G7.4: registrar resultados e entregar prévia local autenticada + screenshot. Aguardar aceite visual; nenhuma publicação nesta rodada.
+
+G7 tecnicamente verificado: 117 testes/39 E2E (baseline PDV ignorado), build aprovado, lint sem erros/aviso anterior. Prévia autenticada em http://localhost:3100/admin, banco de teste isolado. Aguardando aceite visual; sem push, merge ou publicação.

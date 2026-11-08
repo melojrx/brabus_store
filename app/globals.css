@@ -55,8 +55,9 @@
   }
 }
 
-/* Public storefront typography stays separate from the PDV color-only theme. */
-.theme-pdv {
+/* Admin header tokens never reach the sidebar or page content. */
+.theme-pdv,
+.admin-brand-header {
   --color-primary: #D4A346;
   --color-primary-dark: #E7BB68;
   --color-background: #000000;
@@ -66,10 +67,22 @@
 }
 
 /* Fit the signature inside the existing 40px navbar row. */
-.pdv-logo {
+.pdv-logo,
+.admin-header-logo {
   width: 128px;
   height: 40px;
   object-fit: contain;
+}
+
+.admin-brand-header {
+  background: #000000;
+  color: var(--color-foreground);
+  border-bottom-color: #D4A34633;
+}
+
+.admin-brand-header :where(a, button):focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 4px;
 }
 
 .theme-storefront {

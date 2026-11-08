@@ -26,7 +26,7 @@ test("capture authenticated PDV baseline before brand activation", async ({ page
   await writeFile("outputs/vitrine-identidade-brabus/g4-baseline-geometria.json", JSON.stringify(measurements, null, 2))
 })
 
-test("PDV uses the new signature and gold while dashboard keeps legacy theme", async ({ page }) => {
+test("PDV and admin headers share branding while dashboard content keeps legacy theme", async ({ page }) => {
   await page.setViewportSize(viewports[1])
   await loginAsAdmin(page, "/admin/pdv")
   const navbar = page.getByRole("navigation").first()
@@ -38,7 +38,8 @@ test("PDV uses the new signature and gold while dashboard keeps legacy theme", a
   await page.goto("/admin")
   await expect(page.locator(".theme-pdv")).toHaveCount(0)
   expect((await page.getByTestId("admin-main").evaluate(el => getComputedStyle(el).getPropertyValue("--color-primary"))).trim().toUpperCase()).toBe("#C9A84C")
-  await expect(navbar.getByRole("img", { name: "Brabu’s Performance Store", exact: true })).toHaveCount(0)
+  await expect(navbar.getByRole("img", { name: "Brabu’s Performance Store", exact: true })).toBeVisible()
+  await expect(navbar).toHaveCSS("--color-primary", /#d4a346/i)
 })
 
 

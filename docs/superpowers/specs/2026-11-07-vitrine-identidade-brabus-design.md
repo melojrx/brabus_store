@@ -143,3 +143,7 @@ Baseline e resultados de cada gate em `docs/superpowers/validation/2026-11-07-vi
 Comandos obrigatórios após cada fase que altere código: `npm test`, `npm run lint -- .`, `npm run build`. Verificação manual/browser antes e depois por gate visual. Testes de navegador com fixtures somente via configuração `_e2e` existente; não executar seed/migrate para preparar a base de trabalho. Não guardar credenciais ou dados de clientes nos documentos/screenshots.
 
 Commits convencionais pequenos por fase, autor `Junior Melo <jrmeloafrf@gmail.com>`. Preservar `outputs/` preexistente. Não criar worktree nem alterar a `main`. Reversão por commits da fase; sem feature flag remota para este preview local.
+
+## Extensão aprovada G7 — cabeçalho administrativo
+
+Após publicação G6, usuário autorizou uniformizar logo e paleta do cabeçalho em toda `/admin` e descendentes, preservando layout/fluxos e tema do conteúdo. Usar assinatura compacta na linha existente, preto/dourado/off-white restritos ao nav e menus internos. A política de tema do corpo permanece igual; rotas não administrativas não recebem esse cabeçalho. Avaliação local antes de nova publicação, conforme plano G7.

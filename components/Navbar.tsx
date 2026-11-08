@@ -6,11 +6,13 @@ import { useCartStore } from "@/store/cartStore"
 import { useSession } from "next-auth/react"
 import { useEffect, useRef, useState } from "react"
 import { usePathname } from "next/navigation"
-import { getBrandTheme } from "@/lib/storefront-theme"
+import { getBrandTheme, isAdminPath } from "@/lib/storefront-theme"
 import BrandLogo from "@/components/brand/BrandLogo"
 
 export default function Navbar({ onlineSalesEnabled = true }: { onlineSalesEnabled?: boolean }) {
-  const theme = getBrandTheme(usePathname())
+  const pathname = usePathname()
+  const theme = getBrandTheme(pathname)
+  const adminHeader = isAdminPath(pathname)
   const storefront = theme === "storefront"
   const { getItemCount, hasHydrated } = useCartStore()
   const { data: session } = useSession()
@@ -61,11 +63,11 @@ export default function Navbar({ onlineSalesEnabled = true }: { onlineSalesEnabl
   }, [accountMenuOpen, menuOpen])
 
   return (
-    <nav className={storefront ? "sticky top-0 z-50 storefront-navbar" : "sticky top-0 z-50 glass border-b border-white/5 py-4"}>
+    <nav className={storefront ? "sticky top-0 z-50 storefront-navbar" : `sticky top-0 z-50 glass border-b border-white/5 py-4${adminHeader ? " admin-brand-header" : ""}`}>
       <div className={`${storefront ? "storefront-container" : "container mx-auto px-4"} flex justify-between items-center`}>
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 group shrink-0">
-          {theme !== "legacy" ? <BrandLogo variant={theme} /> : <span className="text-2xl font-heading tracking-wider uppercase text-white group-hover:text-[var(--color-primary)] transition-colors">
+          {adminHeader || storefront ? <BrandLogo variant={theme === "pdv" ? "pdv" : adminHeader ? "admin" : "storefront"} /> : <span className="text-2xl font-heading tracking-wider uppercase text-white group-hover:text-[var(--color-primary)] transition-colors">
             Brabu&apos;s <span className="text-[var(--color-primary)]">Store</span>
           </span>}
         </Link>
