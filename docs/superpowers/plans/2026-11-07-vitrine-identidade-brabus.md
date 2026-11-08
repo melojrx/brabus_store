@@ -284,3 +284,7 @@ Contratos de props e responsabilidade por consultas definidos. Gate de PDV imped
 ### Ajuste aprovado do G5 — mapa com identidade
 
 Após solicitação do marcador com emblema, usuário escolheu OpenStreetMap interativo em vez do iframe Google. Implementado StoreMap com Leaflet, marcador oficial e coordenadas verificadas no JSON de localização; link Google Maps preservado. 116 testes e quatro E2E aprovados, build aprovado, lint com aviso preexistente. Sem avanço ao G6; aguardar avaliação do marcador e das páginas.
+
+Revisão visual adicional do G5 solicitada pelo usuário: escurecer apenas as imagens raster do mapa e desenhar um pino dourado com emblema. Coordenadas e interação mantidas; avaliar contraste e ponta do marcador no site local antes de G6.
+
+Alternativa sem cadastro/chave autorizada e integrada no G5: OpenFreeMap Dark + MapLibre, pino dourado com emblema e botão Google Maps. Worker servido localmente e preparado automaticamente em predev/prebuild. Leaflet e filtro raster removidos; ruas e rótulos usam cores nativas de contraste maior. Chave CARTO não é mais dependência. Verificação real de carregamento após zoom nas três resoluções; aguardar aceite visual antes de G6.

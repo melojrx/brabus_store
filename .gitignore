@@ -54,3 +54,6 @@ CLAUDE.md
 .env.production
 backups/
 .antigravitycli/
+
+# Generated from the pinned MapLibre dependency before dev/build
+/public/map-engine/

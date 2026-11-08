@@ -17,12 +17,15 @@ for (const viewport of [{ width: 375, height: 812 }, { width: 768, height: 1024 
     const map = page.getByRole("region", { name: "Localização da Brabu’s Performance Store", exact: true })
     await expect(map).toBeVisible()
     await expect(map.locator(".brabus-map-marker")).toBeVisible()
-    await expect(map.locator(".brabus-map-marker")).toHaveAttribute("src", /emblema-principal/)
+    await expect(map.locator(".brabus-map-marker")).toHaveClass(/brabus-map-pin/)
+    await expect(map.locator(".brabus-map-marker img")).toHaveAttribute("src", /emblema-principal/)
+    await expect(map).toHaveAttribute("data-map-style", "https://tiles.openfreemap.org/styles/dark")
     await map.getByRole("button", { name: "Zoom in" }).click()
     await expect(map.locator(".brabus-map-marker")).toBeVisible()
+    await expect(map).toHaveAttribute("data-map-loaded", "true", { timeout: 30000 })
+    await expect(page.locator(".storefront-map-error")).toHaveCount(0)
     if (viewport.width === 1440) {
-      await expect(map.locator(".leaflet-tile-loaded").first()).toBeVisible()
-      await page.screenshot({ path: "outputs/vitrine-identidade-brabus/g5-marcador-brabus.png", fullPage: true })
+      await page.screenshot({ path: "outputs/vitrine-identidade-brabus/g5-openfreemap-escuro.png", fullPage: true })
     }
     const boxes = await Promise.all([page.locator(".storefront-location-address").boundingBox(), map.boundingBox()])
     if (viewport.width < 768) expect(boxes[1]!.y).toBeGreaterThanOrEqual(boxes[0]!.y + boxes[0]!.height - 1)
