@@ -1,7 +1,7 @@
 # Redesenho da vitrine Brabu’s
 
 Data: 2026-11-07 (America/Fortaleza).
-Status: G0–G9 concluídos e publicados após os aceites. G9 publicado em 2026-11-08, release3276176/workflow42526800281. Mockups editoriais da categoria preservam navegação ao catálogo real e bloqueio de vendas online.
+Status: G0–G10 concluídos e publicados após os aceites. G10 publicado em2026-11-08, release f871381/workflow42530721484. G9 publicado em 2026-11-08, release3276176/workflow42526800281. Mockups editoriais da categoria preservam navegação ao catálogo real e bloqueio de vendas online.
 Branch: `codex/vitrine-identidade-brabus`, criada da `main` local em `2c5cecb`.
 Execução: checkout atual, sem worktree; trabalho sequencial, sem subagentes por padrão.
 
@@ -162,4 +162,4 @@ Usuário aprovou mockups com identidade Brabu’s na composição de cinco embal
 
 ## G10 — Favicon e aplicativo
 
-Autorizado em2026-11-08: derivar caveira da nova hero sem textos, enquadramento compacto; favicon16/32, Apple180, PWA192/512 e maskable512 com fundo opaco e área segura. Versionar URLs/namespace do cache e preservar comportamento offline e fluxos. Prévia local obrigatória antes de publicar. Implementação na branch codex/g10-brand-icons, checkout atual; detalhes/proveniência em docs/brand/2026-11-08-brand-icons.md. Execução local testada; aceite visual/publicação pendentes.
+Autorizado em2026-11-08: derivar caveira da nova hero sem textos, enquadramento compacto; favicon16/32, Apple180, PWA192/512 e maskable512 com fundo opaco e área segura. Versionar URLs/namespace do cache e preservar comportamento offline e fluxos. Prévia local obrigatória antes de publicar. Implementação na branch codex/g10-brand-icons, checkout atual; detalhes/proveniência em docs/brand/2026-11-08-brand-icons.md. Execução visual aprovada e publicação concluída em2026-11-08; release f871381/workflow42530721484, ícones/cache conferidos em produção.

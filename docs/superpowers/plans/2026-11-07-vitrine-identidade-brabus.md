@@ -385,3 +385,7 @@ G10 tecnicamente validado: baseline118;120 testes após implementação;45 E2E a
 ### Aceite e autorização de produção G10
 
 Usuário aprovou os ícones e autorizou merge em main/publicação, com testes e conferência do favicon, ícones do app e atualização do cache após o deploy. Sem alterações de dados/env/fluxos. A restrição anterior de entrega apenas local está superada por este aceite.
+
+### Fechamento G10 — produção
+
+Ícones aprovados, merge/push/publicação concluídos. Release f871381, workflow [42530721484](https://github.com/melojrx/brabus_store/actions/runs/42530721484) aprovado, digest confirmado e Swarm completed.120 testes/45 E2E locais, build aprovado e lint0 erros/aviso anterior. Dois E2E em produção confirmaram ícones/metadados e remoção do cache v1 com preservação de caches alheios.13 arquivos públicos idênticos aos aprovados, incluindo aliases antigos e sw.js. G10 concluído; nenhum dado/env/fluxo alterado.

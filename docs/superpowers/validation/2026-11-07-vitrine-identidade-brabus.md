@@ -252,3 +252,13 @@ Pré-merge G9: revisão independente sem bloqueadores, manifesto de aceite atual
 ### G10 — Aceite e preparação da publicação
 
 Usuário aprovou G10 e autorizou merge/publicação em2026-11-08. Revisão final inline confirmou escopo limitado a arte, metadata/manifest e cache; aliases antigos correspondem aos PNG versionados. Nova execução:120/120 testes,45 E2E aprovados/1 baseline ignorado, build aprovado; lint0 erros/aviso anterior. Logs /tmp/brabus-g10-release-{tests,lint,e2e}.log. Publicação pela esteira Homelab existente, sem alterar env/dados/vendas online.
+
+### G10 — Fechamento de produção
+
+- Release f8713811bafabb62c1c60063f0e4423bd9c755f1; workflow [42530721484](https://github.com/melojrx/brabus_store/actions/runs/42530721484) concluído com sucesso.
+- Imagem GHCR sha256:ec4ce1151ffbfcac83a9ee7060dfac4f9d2b32c458c031b815e25d40390e8c83 igual à publicada; Swarm completed e /api/health HTTP200/status ok.
+-120 testes após merge passaram;45 E2E locais/1 baseline ignorado e build aprovados. Lint0 erros/aviso anterior.
+- Dois E2E pós-deploy passaram em /tmp/brabus-g10-production-smoke.log: favicon16/metadados, Apple/PWA, PNG/MIME/dimensões, ativação do service worker, limpeza do cache v1, preservação de cache alheio e precache do novo32. Navegador de teste isolado, sem conta, pedidos, pagamentos ou seed em produção.
+-13 hashes públicos iguais aos locais, incluindo6 ícones versionados,6 aliases antigos e sw.js; evidência outputs/vitrine-identidade-brabus/g10-production-assets-check.json.
+- Captura outputs/vitrine-identidade-brabus/g10-icons-production.jpg mostra comparação usando imagens do domínio de produção. Não foi teste em iPhone/Android físico; ícone de aplicativo já instalado pode depender da atualização pelo navegador/SO.
+- Logs da esteira /tmp/brabus-g10-release.log. Dados/env/vendas online preservados. G10 concluído.
