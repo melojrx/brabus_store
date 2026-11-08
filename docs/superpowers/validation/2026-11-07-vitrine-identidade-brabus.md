@@ -169,3 +169,9 @@ MapLibre requer worker explícito com o bundler atual: scripts/prepare-map-worke
 - E2E novo autenticado conferiu assinatura carregada e paleta do nav em dashboard/produtos/configurações/PDV, altura74px, corpo legado, links de conta/admin/logout e teclado/menu mobile sem overflow no header. Suites existentes conferiram permissões, operação PDV, sidebar, vitrine e mapa.
 - Capturas finais inspecionadas: outputs/vitrine-identidade-brabus/g7-admin-depois.png (1366×900) e g7-admin-mobile.png (375×812). Prévia mantida em http://localhost:3100/admin com banco isolado; CUA renovou sessão antiga de teste e confirmou a dashboard autenticada.
 - Revisão inline do diff: somente apresentação do nav, predicado de rota, variante de logo e testes/documentação; nenhum provider, fluxo de auth, query, endpoint ou schema alterado. G7 aguardando avaliação visual. Sem merge/push/deploy desta extensão.
+
+### G7 — autorização de release
+
+Usuário aprovou o visual local e autorizou merge/publicação com testes e verificação pós-deploy. Revisão independente de d9b23c8..59d792e sem bloqueadores: nav isolado, tema do corpo e fluxos preservados. Verificação fresca: 117 testes passaram, lint sem erros com aviso preexistente. Logs /tmp/brabus-g7-release-tests.log e /tmp/brabus-g7-release-lint.log. E2E completo/build em execução no banco isolado após a suite unitária, sem seed em produção/base de trabalho.
+
+Verificação final pré-merge G7: build aprovado, 39 E2E passaram e uma captura de baseline PDV intencionalmente ignorada. Log /tmp/brabus-g7-release-e2e.log; banco isolado. Navegador autenticado em produção localizado para conferência pós-deploy: baseline headerHeight74px/mainTop74px/conteúdo #C9A84C. Nenhuma nova credencial criada.

@@ -301,7 +301,7 @@ Merge/push concluídos em main (`e3f28cd`). Release homelab [42497779216](https:
 
 ## G7 — Cabeçalho de toda a área administrativa (2026-11-08)
 
-Extensão explicitamente aprovada pelo usuário após G6: aplicar logo/paleta somente ao cabeçalho em `/admin` e descendentes. As restrições anteriores sobre manter toda a área administrativa legada passam a permitir essa exceção no cabeçalho. Entrega somente local, sem merge/push/publicação até novo aceite.
+Extensão explicitamente aprovada pelo usuário após G6: aplicar logo/paleta somente ao cabeçalho em `/admin` e descendentes. As restrições anteriores sobre manter toda a área administrativa legada passam a permitir essa exceção no cabeçalho. Prévia local aprovada; merge/push/publicação agora autorizados, conforme aceite registrado ao final.
 
 **Design aprovado:** assinatura horizontal compacta (128×40, linha de navegação de 74px), fundo preto #000000, dourado #D4A346 e texto #F4F4F4. Tokens CSS no próprio nav, sem herança para conteúdo/sidebar/footer. Menus desktop/mobile e conta recebem esses tokens dentro do nav. Preservar medidas, fontes, links, autenticação, logout, carrinho condicional e fluxos. PDV mantém seu tema anterior aprovado; demais conteúdos admin continuam legados. Não alterar login/account/cart nem tema da vitrine.
 
@@ -313,3 +313,7 @@ Extensão explicitamente aprovada pelo usuário após G6: aplicar logo/paleta so
 - [x] G7.4: registrar resultados e entregar prévia local autenticada + screenshot. Aguardar aceite visual; nenhuma publicação nesta rodada.
 
 G7 tecnicamente verificado: 117 testes/39 E2E (baseline PDV ignorado), build aprovado, lint sem erros/aviso anterior. Prévia autenticada em http://localhost:3100/admin, banco de teste isolado. Aguardando aceite visual; sem push, merge ou publicação.
+
+### Aceite e autorização de produção G7
+
+Usuário aprovou explicitamente o novo cabeçalho administrativo e autorizou merge em main e publicação, condicionados aos testes e conferência após deploy. Revisão independente de d9b23c8..59d792e sem bloqueadores. Release segue o workflow existente; nenhuma alteração de banco nesta extensão.
