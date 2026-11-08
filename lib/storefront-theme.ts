@@ -13,7 +13,13 @@ export function getBrandTheme(pathname: string): BrandTheme {
     pathname === "/products" ||
     pathname.startsWith("/products/") ||
     pathname === "/loja" ||
-    pathname === "/contato"
+    pathname === "/contato" ||
+    pathname === "/account" ||
+    pathname.startsWith("/account/") ||
+    ["/auth/login", "/auth/register", "/auth/forgot-password", "/auth/reset-password"].includes(pathname) ||
+    pathname === "/cart" ||
+    pathname === "/checkout" ||
+    pathname.startsWith("/checkout/")
   ) {
     return "storefront"
   }

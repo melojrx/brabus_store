@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import AuthBrandHeader from "@/components/brand/AuthBrandHeader"
 import { UserPlus, AlertCircle } from "lucide-react"
 import { formatPhone } from "@/lib/account"
 
@@ -43,17 +44,10 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-20">
       <div className="w-full max-w-md">
-        <div className="text-center mb-10">
-          <Link href="/" className="inline-block">
-            <h1 className="text-4xl font-heading tracking-wider uppercase text-white">
-              Brabu&apos;s <span className="text-[var(--color-primary)]">Store</span>
-            </h1>
-          </Link>
-          <p className="text-gray-400 mt-2 text-sm uppercase tracking-widest">Crie sua conta</p>
-        </div>
+        <AuthBrandHeader caption="Crie sua conta" />
 
         <div className="glass p-8 rounded-sm border border-white/10">
-          <h2 className="text-2xl font-heading tracking-wider uppercase mb-8 text-center">Criar Conta</h2>
+          <h1 className="text-2xl font-heading tracking-wider uppercase mb-8 text-center">Criar Conta</h1>
 
           {error && (
             <div className="bg-red-500/10 border border-red-500/30 text-red-400 p-4 rounded-sm flex items-start gap-3 mb-6">

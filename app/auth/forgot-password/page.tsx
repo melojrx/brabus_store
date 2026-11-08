@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import AuthBrandHeader from "@/components/brand/AuthBrandHeader"
 import { useState, useTransition } from "react"
 import { Mail, LoaderCircle } from "lucide-react"
 
@@ -43,17 +44,10 @@ export default function ForgotPasswordPage() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-20">
       <div className="w-full max-w-md">
-        <div className="text-center mb-10">
-          <Link href="/" className="inline-block">
-            <h1 className="text-4xl font-heading tracking-wider uppercase text-white">
-              Brabu&apos;s <span className="text-[var(--color-primary)]">Store</span>
-            </h1>
-          </Link>
-          <p className="text-gray-400 mt-2 text-sm uppercase tracking-widest">Recuperar acesso</p>
-        </div>
+        <AuthBrandHeader caption="Recuperar acesso" />
 
         <div className="glass p-8 rounded-sm border border-white/10">
-          <h2 className="text-2xl font-heading tracking-wider uppercase mb-4 text-center">Esqueci Minha Senha</h2>
+          <h1 className="text-2xl font-heading tracking-wider uppercase mb-4 text-center">Esqueci Minha Senha</h1>
           <p className="text-sm text-center text-gray-400 mb-8">
             Informe o e-mail da conta para gerar um link seguro de redefinição.
           </p>

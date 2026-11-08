@@ -95,7 +95,7 @@ export default async function AccountOrdersPage() {
           {orders.map((order) => (
             <article
               key={order.id}
-              className="flex flex-col gap-5 rounded-sm border border-white/5 bg-zinc-900 px-6 py-5 sm:flex-row sm:items-center sm:justify-between"
+              className="flex flex-col gap-5 rounded-sm border border-white/5 bg-[var(--color-surface)] px-6 py-5 sm:flex-row sm:items-center sm:justify-between"
             >
               <div>
                 <p className="text-xs font-mono text-gray-500">Pedido {getOrderDisplayNumber(order)}</p>

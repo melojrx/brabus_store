@@ -137,7 +137,7 @@ export default function AccountProfileClient({
 
   return (
     <div className="space-y-8">
-      <section className="rounded-sm border border-white/5 bg-zinc-900 p-6">
+      <section className="rounded-sm border border-white/5 bg-[var(--color-surface)] p-6">
         <div className="mb-6 flex items-center gap-3">
           <div className="rounded-full bg-[var(--color-primary)]/10 p-2.5 text-[var(--color-primary)]">
             <UserRound className="h-5 w-5" />
@@ -290,7 +290,7 @@ export default function AccountProfileClient({
                   className={inputCls}
                   value={profileForm.addressZip}
                   onChange={(event) => setProfileField("addressZip", event.target.value)}
-                  placeholder="62765-000"
+                  placeholder="62750-000"
                 />
               </div>
             </div>
@@ -310,7 +310,7 @@ export default function AccountProfileClient({
         </form>
       </section>
 
-      <section className="rounded-sm border border-white/5 bg-zinc-900 p-6">
+      <section className="rounded-sm border border-white/5 bg-[var(--color-surface)] p-6">
         <div className="mb-6 flex items-center gap-3">
           <div className="rounded-full bg-[var(--color-primary)]/10 p-2.5 text-[var(--color-primary)]">
             <KeyRound className="h-5 w-5" />

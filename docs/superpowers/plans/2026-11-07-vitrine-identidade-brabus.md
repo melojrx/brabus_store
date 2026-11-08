@@ -321,3 +321,24 @@ Usuário aprovou explicitamente o novo cabeçalho administrativo e autorizou mer
 ### Fechamento G7 — produção
 
 Visual aprovado pelo usuário, merge/push autorizados e concluídos. 117 testes e 39 E2E aprovados (baseline ignorado), build aprovado, lint sem erros/aviso anterior. Release `6d4815a`, workflow [42500635560](https://github.com/melojrx/brabus_store/actions/runs/42500635560) aprovado, digest em execução confirmado e Swarm completed. Conferência autenticada em produção confirmou assinatura nova, nav preto/dourado, altura74px e conteúdo legado preservado. Sem alteração de banco nesta extensão. G7 concluído.
+
+## G8 — Identidade das páginas do cliente
+
+Autorizado pelo usuário após levantamento de inconsistências: conta, pedidos, login/cadastro/recuperação de senha, carrinho e checkout recebem a nova identidade. Esta extensão substitui a exclusão anterior dessas rotas. Entrega local para avaliação; não há autorização de merge/push/publicação do G8.
+
+**Goal:** uniformizar marca, paleta, fontes, cabeçalho e rodapé das jornadas do cliente, preservando os fluxos e o bloqueio das vendas online.
+
+**Architecture:** ampliar somente o mapa explícito de rotas em `lib/storefront-theme.ts`, sem alterar o tema administrativo/PDV. Usar `AuthBrandHeader` compartilhado pelas quatro páginas de acesso, com `BrandLogo` e legendas atuais; título de cada formulário passa a ser h1. Usar superfícies por token nas páginas da conta, sem alterar organização ou regras de formulário/pedido. Navbar/FooterTheme existentes passam a consumir o mesmo tema por rota.
+
+**Tech Stack:** Next.js16/React19, CSS/Tailwind existentes, Playwright e Node test runner; nenhuma dependência nova.
+
+**Files:** `lib/storefront-theme.ts`; adicionar `components/brand/AuthBrandHeader.tsx`; páginas `app/auth/{login,register,forgot-password,reset-password}/page.tsx`; classes de superfície em `app/account/page.tsx`, `app/account/AccountProfileClient.tsx`, `app/account/orders/{page.tsx,[id]/page.tsx}`. Testes em `tests/storefront-theme.test.ts`, `tests/e2e/customer-brand.spec.ts`.
+
+**Restrições:** rotas exatas de acesso (não habilitar todo `/auth/*` desconhecido), fronteiras de segmento para `/account` e `/checkout`, carrinho exato. `/administrator`, `/account-other`, `/checkout-other` e rotas desconhecidas não recebem tema. Preservar proxy, Providers, callbacks, handlers/API, autenticação, perfil/senha/pedidos, carrinho persistido, pagamentos e estados semânticos. Não mudar env/flag ONLINE_SALES_ENABLED, nem banco de trabalho/produção. Validar compras desabilitadas com env=false no processo E2E e API503 sem pedido criado. Não enviar WhatsApp/e-mail nem executar pagamento externo.
+
+- [x] G8.1: baseline de testes; novo teste falhando em rota/identidade antes do código, captura local anterior. Branch de main no checkout atual, sem worktree.
+- [x] G8.2: ampliar política explícita de tema; compartilhar assinatura de acesso e tokens das superfícies da conta. Preservar lógica e layout funcional.
+- [x] G8.3: testes completos, lint/build e E2E em banco isolado. Verificar desktop768/1440 e celular375, imagens, rodapé/logo, sem overflow, login/conta/perfil/pedidos, erros de acesso, estados de bloqueio de cart/checkout e API503. Testes não reativam venda online.
+- [x] G8.4: inspeção das capturas, atualizar validação e apresentar prévia local autenticada/entrada/bloqueio. Aguardar aceite visual antes de publicar.
+
+G8 tecnicamente verificado e aguardando aceite visual:118 testes,43 E2E aprovados (baseline PDV ignorado), build aprovado, lint sem erros/aviso anterior. Revisão independente sem bloqueadores. Prévia http://localhost:3100/account autenticada em banco isolado; acesso e bloqueio de checkout na mesma porta. Sem merge/push/publicação.

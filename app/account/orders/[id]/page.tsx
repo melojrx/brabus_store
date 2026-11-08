@@ -78,7 +78,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
       </div>
 
       {/* Itens */}
-      <div className="bg-zinc-900 border border-white/5 rounded-sm overflow-hidden mb-6">
+      <div className="bg-[var(--color-surface)] border border-white/5 rounded-sm overflow-hidden mb-6">
         <div className="px-6 py-4 border-b border-white/5">
           <h2 className="font-heading tracking-wider uppercase text-sm">Itens do Pedido</h2>
         </div>
@@ -126,7 +126,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         {/* Resumo */}
-        <div className="bg-zinc-900 border border-white/5 rounded-sm p-6">
+        <div className="bg-[var(--color-surface)] border border-white/5 rounded-sm p-6">
           <h2 className="font-heading tracking-wider uppercase text-sm mb-4">Resumo</h2>
           <div className="space-y-2 text-sm">
             <div className="flex justify-between text-gray-400">
@@ -154,7 +154,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
 
         {/* Endereço */}
         {order.shippingType !== "PICKUP" && order.addressStreet && (
-          <div className="bg-zinc-900 border border-white/5 rounded-sm p-6">
+          <div className="bg-[var(--color-surface)] border border-white/5 rounded-sm p-6">
             <h2 className="font-heading tracking-wider uppercase text-sm mb-4 flex items-center gap-2">
               <MapPin className="w-4 h-4 text-[var(--color-primary)]" /> Endereço de Entrega
             </h2>
@@ -169,7 +169,7 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
         )}
 
         {order.shippingType === "PICKUP" && (
-          <div className="bg-zinc-900 border border-white/5 rounded-sm p-6">
+          <div className="bg-[var(--color-surface)] border border-white/5 rounded-sm p-6">
             <h2 className="font-heading tracking-wider uppercase text-sm mb-2 flex items-center gap-2">
               <MapPin className="w-4 h-4 text-[var(--color-primary)]" /> Retirada na Loja
             </h2>

@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import AuthBrandHeader from "@/components/brand/AuthBrandHeader"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Suspense, useState, useTransition } from "react"
 import { KeyRound, LoaderCircle } from "lucide-react"
@@ -43,17 +44,10 @@ function ResetPasswordForm() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4 py-20">
       <div className="w-full max-w-md">
-        <div className="text-center mb-10">
-          <Link href="/" className="inline-block">
-            <h1 className="text-4xl font-heading tracking-wider uppercase text-white">
-              Brabu&apos;s <span className="text-[var(--color-primary)]">Store</span>
-            </h1>
-          </Link>
-          <p className="text-gray-400 mt-2 text-sm uppercase tracking-widest">Definir nova senha</p>
-        </div>
+        <AuthBrandHeader caption="Definir nova senha" />
 
         <div className="glass p-8 rounded-sm border border-white/10">
-          <h2 className="text-2xl font-heading tracking-wider uppercase mb-4 text-center">Redefinir Senha</h2>
+          <h1 className="text-2xl font-heading tracking-wider uppercase mb-4 text-center">Redefinir Senha</h1>
           <p className="text-sm text-center text-gray-400 mb-8">
             Crie uma nova senha para voltar a acessar sua conta.
           </p>

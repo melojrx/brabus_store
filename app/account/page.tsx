@@ -106,7 +106,7 @@ export default async function AccountPage() {
       </div>
 
       <div className="grid gap-8 lg:grid-cols-[260px_minmax(0,1fr)]">
-        <aside className="rounded-sm border border-white/5 bg-zinc-950 p-5">
+        <aside className="rounded-sm border border-white/5 bg-[var(--color-surface)] p-5">
           <div className="border-b border-white/5 pb-5">
             <p className="text-xs uppercase tracking-[0.25em] text-gray-500">Conta</p>
             <p className="mt-3 text-xl font-heading uppercase tracking-wider text-white">{user.name}</p>
@@ -132,7 +132,7 @@ export default async function AccountPage() {
         <div className="space-y-8">
           <AccountProfileClient profile={serializeAccountProfile(user)} />
 
-          <section className="rounded-sm border border-white/5 bg-zinc-900 p-6">
+          <section className="rounded-sm border border-white/5 bg-[var(--color-surface)] p-6">
             <div className="mb-6 flex items-center justify-between gap-4">
               <div>
                 <h2 className="font-heading text-xl uppercase tracking-wider text-white">Pedidos Recentes</h2>
