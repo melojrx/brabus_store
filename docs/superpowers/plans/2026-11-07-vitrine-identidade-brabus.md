@@ -324,7 +324,7 @@ Visual aprovado pelo usuário, merge/push autorizados e concluídos. 117 testes 
 
 ## G8 — Identidade das páginas do cliente
 
-Autorizado pelo usuário após levantamento de inconsistências: conta, pedidos, login/cadastro/recuperação de senha, carrinho e checkout recebem a nova identidade. Esta extensão substitui a exclusão anterior dessas rotas. Entrega local para avaliação; não há autorização de merge/push/publicação do G8.
+Autorizado pelo usuário após levantamento de inconsistências: conta, pedidos, login/cadastro/recuperação de senha, carrinho e checkout recebem a nova identidade. Esta extensão substitui a exclusão anterior dessas rotas. Prévia local aprovada; merge/push/publicação autorizados e concluídos no fechamento abaixo.
 
 **Goal:** uniformizar marca, paleta, fontes, cabeçalho e rodapé das jornadas do cliente, preservando os fluxos e o bloqueio das vendas online.
 
@@ -346,3 +346,7 @@ G8 tecnicamente verificado e aguardando aceite visual:118 testes,43 E2E aprovado
 ### Aceite e autorização de produção G8
 
 Usuário aprovou o G8 e autorizou merge em main e publicação após testes, com conferência de conta, acesso e bloqueio de vendas online em produção. A restrição de entrega apenas local fica superada por este aceite. Código aprovado2c7a5a5; revisão independente prévia sem bloqueadores. Nenhuma alteração de dados/env/schema nesta promoção.
+
+### Fechamento G8 — produção
+
+G8 aprovado visualmente pelo usuário e publicado. Candidato893eeb2, workflow [42502717474](https://github.com/melojrx/brabus_store/actions/runs/42502717474) aprovado; digest em execução confirmado e Swarm completed.118 testes/43 E2E locais, build/lint sem erros (aviso anterior), três E2E públicos aprovados. Conta autenticada/identidade e acesso conferidos; cart/checkout e APIs de compra permanecem bloqueados. Sem alteração de dados/env em produção. Evidências no registro de validação.

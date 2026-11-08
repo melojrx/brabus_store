@@ -1,7 +1,7 @@
 # Redesenho da vitrine Brabu’s
 
 Data: 2026-11-07 (America/Fortaleza).
-Status: G0–G6 concluídos. Spec/plano e visuais aprovados; revisão/testes finais, merge e publicação em produção concluídos em 2026-11-08. Release de aplicação e3f28cd, workflow 42497779216.
+Status: G0–G8 concluídos e publicados após os aceites. G8 publicado em 2026-11-08, release893eeb2/workflow42502717474, com bloqueio das vendas online preservado.
 Branch: `codex/vitrine-identidade-brabus`, criada da `main` local em `2c5cecb`.
 Execução: checkout atual, sem worktree; trabalho sequencial, sem subagentes por padrão.
 
@@ -153,3 +153,5 @@ G7 aprovado visualmente e publicado em 2026-11-08 após revisão/testes: candida
 ## Extensão aprovada G8 — jornadas do cliente
 
 Usuário autorizou uniformizar conta/pedidos, acesso (login, cadastro, recuperação/redefinição de senha), carrinho e checkout com a identidade da vitrine. Usar tema público, cabeçalho/rodapé oficiais e assinatura compartilhada nos formulários. Preservar layout funcional, dados, fluxos e bloqueio das vendas online. Admin/PDV mantêm o escopo G7. Planificação e critérios no G8; avaliação local obrigatória antes de nova publicação.
+
+G8 aprovado visualmente e publicado após verificações:118 testes/43 E2E, build e lint sem erros; smoke público3/3, conta autenticada e bloqueio de APIs conferidos. Detalhes no registro de validação.
