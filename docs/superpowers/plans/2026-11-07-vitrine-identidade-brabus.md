@@ -11,7 +11,7 @@
 ## Global Constraints
 
 - Checkout atual, sem worktree; branch `codex/vitrine-identidade-brabus` da `main` local em `2c5cecb`.
-- Spec e plano aprovados explicitamente pelo usuário. G2 aprovado visualmente; autorizada execução do G3 com nova apresentação local antes do PDV/G4. Preparação dos ativos também autorizada.
+- Spec e plano aprovados explicitamente pelo usuário. G2 e G3 aprovados visualmente; execução do G4 autorizada, com apresentação local antes do novo G5. Preparação dos ativos também autorizada.
 - Sem push, merge, deploy, migrations, seed ou alteração de produtos na base de trabalho.
 - Textos em português; código/commits em inglês; 2 espaços, sem ponto e vírgula, strings duplas e alias `@/`.
 - Bebas Neue e Inter existentes; nenhuma nova dependência ou fonte externa.
@@ -157,7 +157,7 @@ Run: `npm run test:e2e -- tests/e2e/storefront-brand.spec.ts` somente com `DATAB
 
 ## Task 3 / G3 — Categorias corretas e cards compartilhados
 
-Estado: implementação autorizada após aprovação do G2 e concluída para avaliação local em 08/11/2026. Categorias usam os três ativos preparados; home e catálogo compartilham ProductCard. 112 testes aprovados, lint sem erros (um aviso preexistente) e build aprovado. Verificação de UI local em 375/768/1440 px; testes de renderização substituem E2E nesta fase, pois DATABASE_URL_E2E permanece indisponível. Aguardando aceite visual do G3; PDV não iniciado.
+Estado: implementação autorizada após aprovação do G2 e concluída para avaliação local em 08/11/2026. Categorias usam os três ativos preparados; home e catálogo compartilham ProductCard. 112 testes aprovados, lint sem erros (um aviso preexistente) e build aprovado. Verificação de UI local em 375/768/1440 px; testes de renderização substituem E2E nesta fase, pois DATABASE_URL_E2E permanece indisponível. G3 aprovado visualmente pelo usuário; G4 autorizado.
 
 **Files:**
 - Create: `components/storefront/ObjectiveCategories.tsx`, `components/storefront/ProductCard.tsx`.
@@ -215,16 +215,18 @@ await expect.poll(() => page.evaluate(() =>
 
 ## Task 4 / G4 — PDV com extensão visual limitada
 
+Estado: implementação autorizada e tecnicamente verificada em 08/11/2026; aguardando avaliação visual. Banco local separado `brabus_brand_e2e` criado para fixtures e testes. Baseline autenticado anterior à mudança capturado em 1280×800 e 1366×768, nos dois estados de sidebar. 112 testes e 14 testes de navegador aprovados; build e lint sem erros. Prévia autenticada na porta 3100, base sintética. G5 não iniciado.
+
 **Files:**
-- Modify apenas se necessário: `app/globals.css`, `components/Navbar.tsx`, `lib/storefront-theme.ts`.
-- Test: `tests/e2e/admin-responsiveness.spec.ts`, `tests/e2e/storefront-brand.spec.ts`, suites de PDV existentes.
+- Modify: `app/globals.css`, `components/Navbar.tsx`, `components/BrandTheme.tsx`, `components/brand/BrandLogo.tsx`. Política exata existente em `lib/storefront-theme.ts` preservada.
+- Test: `tests/e2e/admin-responsiveness.spec.ts`, `tests/e2e/pdv-brand.spec.ts`, `tests/e2e/seller-dashboard-access.spec.ts`, caso de PDV em `tests/e2e/product-cost-access.spec.ts` e suites unitárias existentes.
 - Não modificar: lógica em `lib/pdv*`, fluxo em `app/admin/pdv/PdvManager.tsx`, schema ou endpoints.
 
 **Interfaces:** mesmas `getBrandTheme` e `BrandLogo` das Tasks 1/2; sem novos props de domínio.
 
-- [ ] Antes da alteração visual efetiva no PDV, capturar baseline autenticado em base de teste com 1280 × 800 e 1366 × 768, sidebar recolhida/expandida. A Task 1 não ativa `.theme-pdv`; esta tarefa registra o baseline antes de ativar classe/tokens e assinatura. Não inventar um baseline posterior.
-- [ ] Adicionar teste E2E com login de fixture via helper existente. Conferir que cabeçalho do PDV tem assinatura nova, `--color-primary` é `#D4A346` e em `/admin` continua `#C9A84C` após navegação. Confirmar a falha esperada antes de ativar o tema PDV.
-- [ ] Ativar variante PDV apenas no caminho exato. Limitar diferenças a cores de marca herdadas e assinatura. Manter fonte, dimensões, sidebar e tabela. Não trocar cores semânticas de pagamento/erro pelo vermelho da marca.
+- [x] Antes da alteração visual efetiva no PDV, capturar baseline autenticado em base de teste com 1280 × 800 e 1366 × 768, sidebar recolhida/expandida. A Task 1 não ativa `.theme-pdv`; esta tarefa registra o baseline antes de ativar classe/tokens e assinatura. Não inventar um baseline posterior.
+- [x] Adicionar teste E2E com login de fixture via helper existente. Conferir que cabeçalho do PDV tem assinatura nova, `--color-primary` é `#D4A346` e em `/admin` continua `#C9A84C` após navegação. Confirmar a falha esperada antes de ativar o tema PDV.
+- [x] Ativar variante PDV apenas no caminho exato. Limitar diferenças a cores de marca herdadas e assinatura. Manter fonte, dimensões, sidebar e tabela. Não trocar cores semânticas de pagamento/erro pelo vermelho da marca.
 - [ ] Rodar `npm run test:e2e -- tests/e2e/admin-responsiveness.spec.ts tests/e2e/seller-dashboard-access.spec.ts tests/e2e/storefront-brand.spec.ts` na base `_e2e`.
 - [ ] Rodar `npm test`, lint e build. Conferir no PDV produto, quantidade, cliente, desconto, resumo, fiado e botões de pagamento; operações que gravam apenas na base `_e2e`.
 - [ ] Comparar screenshots e inspecionar dashboard/cadastro para confirmar tema legado. Se exigir mudar estrutura ou lógica, retirar essa ampliação da fase e registrar a dependência para decisão do usuário.
@@ -232,7 +234,22 @@ await expect.poll(() => page.evaluate(() =>
 
 **Gate G4:** responsividade e fluxos preservados, comparação autenticada disponível e nenhuma alteração fora do limite de marca/paleta. Não declarar testes transacionais executados se foram somente inspecionados visualmente.
 
-## Task 5 / G5 — Ativos finais e entrega local
+## Task 5 / G5 — Footer, Loja Física e Contato
+
+Estado: escopo solicitado e aprovado pelo usuário; executar somente após avaliação do PDV/G4. Sem alterações nestas telas durante o G4.
+
+**Files:** `components/Footer.tsx`, `app/loja/page.tsx`, `app/contato/page.tsx`, `lib/store-settings.ts`, `app/globals.css`, testes de apresentação e E2E pertinentes.
+
+- [ ] Revisar identidade dos três componentes com tokens e logo existentes, mantendo legibilidade, responsividade, foco e informações comerciais configuradas.
+- [ ] Corrigir o CEP da loja para **62750-000** em footer e páginas públicas; identificar a fonte compartilhada e valores antigos hardcoded para evitar divergências. Se o valor estiver persistido, tratar a atualização comercial explicitamente sem seed/migration da base de trabalho.
+- [ ] Loja Física: retirar a fotografia atual de academia/fachada; não gerar uma foto fictícia da loja. Compor bloco de endereço à esquerda e mapa integrado à direita no desktop, empilhados no celular, conforme referência enviada em 08/11. Manter botão “Abrir no Google Maps”, endereço e contatos reais, iframe com título acessível e carregamento lazy. Usar localização configurada, sem inventar coordenadas ou marcador personalizado. Não aplicar filtro visual que prejudique rótulos do mapa.
+- [ ] Contato: alinhar cartões, ícones e ações à marca, preservando canais reais e sem envio de mensagens nos testes.
+- [ ] Escrever testes antes da implementação para CEP, ausência da foto fictícia, mapa/URL e contatos configurados. Conferir 375/768/1440 px, ausência de overflow, teclado e links.
+- [ ] Executar testes, lint e build; registrar screenshots e apresentar no site local.
+
+**Gate G5 — parar para avaliação:** usuário aprova footer, Loja Física e Contato, incluindo endereço/mapa e CEP. Não concluir a entrega final antes deste aceite.
+
+## Task 6 / G6 — Ativos finais e entrega local
 
 **Files:**
 - Add: arquivos aprovados em `public/brand/`.
@@ -253,10 +270,11 @@ await expect.poll(() => page.evaluate(() =>
 | Branch da main sem worktree, baseline e gates | G0, todas |
 | Nova paleta com isolamento e manutenção | 1 |
 | Cabeçalho, hero e faixa | 2 |
-| Moda masculina, acessórios e suplementos corretos | 3, 5 |
+| Moda masculina, acessórios e suplementos corretos | 3, 6 |
 | Cards compartilhados e fluxos comerciais preservados | 3 |
 | PDV sem ampliar layout/operação | 4 |
-| Briefing de transparência/vetores | G0, 5 |
+| Footer, Loja Física, Contato e CEP 62750-000 | 5 |
+| Briefing de transparência/vetores | G0, 6 |
 | Verificação antes/depois e avaliação local | Todas |
 
 ## Revisão do plano

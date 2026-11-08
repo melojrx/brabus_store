@@ -2,7 +2,7 @@ import React from "react"
 import Image from "next/image"
 import { brandAssets } from "@/lib/brand-assets"
 
-export default function BrandLogo() {
+export default function BrandLogo({ variant = "storefront" }: { variant?: "storefront" | "pdv" }) {
   const logo = brandAssets.horizontal
 
   return (
@@ -11,8 +11,8 @@ export default function BrandLogo() {
       width={logo.width}
       height={logo.height}
       alt="Brabu’s Performance Store"
-      className="storefront-logo"
-      sizes="(max-width: 767px) 155px, 210px"
+      className={variant === "pdv" ? "pdv-logo" : "storefront-logo"}
+      sizes={variant === "pdv" ? "128px" : "(max-width: 767px) 155px, 210px"}
       unoptimized
     />
   )

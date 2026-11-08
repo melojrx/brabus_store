@@ -10,7 +10,8 @@ import { getBrandTheme } from "@/lib/storefront-theme"
 import BrandLogo from "@/components/brand/BrandLogo"
 
 export default function Navbar({ onlineSalesEnabled = true }: { onlineSalesEnabled?: boolean }) {
-  const storefront = getBrandTheme(usePathname()) === "storefront"
+  const theme = getBrandTheme(usePathname())
+  const storefront = theme === "storefront"
   const { getItemCount, hasHydrated } = useCartStore()
   const { data: session } = useSession()
   const [menuOpen, setMenuOpen] = useState(false)
@@ -64,7 +65,7 @@ export default function Navbar({ onlineSalesEnabled = true }: { onlineSalesEnabl
       <div className={`${storefront ? "storefront-container" : "container mx-auto px-4"} flex justify-between items-center`}>
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 group shrink-0">
-          {storefront ? <BrandLogo /> : <span className="text-2xl font-heading tracking-wider uppercase text-white group-hover:text-[var(--color-primary)] transition-colors">
+          {theme !== "legacy" ? <BrandLogo variant={theme} /> : <span className="text-2xl font-heading tracking-wider uppercase text-white group-hover:text-[var(--color-primary)] transition-colors">
             Brabu&apos;s <span className="text-[var(--color-primary)]">Store</span>
           </span>}
         </Link>
