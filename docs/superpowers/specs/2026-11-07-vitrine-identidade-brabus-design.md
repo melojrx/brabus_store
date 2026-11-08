@@ -52,6 +52,8 @@ Manter Bebas Neue e Inter já instaladas nesta fase. Resolver as fontes por suas
 
 ## Hero
 
+Revisão autorizada em 2026-11-08: usar a assinatura aberta “Força de Verdade” em vez do medalhão fechado. Transparência externa, fumaça e brasas discretas e estáticas nas bordas, com controle independente de intensidade. Preservar texto e ações existentes. Detalhamento e evidências em `docs/brand/2026-11-08-hero-integrada.md`; segue o mesmo gate G2 de avaliação visual.
+
 - Desktop: duas colunas, texto/ações à esquerda e emblema oficial à direita. Conteúdo em container consistente com o restante da home.
 - Título: “Para quem treina de verdade”. Corpo proposto: “Suplementos, moda fitness masculina e acessórios para sua rotina de treino.”
 - CTAs: “Ver suplementos” e “Moda masculina”, mantendo os slugs atuais `suplementos` e `roupas-fitness`.

@@ -12,13 +12,16 @@ test("brand logo renders the local signature with an accessible name", () => {
   assert.match(html, /logo-horizontal/)
 })
 
-test("hero offers the existing categories and local emblem without delivery promises", () => {
+test("hero preserves category actions with the integrated local signature and decorative atmosphere", () => {
   const html = renderToStaticMarkup(createElement(StorefrontHero))
   assert.match(html, /Para quem treina/)
   assert.match(html, /href="\/products\?category=suplementos"/)
   assert.match(html, /href="\/products\?category=roupas-fitness"/)
   assert.match(html, /Moda masculina/)
-  assert.match(html, /emblema-principal/)
+  assert.match(html, /hero-integrada/)
+  assert.match(html, /hero-atmosfera/)
+  assert.match(html, /aria-hidden="true"/)
+  assert.doesNotMatch(html, /emblema-principal|<video|<canvas/)
   assert.doesNotMatch(html, /24h|unsplash/)
 })
 

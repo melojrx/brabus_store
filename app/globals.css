@@ -115,6 +115,8 @@
 }
 
 .storefront-hero-grid {
+  position: relative;
+  z-index: 1;
   display: grid;
   grid-template-columns: 1.15fr 1fr;
   gap: 3rem;
@@ -211,9 +213,20 @@
   min-width: 0;
 }
 
-.storefront-emblem {
-  width: min(100%, 480px);
+.storefront-hero-signature {
+  width: min(100%, 520px);
   height: auto;
+}
+
+.storefront-hero-atmosphere {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-size: cover;
+  background-position: right center;
+  opacity: .6;
+  mix-blend-mode: screen;
+  mask-image: linear-gradient(to right, transparent 35%, #000000 80%);
 }
 
 .storefront-info {
@@ -287,7 +300,12 @@
   .storefront-hero-description { font-size: 15px; line-height: 1.7; margin-top: 20px; }
   .storefront-hero-actions { margin-top: 24px; gap: 10px; }
   .storefront-button { flex: 1 1 140px; gap: 8px; padding-inline: 10px; font-size: 11px; letter-spacing: .02em; white-space: nowrap; }
-  .storefront-emblem { width: min(68vw, 260px); }
+  .storefront-hero-signature { width: min(78vw, 300px); }
+  .storefront-hero-atmosphere {
+    opacity: .4;
+    background-position: right bottom;
+    mask-image: linear-gradient(to bottom, transparent 35%, #000000 85%);
+  }
   .storefront-info-grid { grid-template-columns: 1fr; padding-block: 8px; }
   .storefront-info-grid > li { padding: 12px 0; }
   .storefront-info-grid > li + li { border-left: 0; border-top: 1px solid #FFFFFF14; padding-left: 0; }

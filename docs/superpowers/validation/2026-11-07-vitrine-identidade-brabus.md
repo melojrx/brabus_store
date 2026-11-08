@@ -50,6 +50,13 @@ Ao executar, acrescentar comandos, resultado, commit e caminhos das screenshots.
 - Sem mudança de queries, cadastro de produtos, categorias, cards, PDV ou banco. A herança de cores/fontes nas páginas públicas é parte do tema aprovado; componentes das fases posteriores continuam os anteriores.
 - Gate visual G2 aberto. Não iniciar G3/G4 antes da avaliação do usuário.
 
+### Revisão G2 em 2026-11-08 — assinatura integrada
+
+- Usuário autorizou trocar o medalhão pela arte “Força de Verdade” com transparência e decoração estática de fumaça/brasas. Registro, prompts e fontes em `docs/brand/2026-11-08-hero-integrada.md`.
+- Teste ajustado antes da implementação: um caso falhou por ainda usar a imagem circular; após implementar, suite completa com 107/107, lint sem erros (mesmo aviso) e build aprovado.
+- Servidor dev reiniciado após confirmar CSS antigo em memória; computados novos inspecionados antes de registrar as capturas.
+- G2 continua aguardando avaliação visual. Cabeçalho, faixa, categorias, cards e PDV não receberam novas alterações nesta revisão.
+
 ## Restrições de teste
 
 Não usar credenciais de fixtures em banco real por suposição. O runner existente exige `DATABASE_URL_E2E` com banco terminado em `_e2e` e aplica migrations/seed apenas nessa base. Testes que criam vendas, clientes ou alteram estoque executam somente ali. Ausência desse banco é bloqueio de testes transacionais, não autorização para usar a base de trabalho.

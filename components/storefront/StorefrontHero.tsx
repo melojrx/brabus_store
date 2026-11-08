@@ -5,10 +5,15 @@ import { ArrowRight } from "lucide-react"
 import { brandAssets } from "@/lib/brand-assets"
 
 export default function StorefrontHero() {
-  const emblem = brandAssets.emblem
+  const artwork = brandAssets.hero
 
   return (
     <section className="storefront-hero" aria-labelledby="storefront-heading">
+      <div
+        aria-hidden="true"
+        className="storefront-hero-atmosphere"
+        style={{ backgroundImage: `url("${brandAssets.atmosphere.src}")` }}
+      />
       <div className="storefront-container storefront-hero-grid">
         <div className="storefront-hero-copy">
           <p className="storefront-eyebrow">Aracoiaba · Ceará</p>
@@ -30,12 +35,12 @@ export default function StorefrontHero() {
         </div>
         <div className="storefront-hero-art">
           <Image
-            src={emblem.src}
-            width={emblem.width}
-            height={emblem.height}
-            alt="Emblema Brabu’s Performance Store"
-            sizes="(max-width: 767px) 260px, (max-width: 1023px) 360px, 480px"
-            className="storefront-emblem"
+            src={artwork.src}
+            width={artwork.width}
+            height={artwork.height}
+            alt="Brabu’s Performance Store — Força de Verdade"
+            sizes="(max-width: 767px) 300px, (max-width: 1023px) 360px, 520px"
+            className="storefront-hero-signature"
             preload
             unoptimized
           />

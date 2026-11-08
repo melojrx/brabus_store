@@ -64,5 +64,27 @@
     "objectPosition": "center center",
     "sourceWidth": 512,
     "sourceHeight": 486
+  },
+  "hero-integrada": {
+    "src": "/brand/hero-integrada.webp",
+    "png": "/brand/hero-integrada.png",
+    "width": 1100,
+    "height": 968,
+    "hasTransparency": true,
+    "kind": "derived-logo",
+    "reviewStatus": "pending-visual-acceptance",
+    "sourceWidth": 1337,
+    "sourceHeight": 1176
+  },
+  "hero-atmosfera": {
+    "src": "/brand/hero-atmosfera.webp",
+    "png": "/brand/hero-atmosfera.png",
+    "width": 1536,
+    "height": 1024,
+    "hasTransparency": false,
+    "kind": "static-decorative-atmosphere",
+    "reviewStatus": "pending-visual-acceptance",
+    "sourceWidth": 1536,
+    "sourceHeight": 1024
   }
 }
