@@ -11,8 +11,8 @@
 ## Global Constraints
 
 - Checkout atual, sem worktree; branch `codex/vitrine-identidade-brabus` da `main` local em `2c5cecb`.
-- Spec e plano aprovados explicitamente pelo usuário. G2, G3 e G4 aprovados visualmente; G5 autorizado com apresentação local antes do G6. Preparação dos ativos também autorizada.
-- Sem push, merge, deploy, migrations, seed ou alteração de produtos na base de trabalho.
+- Spec e plano aprovados explicitamente pelo usuário. G2, G3, G4 e G5 aprovados visualmente. G6 autorizado em 2026-11-08, incluindo merge e promoção para produção após revisão/testes aprovados.
+- Merge, push e promoção via workflow de produção autorizados no G6. Sem seed em produção/base de trabalho, sem alteração de produtos. Atualização restrita do CEP e links do mapa no cadastro de produção autorizada pelo escopo aprovado.
 - Textos em português; código/commits em inglês; 2 espaços, sem ponto e vírgula, strings duplas e alias `@/`.
 - Bebas Neue e Inter existentes; nenhuma nova dependência ou fonte externa.
 - Preto `#000000`, grafite `#1A1A1A`, dourado `#D4A346`, off-white `#F4F4F4`, acento `#E01919` somente nos temas delimitados.
@@ -249,19 +249,19 @@ Estado: implementação autorizada após aceite do PDV/G4. Footer público, Loja
 
 **Gate G5 — parar para avaliação:** usuário aprova footer, Loja Física e Contato, incluindo endereço/mapa e CEP. Não concluir a entrega final antes deste aceite.
 
-## Task 6 / G6 — Ativos finais e entrega local
+## Task 6 / G6 — Revisão final e promoção autorizada
 
 **Files:**
 - Add: arquivos aprovados em `public/brand/`.
 - Modify: `lib/brand-assets.ts`, registro de validação e plano (status dos gates).
 
-- [ ] Receber arquivos conforme briefing, abrir e conferir fidelidade, dimensões, alpha e recorte. PNG com canal RGBA não prova alpha real: verificar que há pixels com alpha menor que 255 e inspecionar halos sobre claro/escuro.
-- [ ] Conferir roupas masculinas, bonés/coqueteleiras e variedade real de suplementos; não aprovar rótulos gerados incorretamente.
-- [ ] Otimizar cópias com ferramentas já disponíveis, preservando os originais, e atualizar apenas o mapa de ativos; marcar `provisional: false` somente para arquivos aprovados.
-- [ ] Verificar imagens carregadas sem erro, desktop/celular, reduced-motion e teclado. Checar links sem enviar mensagens.
-- [ ] Rodar checks finais e E2E aplicáveis. Registrar o único aviso preexistente separadamente; não exigir sua correção neste escopo.
-- [ ] Revisar diff final, confirmar ausência de secrets/arquivos de `outputs/` e commitar: `style: finalize approved storefront assets`.
-- [ ] Entregar URL local, screenshots e pendências reais. Sem integração à `main` ou publicação automática. Solicitar aceite visual final.
+- [x] Receber arquivos conforme briefing, abrir e conferir fidelidade, dimensões, alpha e recorte. PNG com canal RGBA não prova alpha real: verificar que há pixels com alpha menor que 255 e inspecionar halos sobre claro/escuro.
+- [x] Conferir roupas masculinas, bonés/coqueteleiras e variedade real de suplementos; não aprovar rótulos gerados incorretamente.
+- [x] Otimizar cópias com ferramentas já disponíveis, preservando os originais, e atualizar apenas o mapa de ativos; marcar `provisional: false` somente para arquivos aprovados.
+- [x] Verificar imagens carregadas sem erro, desktop/celular, reduced-motion e teclado. Checar links sem enviar mensagens.
+- [x] Rodar checks finais e E2E aplicáveis. Registrar o único aviso preexistente separadamente; não exigir sua correção neste escopo.
+- [x] Revisar diff final, confirmar ausência de secrets/arquivos de `outputs/` e commitar: `style: finalize approved storefront assets`.
+- [x] Entregar evidências finais, integrar à `main` e promover pelo workflow existente após revisão/testes aprovados, conforme autorização de 2026-11-08. Confirmar digest do serviço, health público, ativos, worker do mapa e CEP. Não executar seed em produção.
 
 ## Rastreabilidade de requisitos
 
@@ -288,3 +288,9 @@ Após solicitação do marcador com emblema, usuário escolheu OpenStreetMap int
 Revisão visual adicional do G5 solicitada pelo usuário: escurecer apenas as imagens raster do mapa e desenhar um pino dourado com emblema. Coordenadas e interação mantidas; avaliar contraste e ponta do marcador no site local antes de G6.
 
 Alternativa sem cadastro/chave autorizada e integrada no G5: OpenFreeMap Dark + MapLibre, pino dourado com emblema e botão Google Maps. Worker servido localmente e preparado automaticamente em predev/prebuild. Leaflet e filtro raster removidos; ruas e rótulos usam cores nativas de contraste maior. Chave CARTO não é mais dependência. Verificação real de carregamento após zoom nas três resoluções; aguardar aceite visual antes de G6.
+
+### Aceite G5 e abertura G6 — 2026-11-08
+
+Usuário aprovou explicitamente mapa escuro/pino, footer, Loja Física e Contato e autorizou merge e promoção para produção se a revisão final e os testes passarem. Essa decisão substitui a restrição anterior de entrega apenas local. A ilustração de suplementos continua genérica/provisória; aprovação visual não a transforma em fotografia de estoque. Compacto preservado opaco, sem consumidor no site.
+
+G6: revisão independente sem bloqueadores; 116 testes e 38 E2E aprovados (baseline ignorado), lint sem erros/aviso preexistente e build aprovado. Ativos consumidos aprovados, incluindo editorial provisório de suplementos. Merge/promoção autorizados; confirmação remota na validação.

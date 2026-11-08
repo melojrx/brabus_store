@@ -20,10 +20,11 @@ Base: `main` local, `2c5cecb`.
 | --- | --- | --- |
 | G0 | Spec e plano aprovados | Usuário autorizou implementar até G2 e mostrar antes de avançar |
 | G1 | Verificado | 104 testes, lint sem erros, build aprovado; tema público isolado |
-| G2 | Implementado e tecnicamente verificado; aguardando aceite visual | Cabeçalho/hero/faixa disponíveis no localhost |
-| G3 | Não iniciado | Categorias/cards testados e aceitos visualmente |
-| G4 | Não iniciado | PDV: marca/paleta, regressões e comparação antes/depois |
-| G5 | Não iniciado | Ativos finais, checks e aceite local completo |
+| G2 | Aprovado pelo usuário | Cabeçalho/hero/faixa, hero integrado com atmosfera estática |
+| G3 | Aprovado pelo usuário | Categorias masculinas/bonés/suplementos e cards compartilhados |
+| G4 | Aprovado pelo usuário | PDV restrito a marca/paleta; fluxos e layout preservados |
+| G5 | Aprovado pelo usuário em 2026-11-08 | Footer, Loja Física, Contato, mapa escuro/pino e CEP |
+| G6 | Em revisão/testes finais | Merge e produção autorizados se verificações aprovadas |
 
 ## Registro de execução por fase
 
@@ -134,3 +135,14 @@ Usuário autorizou alternativa sem cadastro e API key. Confirmado no serviço of
 MapLibre requer worker explícito com o bundler atual: scripts/prepare-map-worker.mjs copia o worker da dependência instalada para public/map-engine antes de dev/build. Gerado não versionado e ignorado pelo ESLint, sem excluir código próprio da verificação. Não há chave, conta ou variável obrigatória. Em caso de falha de rede/WebGL, mensagem com alternativa Google Maps; ResizeObserver e mapa são removidos no cleanup. Renderização fica restrita ao componente cliente da Loja Física e o import da biblioteca é dinâmico.
 
 116 testes aprovados e lint sem erros (um aviso anterior). Novo contrato de estilo falhou antes da troca (/tmp/brabus-openmap-red.log). Primeira rodada detectou worker não carregado, corrigido por URL local. Houve uma colisão entre seed E2E e testes de domínio no mesmo banco descartável; execução serial após conclusão dos testes resolveu sem mudança na base de trabalho. Quatro E2E passaram com dados reais do OpenFreeMap carregados após zoom em 375/768/1440; CUA confirmou data-map-loaded=true e ausência de erro na porta 3000. Logs /tmp/brabus-openmap-tests.log, /tmp/brabus-openmap-e2e-final.log e /tmp/brabus-openmap-e2e-contrast.log; build incluído no runner. Screenshot outputs/vitrine-identidade-brabus/g5-openfreemap-escuro.png, inspecionada visualmente. CUA não conseguiu salvar screenshot; captura final pelo teste automatizado. Pendência de chave CARTO encerrada; G5 continua aguardando aceite visual, sem avançar G6.
+
+
+### G6 — revisão final e autorização de release (2026-11-08)
+
+- Usuário aprovou G5 e autorizou merge e promoção para produção condicionados à revisão/testes finais.
+- Revisão independente de main...066cbb2 sem bloqueador de código; Docker copia worker gerado no prebuild. Recomendação operacional: atualizar CEP e links Maps na única linha de StoreSettings produção, sem seed. Cadastro remoto consultado somente nesses campos: CEP anterior 62765-000, URLs vazias.
+- Manifesto atualizado com aceites humanos; suplementos continuam editorial genérico provisório. Símbolo compacto opaco preservado e não consumido. WebP decodificados: dimensões conferidas e alpha real em horizontal/emblema/hero; total dos oito WebP ~1,04 MB.
+- 116/116 testes passaram, lint sem erros com único aviso preexistente. Logs /tmp/brabus-g6-tests.log e /tmp/brabus-g6-lint.log.
+- Novo E2E verifica assets carregados, teclado/menu/Escape, navegação hero→catálogo→produto, reduced-motion e ausência de overflow em 375/768/1440. Suite completa concluída: build aprovado, 38 E2E passaram, um caso de captura de baseline intencionalmente ignorado. Banco isolado brabus_brand_e2e; log /tmp/brabus-g6-e2e.log. Inclui permissões/custos, integração, dashboard vendedor, responsividade PDV e mapa carregado após zoom.
+
+- Gate técnico G6 aprovado antes do merge: sem bloqueadores na revisão, 116 testes/38 E2E, build e lint sem erros. Única limitação visual aceita: suplementos genéricos provisórios. Release e verificação pública registrados após execução.

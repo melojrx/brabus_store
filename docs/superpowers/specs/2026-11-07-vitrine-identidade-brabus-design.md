@@ -1,7 +1,7 @@
 # Redesenho da vitrine Brabu’s
 
 Data: 2026-11-07 (America/Fortaleza).
-Status: especificação e plano aprovados pelo usuário. G1 implementado e verificado; G2 implementado, com verificação técnica concluída e aguardando avaliação visual. Categorias/cards e PDV não iniciados. Ativos preparados conforme `docs/brand/2026-11-07-vitrine-assets-production.md`.
+Status: spec/plano e visuais G2–G5 aprovados. G6 autorizado em 2026-11-08 para revisão final, merge e produção condicionados aos testes.
 Branch: `codex/vitrine-identidade-brabus`, criada da `main` local em `2c5cecb`.
 Execução: checkout atual, sem worktree; trabalho sequencial, sem subagentes por padrão.
 
@@ -9,7 +9,7 @@ Execução: checkout atual, sem worktree; trabalho sequencial, sem subagentes po
 
 Aplicar a identidade preta, grafite e dourada à vitrine local, começando por cabeçalho, hero, faixa de informações, categorias e cards. Incluir o PDV apenas na assinatura compartilhada e na paleta, sem redesenhar sua operação. A ampliação limitada ao PDV foi autorizada pelo usuário após o pedido inicial.
 
-A etapa entrega uma prévia navegável no servidor local para avaliação. Não inclui publicação, push, merge, alterações de banco ou substituição das fotos dos produtos cadastrados. Loja física e contato recebem o tema público herdado; seu conteúdo e composição não serão redesenhados nesta etapa. O rodapé recebe a paleta herdada; substituir sua assinatura fica para uma fase posterior.
+O escopo inicial de prévia local foi ampliado por aprovações sucessivas: footer, Loja Física e Contato recebem composição própria, CEP 62750-000 e mapa escuro com pino da marca. Em 2026-11-08, usuário aprovou G5 e autorizou merge e promoção para produção após revisão/testes finais. Atualizar somente CEP/links do mapa no cadastro existente de produção, sem seed nem alteração das fotos/dados dos produtos.
 
 ## Evidências e referências
 

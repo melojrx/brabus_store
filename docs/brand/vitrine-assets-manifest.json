@@ -6,10 +6,12 @@
     "height": 309,
     "hasTransparency": true,
     "kind": "derived-logo",
-    "reviewStatus": "pending-visual-acceptance",
+    "reviewStatus": "approved",
     "objectPosition": "center center",
     "sourceWidth": 1976,
-    "sourceHeight": 796
+    "sourceHeight": 796,
+    "approvedOn": "2026-11-08",
+    "provisional": false
   },
   "emblema-principal": {
     "src": "/brand/emblema-principal.webp",
@@ -18,10 +20,12 @@
     "height": 960,
     "hasTransparency": true,
     "kind": "derived-logo",
-    "reviewStatus": "pending-visual-acceptance",
+    "reviewStatus": "approved",
     "objectPosition": "center center",
     "sourceWidth": 1254,
-    "sourceHeight": 1254
+    "sourceHeight": 1254,
+    "approvedOn": "2026-11-08",
+    "provisional": false
   },
   "categoria-masculina": {
     "src": "/brand/categoria-masculina.webp",
@@ -30,8 +34,10 @@
     "height": 1086,
     "hasTransparency": false,
     "kind": "reference-based-editorial",
-    "reviewStatus": "pending-visual-acceptance",
-    "objectPosition": "center center"
+    "reviewStatus": "approved",
+    "objectPosition": "center center",
+    "approvedOn": "2026-11-08",
+    "provisional": false
   },
   "categoria-acessorios": {
     "src": "/brand/categoria-acessorios.webp",
@@ -40,8 +46,10 @@
     "height": 1086,
     "hasTransparency": false,
     "kind": "reference-based-editorial",
-    "reviewStatus": "pending-visual-acceptance",
-    "objectPosition": "center center"
+    "reviewStatus": "approved",
+    "objectPosition": "center center",
+    "approvedOn": "2026-11-08",
+    "provisional": false
   },
   "categoria-suplementos": {
     "src": "/brand/categoria-suplementos.webp",
@@ -50,8 +58,10 @@
     "height": 1086,
     "hasTransparency": false,
     "kind": "provisional-generic-editorial",
-    "reviewStatus": "pending-visual-acceptance",
-    "objectPosition": "center center"
+    "reviewStatus": "approved-provisional-editorial",
+    "objectPosition": "center center",
+    "approvedOn": "2026-11-08",
+    "provisional": true
   },
   "simbolo-compacto": {
     "src": "/brand/simbolo-compacto.webp",
@@ -60,7 +70,7 @@
     "height": 486,
     "hasTransparency": false,
     "kind": "unchanged-official-source",
-    "reviewStatus": "pending-visual-acceptance",
+    "reviewStatus": "preserved-unused",
     "objectPosition": "center center",
     "sourceWidth": 512,
     "sourceHeight": 486
@@ -72,9 +82,11 @@
     "height": 968,
     "hasTransparency": true,
     "kind": "derived-logo",
-    "reviewStatus": "pending-visual-acceptance",
+    "reviewStatus": "approved",
     "sourceWidth": 1337,
-    "sourceHeight": 1176
+    "sourceHeight": 1176,
+    "approvedOn": "2026-11-08",
+    "provisional": false
   },
   "hero-atmosfera": {
     "src": "/brand/hero-atmosfera.webp",
@@ -83,8 +95,10 @@
     "height": 1024,
     "hasTransparency": false,
     "kind": "static-decorative-atmosphere",
-    "reviewStatus": "pending-visual-acceptance",
+    "reviewStatus": "approved",
     "sourceWidth": 1536,
-    "sourceHeight": 1024
+    "sourceHeight": 1024,
+    "approvedOn": "2026-11-08",
+    "provisional": false
   }
 }

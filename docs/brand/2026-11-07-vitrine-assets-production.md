@@ -62,3 +62,7 @@ Ferramenta: `image_gen` integrada, sem CLI/API externa configurada pelo usuário
 Todos os 12 arquivos PNG/WebP foram decodificados. Dimensões do mapa conferidas com os WebP servidos. Canal alpha real confirmado em logo horizontal e emblema, preservado após conversão; compacto original confirmado opaco. Inspeção visual das saídas realizada: letras das assinaturas, composição masculina, bonés e ausência de rótulos na arte genérica. O aceite de marca e fidelidade das derivações permanece humano; geração não garante reprodução pixel a pixel do original.
 
 Nenhum consumidor da aplicação foi alterado nesta preparação. Os caminhos estão prontos para o mapa `lib/brand-assets.ts` previsto no plano. Categorias/cards e PDV continuam sujeitos aos gates combinados.
+
+## Aceites posteriores — 2026-11-08
+
+As versões efetivamente integradas (horizontal, emblema, hero aberto/atmosfera, categorias) foram aprovadas nos gates G2–G5. Manifesto atualizado no G6. Suplementos continuam uma composição editorial genérica provisória autorizada, não fotografia de estoque nem SKU. Compacto permanece original opaco, preservado sem consumo; não houve nova extração nem aprovação fictícia de transparência.
